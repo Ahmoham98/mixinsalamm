@@ -751,7 +751,7 @@ function HomePage() {
     console.log('Basalam Credentials:', basalamCredentials);
   }, [mixinProducts, basalamProducts, userData, mixinCredentials, basalamCredentials]);
 
-  // Update getCommonProducts function to handle undefined data
+  // Update getCommonProducts function to handle undefined data and null values
   const getCommonProducts = () => {
     if (!mixinProducts || !basalamProducts) {
       return { 
@@ -763,26 +763,30 @@ function HomePage() {
     }
 
     const commonMixinProducts = mixinProducts.filter(mixinProduct => 
-      basalamProducts.some(basalamProduct => 
+      mixinProduct?.name && basalamProducts.some(basalamProduct => 
+        basalamProduct?.title && 
         basalamProduct.title.toLowerCase() === mixinProduct.name.toLowerCase()
       )
     )
 
     const commonBasalamProducts = basalamProducts.filter(basalamProduct => 
-      mixinProducts.some(mixinProduct => 
+      basalamProduct?.title && mixinProducts.some(mixinProduct => 
+        mixinProduct?.name && 
         mixinProduct.name.toLowerCase() === basalamProduct.title.toLowerCase()
       )
     )
 
     // Get unique products (products that only exist in one platform)
     const uniqueMixinProducts = mixinProducts.filter(mixinProduct => 
-      !basalamProducts.some(basalamProduct => 
+      mixinProduct?.name && !basalamProducts.some(basalamProduct => 
+        basalamProduct?.title && 
         basalamProduct.title.toLowerCase() === mixinProduct.name.toLowerCase()
       )
     )
 
     const uniqueBasalamProducts = basalamProducts.filter(basalamProduct => 
-      !mixinProducts.some(mixinProduct => 
+      basalamProduct?.title && !mixinProducts.some(mixinProduct => 
+        mixinProduct?.name && 
         mixinProduct.name.toLowerCase() === basalamProduct.title.toLowerCase()
       )
     )
