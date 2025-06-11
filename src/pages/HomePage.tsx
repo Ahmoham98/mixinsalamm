@@ -798,21 +798,6 @@ function HomePage() {
     );
   };
 
-  // Add authentication status display
-  const AuthStatus = () => {
-    return (
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-        <h3 className="text-blue-800 font-medium mb-2">Authentication Status</h3>
-        <div className="text-sm">
-          <p>Mixin Connected: {mixinCredentials ? 'Yes' : 'No'}</p>
-          <p>Basalam Connected: {basalamCredentials ? 'Yes' : 'No'}</p>
-          <p>User Data Loaded: {userData ? 'Yes' : 'No'}</p>
-          {userData?.vendor?.id && <p>Vendor ID: {userData.vendor.id}</p>}
-        </div>
-      </div>
-    );
-  };
-
   // Update getCommonProducts function to handle undefined data and null values
   const getCommonProducts = () => {
     if (!mixinProducts || !basalamProducts) {
@@ -922,7 +907,6 @@ function HomePage() {
     <div className="min-h-screen bg-gray-100">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <AuthStatus />
           <ErrorDisplay error={mixinError} />
           <ErrorDisplay error={basalamError} />
         </div>
