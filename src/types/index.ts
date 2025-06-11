@@ -11,17 +11,61 @@ export interface BasalamCredentials {
 export interface MixinProduct {
   id: number;
   name: string;
+  english_name: string | null;
+  main_category: number;
+  brand: number | null;
   price: number;
-  description: string;
-  // Add other fields as needed
+  stock_type: 'limited' | 'unlimited' | 'out_of_stock';
+  has_variants: boolean;
+  available: boolean;
+  images: {
+    id: number;
+    image: string;
+    image_alt: string | null;
+    default: boolean;
+  }[];
 }
 
 export interface BasalamProduct {
   id: number;
   title: string;
   price: number;
-  description: string;
-  // Add other fields as needed
+  photo: {
+    id: number;
+    original: string;
+    xs: string;
+    sm: string;
+    md: string;
+    lg: string;
+  };
+  status: {
+    name: string;
+    value: number;
+    description: string | null;
+  };
+  inventory: number;
+  primary_price: number | null;
+  is_product_for_revision: boolean;
+  revision: any | null;
+  preparation_day: number;
+  published: string | null;
+  shipping_data: {
+    illegal_for_iran: boolean;
+    illegal_for_same_city: boolean;
+  };
+  net_weight: number;
+  packaged_weight: number;
+  net_weight_decimal: number;
+  variant: any[];
+  unit_quantity: number;
+  unit_type: {
+    name: string;
+    value: number;
+    description: string | null;
+  };
+  sku: string | null;
+  discount: any | null;
+  is_wholesale: boolean;
 }
 
 export interface BasalamVendor {
@@ -74,4 +118,20 @@ export interface BasalamUserData {
     description: string;
   };
   referrer_user_id: string | null;
+}
+
+export interface MixinProductsResponse {
+  next: string | null;
+  previous: string | null;
+  total_pages: number;
+  current_page: number;
+  per_page: number;
+  result: MixinProduct[];
+}
+
+export interface BasalamProductsResponse {
+  data: BasalamProduct[];
+  total: number;
+  page: number;
+  per_page: number;
 }

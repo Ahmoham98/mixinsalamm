@@ -1,5 +1,5 @@
 import { api, handleApiError } from './config'
-import type { MixinCredentials, MixinProduct } from '../../types'
+import type { MixinCredentials, MixinProduct, MixinProductsResponse } from '../../types'
 import { AxiosError } from 'axios'
 
 export const mixinApi = {
@@ -46,7 +46,7 @@ export const mixinApi = {
         token: credentials.access_token
       });
 
-      const response = await api.get('/products/my-mixin-products', {
+      const response = await api.get<MixinProductsResponse>('/products/my-mixin-products', {
         headers: {
           Authorization: `Bearer ${credentials.access_token}`,
         },
@@ -58,19 +58,8 @@ export const mixinApi = {
 
       console.log('Mixin products response:', response.data);
 
-      // Handle paginated response
       if (response.data?.result && Array.isArray(response.data.result)) {
         return response.data.result;
-      }
-
-      // Fallback to direct array
-      if (Array.isArray(response.data)) {
-        return response.data;
-      }
-
-      // Fallback to single item
-      if (response.data?.id) {
-        return [response.data];
       }
 
       console.error('Unexpected response format:', response.data);
@@ -83,18 +72,18 @@ export const mixinApi = {
 
   getProductById: async (credentials: MixinCredentials, productId: number): Promise<MixinProduct | null> => {
     try {
-      const response = await api.get(`/products/mixin/${productId}`, {
+      const response = await api.get<MixinProduct>(`/products/mixin/${productId}`, {
         headers: {
           Authorization: `Bearer ${credentials.access_token}`,
         },
         params: {
           mixin_url: credentials.url,
         },
-      })
-      return response.data || null
+      });
+      return response.data || null;
     } catch (error) {
-      console.error('Error fetching Mixin product:', error)
-      return null
+      console.error('Error fetching Mixin product:', error);
+      return null;
     }
   },
 
