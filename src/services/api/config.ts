@@ -6,10 +6,7 @@ export const api = axios.create({
   baseURL: BASE_URL,
   headers: {
     'Content-Type': 'application/json',
-    'Accept': 'application/json',
-    'Cache-Control': 'no-cache, no-store, must-revalidate',
-    'Pragma': 'no-cache',
-    'Expires': '0'
+    'Accept': 'application/json'
   },
   withCredentials: true  // Enable credentials for CORS
 })
@@ -30,11 +27,6 @@ api.interceptors.request.use(
 // Add response interceptor for debugging
 api.interceptors.response.use(
   (response) => {
-    // Add cache control headers to response
-    response.headers['cache-control'] = 'no-cache, no-store, must-revalidate';
-    response.headers['pragma'] = 'no-cache';
-    response.headers['expires'] = '0';
-    
     console.log('API Response:', {
       url: response.config.url,
       method: response.config.method,
