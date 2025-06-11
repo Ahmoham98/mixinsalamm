@@ -21,7 +21,18 @@ export interface BasalamProduct {
   title: string;
   price: number;
   description: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
   // Add other fields as needed
+}
+
+export interface BasalamProductsResponse {
+  data: BasalamProduct[];
+  total_count: number;
+  result_count: number;
+  total_page: number;
+  page: number;
 }
 
 export interface BasalamVendor {

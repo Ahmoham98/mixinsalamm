@@ -866,6 +866,17 @@ function HomePage() {
     uniqueBasalamProducts 
   } = getCommonProducts()
 
+  // Add debug logging for product data
+  React.useEffect(() => {
+    console.log('=== Product Data Debug ===');
+    console.log('Mixin Products:', mixinProducts);
+    console.log('Basalam Products:', basalamProducts);
+    console.log('Common Mixin Products:', commonMixinProducts);
+    console.log('Common Basalam Products:', commonBasalamProducts);
+    console.log('Unique Mixin Products:', uniqueMixinProducts);
+    console.log('Unique Basalam Products:', uniqueBasalamProducts);
+  }, [mixinProducts, basalamProducts, commonMixinProducts, commonBasalamProducts, uniqueMixinProducts, uniqueBasalamProducts]);
+
   const handleProductClick = async (productId: number, type: 'mixin' | 'basalam') => {
     try {
       let product: MixinProduct | BasalamProduct | null = null;

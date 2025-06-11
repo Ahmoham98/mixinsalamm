@@ -1,5 +1,5 @@
 import { api, handleApiError } from './config'
-import type { BasalamCredentials, BasalamProduct, BasalamUserData } from '../../types'
+import type { BasalamCredentials, BasalamProduct, BasalamUserData, BasalamProductsResponse } from '../../types'
 import { AxiosError } from 'axios'
 
 export const basalamApi = {
@@ -49,7 +49,7 @@ export const basalamApi = {
       });
       console.log('Request Params:', { basalam_page: 1 });
       
-      const response = await api.get(`/products/my-basalam-products/${vendorId}`, {
+      const response = await api.get<BasalamProductsResponse>(`/products/my-basalam-products/${vendorId}`, {
         headers: {
           Authorization: `Bearer ${credentials.access_token}`,
           'Content-Type': 'application/json',
@@ -70,32 +70,8 @@ export const basalamApi = {
         return [];
       }
 
-      // Handle paginated response with result array
-      if (response.data?.result && Array.isArray(response.data.result)) {
-        console.log('Returning result array from response.data.result');
-        return response.data.result;
-      }
-
-      // Handle direct array response
-      if (Array.isArray(response.data)) {
-        console.log('Returning direct array from response.data');
-        return response.data;
-      }
-
-      // Handle single item response
-      if (response.data?.id) {
-        console.log('Returning single item as array');
-        return [response.data];
-      }
-
-      // Handle paginated response with items array
-      if (response.data?.items && Array.isArray(response.data.items)) {
-        console.log('Returning items array from response.data.items');
-        return response.data.items;
-      }
-
-      // Handle response with data property
-      if (response.data?.data && Array.isArray(response.data.data)) {
+      // Return the data array from the response
+      if (response.data.data && Array.isArray(response.data.data)) {
         console.log('Returning data array from response.data.data');
         return response.data.data;
       }
