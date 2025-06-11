@@ -1,28 +1,14 @@
 import axios from 'axios'
 
-export const BASE_URL = 'https://mixinsalam.liara.run'  // Direct backend URL
+export const BASE_URL = 'https://mixinsalam.liara.run'
 
 export const api = axios.create({
   baseURL: BASE_URL,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json'
-  },
-  withCredentials: true  // Enable credentials for CORS
-})
-
-// Add request interceptor to handle CORS preflight
-api.interceptors.request.use(
-  (config) => {
-    // Add CORS headers to request
-    config.headers['Access-Control-Allow-Origin'] = 'https://mixinsalamm.liara.run';
-    config.headers['Access-Control-Allow-Credentials'] = 'true';
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
   }
-);
+})
 
 // Add response interceptor for debugging
 api.interceptors.response.use(
