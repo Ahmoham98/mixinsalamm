@@ -33,7 +33,10 @@ const tomanToRial = (price: number): number => {
   return price * 10
 }
 
-const formatPrice = (price: number): string => {
+const formatPrice = (price: number | null | undefined): string => {
+  if (price === null || price === undefined) {
+    return 'قیمت نامشخص';
+  }
   return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
 }
 
@@ -987,7 +990,7 @@ function HomePage() {
                           dir="rtl"
                         >
                           <h3 className="font-medium">{product.name}</h3>
-                          <p className="text-gray-600">قیمت: {formatPrice(product.price)} تومان</p>
+                          <p className="text-gray-600">قیمت: {product.price ? formatPrice(product.price) : 'قیمت نامشخص'} تومان</p>
                         </div>
                       ))
                     )}
@@ -1028,7 +1031,7 @@ function HomePage() {
                           dir="rtl"
                         >
                           <h3 className="font-medium">{product.title}</h3>
-                          <p className="text-gray-600">قیمت: {formatPrice(rialToToman(product.price))} تومان</p>
+                          <p className="text-gray-600">قیمت: {product.price ? formatPrice(rialToToman(product.price)) : 'قیمت نامشخص'} تومان</p>
                         </div>
                       ))
                     )}
@@ -1074,7 +1077,7 @@ function HomePage() {
                           dir="rtl"
                       >
                         <h3 className="font-medium">{product.name}</h3>
-                          <p className="text-gray-600">قیمت: {formatPrice(product.price)} تومان</p>
+                          <p className="text-gray-600">قیمت: {product.price ? formatPrice(product.price) : 'قیمت نامشخص'} تومان</p>
                       </div>
                     ))
                   )}
@@ -1120,7 +1123,7 @@ function HomePage() {
                           dir="rtl"
                       >
                         <h3 className="font-medium">{product.title}</h3>
-                          <p className="text-gray-600">قیمت: {formatPrice(rialToToman(product.price))} تومان</p>
+                          <p className="text-gray-600">قیمت: {product.price ? formatPrice(rialToToman(product.price)) : 'قیمت نامشخص'} تومان</p>
                       </div>
                     ))
                   )}
