@@ -70,11 +70,7 @@ export const basalamApi = {
         return [];
       }
 
-      // Handle paginated response with data array
-      if (response.data?.data && Array.isArray(response.data.data)) {
-        console.log('Returning data array from response.data.data');
-        return response.data.data;
-      }
+      
 
       // Handle paginated response with result array
       if (response.data?.result && Array.isArray(response.data.result)) {
