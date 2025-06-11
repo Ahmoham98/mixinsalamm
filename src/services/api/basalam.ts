@@ -73,7 +73,19 @@ export const basalamApi = {
       // Return the data array from the response
       if (response.data.data && Array.isArray(response.data.data)) {
         console.log('Returning data array from response.data.data');
-        return response.data.data;
+        // Validate each product has required fields
+        const validProducts = response.data.data.filter(product => {
+          if (!product || typeof product !== 'object') {
+            console.error('Invalid product:', product);
+            return false;
+          }
+          if (!product.id || !product.title || typeof product.price !== 'number') {
+            console.error('Product missing required fields:', product);
+            return false;
+          }
+          return true;
+        });
+        return validProducts;
       }
 
       console.error('Unexpected response format:', response.data);

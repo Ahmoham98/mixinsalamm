@@ -16,15 +16,54 @@ export interface MixinProduct {
   // Add other fields as needed
 }
 
+export interface BasalamPhoto {
+  id: number;
+  original: string;
+  xs: string;
+  sm: string;
+  md: string;
+  lg: string;
+}
+
+export interface BasalamStatus {
+  name: string;
+  value: number;
+  description: string | null;
+}
+
+export interface BasalamShippingData {
+  illegal_for_iran: boolean;
+  illegal_for_same_city: boolean;
+}
+
+export interface BasalamUnitType {
+  name: string;
+  value: number;
+  description: string | null;
+}
+
 export interface BasalamProduct {
   id: number;
   title: string;
   price: number;
-  description: string;
-  status: string;
-  created_at: string;
-  updated_at: string;
-  // Add other fields as needed
+  photo: BasalamPhoto;
+  status: BasalamStatus;
+  inventory: number;
+  primary_price: number | null;
+  is_product_for_revision: boolean;
+  revision: any | null;
+  preparation_day: number;
+  published: string | null;
+  shipping_data: BasalamShippingData;
+  net_weight: number;
+  packaged_weight: number;
+  net_weight_decimal: number;
+  variant: any[];
+  unit_quantity: number;
+  unit_type: BasalamUnitType;
+  sku: string | null;
+  discount: any | null;
+  is_wholesale: boolean;
 }
 
 export interface BasalamProductsResponse {
@@ -33,6 +72,7 @@ export interface BasalamProductsResponse {
   result_count: number;
   total_page: number;
   page: number;
+  per_page: number;
 }
 
 export interface BasalamVendor {

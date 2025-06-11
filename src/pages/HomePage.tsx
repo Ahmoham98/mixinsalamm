@@ -69,7 +69,7 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
         setEditedProduct({
           name: product.title,
           price: rialToToman(product.price), // Convert Rial to Toman for display
-          description: product.description
+          description: '' // Basalam products don't have a description field
         })
       }
     }
@@ -821,34 +821,46 @@ function HomePage() {
       }
     }
 
-    const commonMixinProducts = mixinProducts.filter(mixinProduct => 
-      mixinProduct?.name && basalamProducts.some(basalamProduct => 
+    // Extract the data array from the response if it exists
+    const mixinProductsArray = Array.isArray(mixinProducts) ? mixinProducts : (mixinProducts as any).data || [];
+    const basalamProductsArray = Array.isArray(basalamProducts) ? basalamProducts : (basalamProducts as any).data || [];
+
+    console.log('Processing Mixin Products:', mixinProductsArray);
+    console.log('Processing Basalam Products:', basalamProductsArray);
+
+    const commonMixinProducts = mixinProductsArray.filter((mixinProduct: MixinProduct) => 
+      mixinProduct?.name && basalamProductsArray.some((basalamProduct: BasalamProduct) => 
         basalamProduct?.title && 
         basalamProduct.title.toLowerCase() === mixinProduct.name.toLowerCase()
       )
     )
 
-    const commonBasalamProducts = basalamProducts.filter(basalamProduct => 
-      basalamProduct?.title && mixinProducts.some(mixinProduct => 
+    const commonBasalamProducts = basalamProductsArray.filter((basalamProduct: BasalamProduct) => 
+      basalamProduct?.title && mixinProductsArray.some((mixinProduct: MixinProduct) => 
         mixinProduct?.name && 
         mixinProduct.name.toLowerCase() === basalamProduct.title.toLowerCase()
       )
     )
 
     // Get unique products (products that only exist in one platform)
-    const uniqueMixinProducts = mixinProducts.filter(mixinProduct => 
-      mixinProduct?.name && !basalamProducts.some(basalamProduct => 
+    const uniqueMixinProducts = mixinProductsArray.filter((mixinProduct: MixinProduct) => 
+      mixinProduct?.name && !basalamProductsArray.some((basalamProduct: BasalamProduct) => 
         basalamProduct?.title && 
         basalamProduct.title.toLowerCase() === mixinProduct.name.toLowerCase()
       )
     )
 
-    const uniqueBasalamProducts = basalamProducts.filter(basalamProduct => 
-      basalamProduct?.title && !mixinProducts.some(mixinProduct => 
+    const uniqueBasalamProducts = basalamProductsArray.filter((basalamProduct: BasalamProduct) => 
+      basalamProduct?.title && !mixinProductsArray.some((mixinProduct: MixinProduct) => 
         mixinProduct?.name && 
         mixinProduct.name.toLowerCase() === basalamProduct.title.toLowerCase()
       )
     )
+
+    console.log('Common Mixin Products:', commonMixinProducts);
+    console.log('Common Basalam Products:', commonBasalamProducts);
+    console.log('Unique Mixin Products:', uniqueMixinProducts);
+    console.log('Unique Basalam Products:', uniqueBasalamProducts);
 
     return { 
       commonMixinProducts, 
