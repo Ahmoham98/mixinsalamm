@@ -14,6 +14,19 @@ export const api = axios.create({
   withCredentials: true  // Enable credentials for CORS
 })
 
+// Add request interceptor to handle CORS preflight
+api.interceptors.request.use(
+  (config) => {
+    // Add CORS headers to request
+    config.headers['Access-Control-Allow-Origin'] = 'https://mixinsalamm.liara.run';
+    config.headers['Access-Control-Allow-Credentials'] = 'true';
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 // Add response interceptor for debugging
 api.interceptors.response.use(
   (response) => {
@@ -45,7 +58,6 @@ api.interceptors.response.use(
 );
 
 export interface ApiError {
-  status: number
   message: string
 }
 
