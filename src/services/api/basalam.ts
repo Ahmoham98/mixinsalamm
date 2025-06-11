@@ -63,14 +63,12 @@ export const basalamApi = {
       console.log('=== Basalam Products Response Debug ===');
       console.log('Response Status:', response.status);
       console.log('Response Headers:', response.headers);
-      console.log('Response Data:', response.data);
+      console.log('Raw Response Data:', response.data);
 
       if (!response.data) {
         console.error('No data received in response');
         return [];
       }
-
-      
 
       // Handle paginated response with result array
       if (response.data?.result && Array.isArray(response.data.result)) {
@@ -78,16 +76,28 @@ export const basalamApi = {
         return response.data.result;
       }
 
-      // Fallback to direct array
+      // Handle direct array response
       if (Array.isArray(response.data)) {
         console.log('Returning direct array from response.data');
         return response.data;
       }
 
-      // Fallback to single item
+      // Handle single item response
       if (response.data?.id) {
         console.log('Returning single item as array');
         return [response.data];
+      }
+
+      // Handle paginated response with items array
+      if (response.data?.items && Array.isArray(response.data.items)) {
+        console.log('Returning items array from response.data.items');
+        return response.data.items;
+      }
+
+      // Handle response with data property
+      if (response.data?.data && Array.isArray(response.data.data)) {
+        console.log('Returning data array from response.data.data');
+        return response.data.data;
       }
 
       console.error('Unexpected response format:', response.data);
