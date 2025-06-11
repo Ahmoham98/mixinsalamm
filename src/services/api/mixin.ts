@@ -1,13 +1,13 @@
 import { api, handleApiError } from './config'
-import type { MixinCredentials, MixinProduct } from '../../types'
+import type { MixinCredentials, MixinProduct, MixinValidationResponse } from '../../types'
 import { AxiosError } from 'axios'
 
 export const mixinApi = {
-  validateCredentials: async (url: string, token: string) => {
+  validateCredentials: async (url: string, token: string): Promise<MixinValidationResponse> => {
     try {
       console.log('Validating Mixin credentials:', { url, token });
       
-      const response = await api.post(`/mixin/client/?mixin_url=${encodeURIComponent(url)}&token=${encodeURIComponent(token)}`);
+      const response = await api.post<MixinValidationResponse>(`/mixin/client/?mixin_url=${encodeURIComponent(url)}&token=${encodeURIComponent(token)}`);
 
       console.log('Validation response:', response.data);
 
@@ -17,10 +17,7 @@ export const mixinApi = {
           response.data["mixin-ceredentials"] && 
           response.data["mixin-ceredentials"].mixin_url && 
           response.data["mixin-ceredentials"].access_token) {
-        return {
-          url: response.data["mixin-ceredentials"].mixin_url,
-          access_token: response.data["mixin-ceredentials"].access_token
-        };
+        return response.data;
       }
       
       throw new Error('Invalid response format from server');

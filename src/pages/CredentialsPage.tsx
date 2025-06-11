@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { mixinApi } from '../services/api/mixin'
 import { X } from 'lucide-react'
+import type { MixinValidationResponse } from '../types'
 
 interface ModalProps {
   isOpen: boolean
@@ -113,11 +114,11 @@ function CredentialsPage() {
       const data = await mixinApi.validateCredentials(url, token)
       console.log('Received data from API:', data)
       
-      if (data && data['mixin-ceredentials']) {
-        console.log('Setting credentials:', data['mixin-ceredentials'])
+      if (data && data.message === "you are connected successfully!" && data["mixin-ceredentials"]) {
+        console.log('Setting credentials:', data["mixin-ceredentials"])
         setMixinCredentials({ 
-          url: data['mixin-ceredentials'].mixin_url, 
-          access_token: data['mixin-ceredentials'].access_token 
+          url: data["mixin-ceredentials"].mixin_url, 
+          access_token: data["mixin-ceredentials"].access_token 
         })
         setIsMixinModalOpen(false)
         alert(data.message || 'Successfully connected to Mixin!')

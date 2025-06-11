@@ -75,3 +75,11 @@ export interface BasalamUserData {
   };
   referrer_user_id: string | null;
 }
+
+export interface MixinValidationResponse {
+  message: string;
+  "mixin-ceredentials": {
+    mixin_url: string;
+    access_token: string;
+  };
+}

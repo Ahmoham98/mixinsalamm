@@ -699,6 +699,7 @@ function LoadingModal() {
 function HomePage() {
   const { mixinCredentials, basalamCredentials, clearCredentials } = useAuthStore()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const [selectedProduct, setSelectedProduct] = useState<MixinProduct | BasalamProduct | null>(null)
   const [modalType, setModalType] = useState<'mixin' | 'basalam'>('mixin')
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -708,9 +709,29 @@ function HomePage() {
   const [isCommonBasalamSectionOpen, setIsCommonBasalamSectionOpen] = useState(true)
   const [isCreateMixinModalOpen, setIsCreateMixinModalOpen] = useState(false)
 
-  const handleLogout = () => {
-    clearCredentials()
-    navigate('/')
+  const handleLogout = async () => {
+    try {
+      // Show confirmation dialog
+      if (!window.confirm('Are you sure you want to logout?')) {
+        return;
+      }
+
+      // Clear credentials from store
+      clearCredentials();
+
+      // Clear any cached data
+      localStorage.removeItem('auth-storage');
+      sessionStorage.clear();
+
+      // Clear React Query cache
+      queryClient.clear();
+
+      // Navigate to home page
+      navigate('/');
+    } catch (error) {
+      console.error('Error during logout:', error);
+      alert('Failed to logout. Please try again.');
+    }
   }
 
   const { data: userData, isLoading: isUserLoading, error: userError } = useQuery({
@@ -832,21 +853,6 @@ function HomePage() {
 
   // Add loading state check
   const isLoading = isUserLoading || isMixinLoading || isBasalamLoading
-
-  if (userError || mixinError || basalamError) {
-    return (
-      <div className="min-h-screen bg-gray-100 p-8 flex items-center justify-center">
-        <div className="bg-white p-6 rounded-lg shadow-lg max-w-lg w-full">
-          <h2 className="text-xl font-semibold mb-4 text-red-600">Error Loading Data</h2>
-          <div className="space-y-2">
-            {userError && <p className="text-gray-600">User Data Error: {(userError as Error).message}</p>}
-            {mixinError && <p className="text-gray-600">Mixin Products Error: {(mixinError as Error).message}</p>}
-            {basalamError && <p className="text-gray-600">Basalam Products Error: {(basalamError as Error).message}</p>}
-          </div>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="min-h-screen bg-gray-100">
