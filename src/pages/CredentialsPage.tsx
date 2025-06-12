@@ -19,21 +19,21 @@ function Modal({ isOpen, onClose, onSubmit, type }: ModalProps) {
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-      <div className="bg-white p-6 rounded-lg w-96 relative">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="bg-white p-8 rounded-xl shadow-2xl w-96 relative transform transition-all duration-300 ease-in-out">
         <button
           onClick={onClose}
-          className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition-colors"
         >
-          <X size={20} />
+          <X size={24} />
         </button>
-        <h2 className="text-xl font-semibold mb-4">
+        <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
           Connect to {type === 'mixin' ? 'Mixin' : 'Basalam'}
         </h2>
         {type === 'mixin' && (
           <>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 URL
               </label>
               <input
@@ -41,11 +41,11 @@ function Modal({ isOpen, onClose, onSubmit, type }: ModalProps) {
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder="e.g., api.mixin.ir"
-                className="w-full p-2 border rounded"
+                className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
               />
             </div>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Access Token
               </label>
               <input
@@ -53,14 +53,14 @@ function Modal({ isOpen, onClose, onSubmit, type }: ModalProps) {
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
                 placeholder="Your Mixin access token"
-                className="w-full p-2 border rounded"
+                className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
               />
             </div>
           </>
         )}
         <button
           onClick={() => onSubmit(url, token)}
-          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transform hover:scale-[1.02] transition-all duration-200 font-medium"
         >
           Connect
         </button>
@@ -233,55 +233,58 @@ function CredentialsPage() {
   }, [basalamCredentials]);
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <div className="bg-white p-8 rounded-lg shadow-lg w-96">
-        <h1 className="text-2xl font-bold mb-6 text-center">حساب های خود را متصل کنید</h1>
-        <div className="space-y-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4">
+      <div className="bg-white/80 backdrop-blur-md p-8 rounded-2xl shadow-xl w-full max-w-md transform transition-all duration-300 hover:shadow-2xl">
+        <h1 className="text-3xl font-bold mb-8 text-center bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          حساب های خود را متصل کنید
+        </h1>
+        <div className="space-y-6">
           <button
             onClick={() => setIsMixinModalOpen(true)}
-            className={`w-full py-3 rounded-lg transition flex items-center justify-center ${
+            className={`w-full py-4 rounded-xl transition-all duration-300 flex items-center justify-center transform hover:scale-[1.02] ${
               mixinCredentials 
-                ? 'bg-green-600 hover:bg-green-700 text-white' 
-                : 'bg-blue-600 hover:bg-blue-700 text-white'
+                ? 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white' 
+                : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white'
             }`}
           >
             {mixinCredentials ? (
               <>
-                <span>✓</span>
-                <span className="ml-2">میکسین متصل شد</span>
+                <span className="text-xl">✓</span>
+                <span className="mr-2 font-medium">میکسین متصل شد</span>
               </>
             ) : (
-              'Connect to Mixin'
+              <span className="font-medium">اتصال به میکسین</span>
             )}
           </button>
           <button
             onClick={handleBasalamConnect}
-            className={`w-full py-3 rounded-lg transition flex items-center justify-center ${
+            className={`w-full py-4 rounded-xl transition-all duration-300 flex items-center justify-center transform hover:scale-[1.02] ${
               basalamCredentials 
-                ? 'bg-green-600 hover:bg-green-700 text-white' 
-                : 'bg-blue-600 hover:bg-blue-700 text-white'
+                ? 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white' 
+                : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white'
             }`}
           >
             {basalamCredentials ? (
               <>
-                <span className="text-xl mr-2">✓</span>
-                <span>باسلام متصل شد</span>
+                <span className="text-xl">✓</span>
+                <span className="mr-2 font-medium">باسلام متصل شد</span>
               </>
             ) : (
-              'Connect to Basalam'
+              <span className="font-medium">اتصال به باسلام</span>
             )}
           </button>
 
           {(mixinCredentials || basalamCredentials) && (
             <button
               onClick={handleContinue}
-              className="w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700 transition mt-8"
+              className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white py-4 rounded-xl transition-all duration-300 transform hover:scale-[1.02] font-medium mt-8"
             >
-              Continue to Dashboard
+              برو به صفحه اصلی
             </button>
           )}
         </div>
       </div>
+      
       <Modal
         isOpen={isMixinModalOpen}
         onClose={() => setIsMixinModalOpen(false)}

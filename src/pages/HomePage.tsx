@@ -690,10 +690,16 @@ function CreateMixinProductModal({ isOpen, onClose }: CreateMixinProductModalPro
 // Add LoadingModal component
 function LoadingModal() {
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white p-8 rounded-lg shadow-lg flex flex-col items-center gap-4">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-        <p className="text-lg font-medium text-gray-700">Loading...</p>
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="bg-white p-8 rounded-xl shadow-2xl flex flex-col items-center gap-4 max-w-sm w-full mx-4">
+        <div className="relative">
+          <div className="w-16 h-16 border-4 border-blue-200 rounded-full animate-spin border-t-blue-600"></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+            <div className="w-8 h-8 bg-blue-600 rounded-full animate-pulse"></div>
+          </div>
+        </div>
+        <h3 className="text-xl font-semibold text-gray-800">در حال بارگذاری...</h3>
+        <p className="text-gray-600 text-center">لطفا صبر کنید تا اطلاعات محصولات بارگذاری شود</p>
       </div>
     </div>
   )
@@ -904,7 +910,7 @@ function HomePage() {
   const isLoading = isUserLoading || isMixinLoading || isBasalamLoading
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <ErrorDisplay error={mixinError} />
@@ -914,18 +920,20 @@ function HomePage() {
         {isLoading && <LoadingModal />}
         
         {/* Sticky Header */}
-        <header className="sticky top-0 bg-white shadow-md z-20">
+        <header className="sticky top-0 bg-white/80 backdrop-blur-md shadow-lg z-20 border-b border-gray-200">
           <div className="max-w-7xl mx-auto px-8 py-4">
             <div className="flex items-center justify-between">
-            <button
-              onClick={handleLogout}
-                className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-            >
-              <LogOut size={20} />
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md hover:shadow-lg"
+              >
+                <LogOut size={20} />
                 <span>خروج</span>
-            </button>
+              </button>
               <div className="text-center flex-1 -ml-[55px]">
-                <h1 className="text-3xl font-bold mb-2">به سایت میکسین سلام خیلی خوش آمدید</h1>
+                <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  به سایت میکسین سلام خیلی خوش آمدید
+                </h1>
                 <p className="text-gray-600">سپاس بابت اینکه ما را انتخاب کردید</p>
               </div>
             </div>
@@ -933,135 +941,42 @@ function HomePage() {
         </header>
 
         {/* Main Content */}
-        <main className="p-8">
-          <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Common Products Header */}
-              <div className="col-span-2 flex justify-center">
-                <h2 className="text-2xl font-bold text-gray-800 mb-4">محصولات مشترک در باسلام و میکسین</h2>
-              </div>
-
-              {/* Common Mixin Products */}
-              <div className="bg-white p-6 rounded-lg shadow-lg">
-                <div 
-                  className="flex items-center justify-between cursor-pointer mb-4"
+        <main className="mt-8">
+          {/* Common Products Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+            {/* Common Mixin Products */}
+            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-gray-800">محصولات مشترک در میکسین</h2>
+                <button
+                  onClick={() => setIsCommonMixinSectionOpen(!isCommonMixinSectionOpen)}
+                  className="text-gray-500 hover:text-gray-700"
                 >
-                  <button 
-                    className="text-gray-500 hover:text-gray-700 focus:outline-none order-first"
-                    onClick={() => setIsCommonMixinSectionOpen(!isCommonMixinSectionOpen)}
-                  >
-                    {isCommonMixinSectionOpen ? <ChevronUp size={24} /> : <ChevronDown size={24} />}
-                  </button>
-                  <h2 className="text-xl font-semibold text-right w-full">محصول مشترک در میکسین</h2>
-                </div>
-                {isCommonMixinSectionOpen && (
-                  <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
-                    {!mixinCredentials ? (
-                      <div className="text-center py-4 text-gray-500">Please connect to Mixin first</div>
-                    ) : isMixinLoading || isBasalamLoading ? (
-                      <div className="text-center py-4">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                        <p className="mt-2">Loading products...</p>
-                      </div>
-                    ) : commonMixinProducts.length === 0 ? (
-                      <div className="text-center py-4 text-gray-500">No common products found</div>
-                    ) : (
-                      commonMixinProducts.map((product: MixinProduct) => (
-                        <div
-                          key={product.id}
-                          onClick={() => handleProductClick(product.id, 'mixin')}
-                          className="p-4 border rounded-lg cursor-pointer hover:bg-gray-50 text-right"
-                          dir="rtl"
-                        >
-                          <h3 className="font-medium">{product.name}</h3>
-                          <p className="text-gray-600">قیمت: {product.price ? formatPrice(product.price) : 'قیمت نامشخص'} تومان</p>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                )}
+                  {isCommonMixinSectionOpen ? '▼' : '▶'}
+                </button>
               </div>
 
-              {/* Common Basalam Products */}
-              <div className="bg-white p-6 rounded-lg shadow-lg">
-                <div 
-                  className="flex items-center justify-between cursor-pointer mb-4"
-                >
-                  <button 
-                    className="text-gray-500 hover:text-gray-700 focus:outline-none order-first"
-                    onClick={() => setIsCommonBasalamSectionOpen(!isCommonBasalamSectionOpen)}
-                  >
-                    {isCommonBasalamSectionOpen ? <ChevronUp size={24} /> : <ChevronDown size={24} />}
-                  </button>
-                  <h2 className="text-xl font-semibold text-right w-full">محصول مشترک در باسلام</h2>
-                </div>
-                {isCommonBasalamSectionOpen && (
-                  <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
-                    {!basalamCredentials ? (
-                      <div className="text-center py-4 text-gray-500">Please connect to Basalam first</div>
-                    ) : isUserLoading || isBasalamLoading || isMixinLoading ? (
-                      <div className="text-center py-4">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                        <p className="mt-2">Loading products...</p>
-                      </div>
-                    ) : commonBasalamProducts.length === 0 ? (
-                      <div className="text-center py-4 text-gray-500">No common products found</div>
-                    ) : (
-                      commonBasalamProducts.map((product: BasalamProduct) => (
-                        <div
-                          key={product.id}
-                          onClick={() => handleProductClick(product.id, 'basalam')}
-                          className="p-4 border rounded-lg cursor-pointer hover:bg-gray-50 text-right"
-                          dir="rtl"
-                        >
-                          <h3 className="font-medium">{product.title}</h3>
-                          <p className="text-gray-600">قیمت: {product.price ? formatPrice(rialToToman(product.price)) : 'قیمت نامشخص'} تومان</p>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Unique Products Header */}
-              <div className="col-span-2 mt-8 flex justify-center">
-                <h2 className="text-2xl font-bold text-gray-800 mb-4">محصولات غیرمشترک در باسلام و میکسین</h2>
-              </div>
-
-            {/* Mixin Products */}
-            <div className="bg-white p-6 rounded-lg shadow-lg">
-              <div 
-                className="flex items-center justify-between cursor-pointer mb-4"
-                >
-                  <button 
-                    className="text-gray-500 hover:text-gray-700 focus:outline-none order-first"
-                    onClick={() => setIsMixinSectionOpen(!isMixinSectionOpen)}
-                  >
-                    {isMixinSectionOpen ? <ChevronUp size={24} /> : <ChevronDown size={24} />}
-                  </button>
-                  <h2 className="text-xl font-semibold text-right w-full">محصولات غیر مشترک در میکسین</h2>
-                </div>
-                {isMixinSectionOpen && (
-                  <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
+              {isCommonMixinSectionOpen && (
+                <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                   {!mixinCredentials ? (
-                    <div className="text-center py-4 text-gray-500">Please connect to Mixin first</div>
-                  ) : isMixinLoading ? (
+                    <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">لطفا ابتدا به میکسین متصل شوید</div>
+                  ) : isMixinLoading || isBasalamLoading ? (
                     <div className="text-center py-4">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                      <p className="mt-2">Loading Mixin products...</p>
+                      <p className="mt-2 text-gray-600">در حال بارگذاری محصولات...</p>
                     </div>
-                    ) : uniqueMixinProducts.length === 0 ? (
-                      <div className="text-center py-4 text-gray-500">No unique Mixin products found</div>
+                  ) : commonMixinProducts.length === 0 ? (
+                    <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">محصول مشترکی یافت نشد</div>
                   ) : (
-                      uniqueMixinProducts.map((product: MixinProduct) => (
+                    commonMixinProducts.map((product: MixinProduct) => (
                       <div
                         key={product.id}
                         onClick={() => handleProductClick(product.id, 'mixin')}
-                          className="p-4 border rounded-lg cursor-pointer hover:bg-gray-50 text-right"
-                          dir="rtl"
+                        className="p-4 border border-gray-100 rounded-lg cursor-pointer hover:bg-blue-50 hover:border-blue-200 transition-all duration-200 text-right group"
+                        dir="rtl"
                       >
-                        <h3 className="font-medium">{product.name}</h3>
-                          <p className="text-gray-600">قیمت: {product.price ? formatPrice(product.price) : 'قیمت نامشخص'} تومان</p>
+                        <h3 className="font-medium text-gray-800 group-hover:text-blue-600 transition-colors">{product.name}</h3>
+                        <p className="text-gray-600 mt-1">قیمت: {product.price ? formatPrice(product.price) : 'قیمت نامشخص'} تومان</p>
                       </div>
                     ))
                   )}
@@ -1069,68 +984,155 @@ function HomePage() {
               )}
             </div>
 
-            {/* Basalam Products */}
-            <div className="bg-white p-6 rounded-lg shadow-lg">
-              <div 
-                className="flex items-center justify-between cursor-pointer mb-4"
+            {/* Common Basalam Products */}
+            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-gray-800">محصولات مشترک در باسلام</h2>
+                <button
+                  onClick={() => setIsCommonBasalamSectionOpen(!isCommonBasalamSectionOpen)}
+                  className="text-gray-500 hover:text-gray-700"
                 >
-                  <button 
-                    className="text-gray-500 hover:text-gray-700 focus:outline-none order-first"
-                    onClick={() => setIsBasalamSectionOpen(!isBasalamSectionOpen)}
-                  >
-                    {isBasalamSectionOpen ? <ChevronUp size={24} /> : <ChevronDown size={24} />}
-                  </button>
-                  <h2 className="text-xl font-semibold text-right w-full">محصولات غیر مشترک در باسلام</h2>
-                </div>
-                {isBasalamSectionOpen && (
-                  <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
+                  {isCommonBasalamSectionOpen ? '▼' : '▶'}
+                </button>
+              </div>
+
+              {isCommonBasalamSectionOpen && (
+                <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                   {!basalamCredentials ? (
-                    <div className="text-center py-4 text-gray-500">Please connect to Basalam first</div>
-                  ) : isUserLoading ? (
+                    <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">لطفا ابتدا به باسلام متصل شوید</div>
+                  ) : isUserLoading || isBasalamLoading || isMixinLoading ? (
                     <div className="text-center py-4">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                      <p className="mt-2">Loading user data...</p>
+                      <p className="mt-2 text-gray-600">در حال بارگذاری محصولات...</p>
                     </div>
-                  ) : isBasalamLoading ? (
-                    <div className="text-center py-4">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                      <p className="mt-2">Loading Basalam products...</p>
-                    </div>
-                    ) : uniqueBasalamProducts.length === 0 ? (
-                      <div className="text-center py-4 text-gray-500">No unique Basalam products found</div>
+                  ) : commonBasalamProducts.length === 0 ? (
+                    <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">محصول مشترکی یافت نشد</div>
                   ) : (
-                      uniqueBasalamProducts.map((product: BasalamProduct) => (
+                    commonBasalamProducts.map((product: BasalamProduct) => (
                       <div
                         key={product.id}
                         onClick={() => handleProductClick(product.id, 'basalam')}
-                          className="p-4 border rounded-lg cursor-pointer hover:bg-gray-50 text-right"
-                          dir="rtl"
+                        className="p-4 border border-gray-100 rounded-lg cursor-pointer hover:bg-blue-50 hover:border-blue-200 transition-all duration-200 text-right group"
+                        dir="rtl"
                       >
-                        <h3 className="font-medium">{product.title}</h3>
-                          <p className="text-gray-600">قیمت: {product.price ? formatPrice(rialToToman(product.price)) : 'قیمت نامشخص'} تومان</p>
+                        <h3 className="font-medium text-gray-800 group-hover:text-blue-600 transition-colors">{product.title}</h3>
+                        <p className="text-gray-600 mt-1">قیمت: {product.price ? formatPrice(rialToToman(product.price)) : 'قیمت نامشخص'} تومان</p>
                       </div>
                     ))
                   )}
                 </div>
               )}
-              </div>
             </div>
           </div>
 
-          <ProductModal
-            isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
-            product={selectedProduct}
-            type={modalType}
-            mixinProducts={mixinProducts}
-            basalamProducts={basalamProducts}
-          />
+          {/* Unique Products Section */}
+          <div className="mt-12">
+            <h2 className="text-2xl font-bold text-gray-800 mb-8 text-center bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              محصولات غیرمشترک در باسلام و میکسین
+            </h2>
 
-          <CreateMixinProductModal
-            isOpen={isCreateMixinModalOpen}
-            onClose={() => setIsCreateMixinModalOpen(false)}
-          />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Unique Mixin Products */}
+              <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-bold text-gray-800">محصولات منحصر به میکسین</h3>
+                  <button
+                    onClick={() => setIsMixinSectionOpen(!isMixinSectionOpen)}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    {isMixinSectionOpen ? '▼' : '▶'}
+                  </button>
+                </div>
+
+                {isMixinSectionOpen && (
+                  <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                    {!mixinCredentials ? (
+                      <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">لطفا ابتدا به میکسین متصل شوید</div>
+                    ) : isMixinLoading ? (
+                      <div className="text-center py-4">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                        <p className="mt-2 text-gray-600">در حال بارگذاری محصولات میکسین...</p>
+                      </div>
+                    ) : uniqueMixinProducts.length === 0 ? (
+                      <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">محصول منحصر به میکسین یافت نشد</div>
+                    ) : (
+                      uniqueMixinProducts.map((product: MixinProduct) => (
+                        <div
+                          key={product.id}
+                          onClick={() => handleProductClick(product.id, 'mixin')}
+                          className="p-4 border border-gray-100 rounded-lg cursor-pointer hover:bg-blue-50 hover:border-blue-200 transition-all duration-200 text-right group"
+                          dir="rtl"
+                        >
+                          <h3 className="font-medium text-gray-800 group-hover:text-blue-600 transition-colors">{product.name}</h3>
+                          <p className="text-gray-600 mt-1">قیمت: {product.price ? formatPrice(product.price) : 'قیمت نامشخص'} تومان</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Unique Basalam Products */}
+              <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-bold text-gray-800">محصولات منحصر به باسلام</h3>
+                  <button
+                    onClick={() => setIsBasalamSectionOpen(!isBasalamSectionOpen)}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    {isBasalamSectionOpen ? '▼' : '▶'}
+                  </button>
+                </div>
+
+                {isBasalamSectionOpen && (
+                  <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                    {!basalamCredentials ? (
+                      <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">لطفا ابتدا به باسلام متصل شوید</div>
+                    ) : isUserLoading ? (
+                      <div className="text-center py-4">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                        <p className="mt-2 text-gray-600">در حال بارگذاری اطلاعات کاربر...</p>
+                      </div>
+                    ) : isBasalamLoading ? (
+                      <div className="text-center py-4">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                        <p className="mt-2 text-gray-600">در حال بارگذاری محصولات باسلام...</p>
+                      </div>
+                    ) : uniqueBasalamProducts.length === 0 ? (
+                      <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">محصول منحصر به باسلام یافت نشد</div>
+                    ) : (
+                      uniqueBasalamProducts.map((product: BasalamProduct) => (
+                        <div
+                          key={product.id}
+                          onClick={() => handleProductClick(product.id, 'basalam')}
+                          className="p-4 border border-gray-100 rounded-lg cursor-pointer hover:bg-blue-50 hover:border-blue-200 transition-all duration-200 text-right group"
+                          dir="rtl"
+                        >
+                          <h3 className="font-medium text-gray-800 group-hover:text-blue-600 transition-colors">{product.title}</h3>
+                          <p className="text-gray-600 mt-1">قیمت: {product.price ? formatPrice(rialToToman(product.price)) : 'قیمت نامشخص'} تومان</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </main>
+
+        <ProductModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          product={selectedProduct}
+          type={modalType}
+          mixinProducts={mixinProducts}
+          basalamProducts={basalamProducts}
+        />
+
+        <CreateMixinProductModal
+          isOpen={isCreateMixinModalOpen}
+          onClose={() => setIsCreateMixinModalOpen(false)}
+        />
       </div>
     </div>
   )
