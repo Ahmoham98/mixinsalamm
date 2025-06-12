@@ -4,26 +4,35 @@
 
 /* Custom scrollbar styles */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
   background: #f1f1f1;
-  border-radius: 3px;
+  border-radius: 4px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 3px;
+  background: #5b9fdb;
+  border-radius: 4px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: #ff6040;
 }
 
 /* Global styles */
 body {
-  font-family: 'Vazirmatn', system-ui, -apple-system, sans-serif;
+  font-family: 'Vazirmatn', sans-serif;
+  color: #2c3e50;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: #5b9fdb;
+}
+
+p {
+  color: #2c3e50;
 }
 
 /* Gradient text animation */
@@ -41,26 +50,26 @@ body {
 
 .animate-gradient {
   background-size: 200% 200%;
-  animation: gradient 15s ease infinite;
+  animation: gradient 3s ease infinite;
 }
 
 /* Card hover effects */
-.hover-card {
+.card-hover {
   transition: all 0.3s ease;
 }
 
-.hover-card:hover {
+.card-hover:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 20px rgba(91, 159, 219, 0.15);
 }
 
 /* Button styles */
 .btn-primary {
-  @apply px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg;
+  @apply bg-gradient-to-r from-[#ff6040] to-[#5b9fdb] text-white px-6 py-2 rounded-lg hover:from-[#ff6040]/90 hover:to-[#5b9fdb]/90 transition-all duration-200;
 }
 
 .btn-secondary {
-  @apply px-4 py-2 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-lg hover:from-gray-700 hover:to-gray-800 transition-all duration-200 shadow-md hover:shadow-lg;
+  @apply bg-white text-[#5b9fdb] px-6 py-2 rounded-lg border border-[#5b9fdb] hover:bg-[#5b9fdb]/10 transition-all duration-200;
 }
 
 /* Loading animation */
@@ -75,4 +84,21 @@ body {
 
 .animate-pulse {
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Text utilities */
+.text-primary {
+  color: #5b9fdb;
+}
+
+.text-secondary {
+  color: #ff6040;
+}
+
+.text-muted {
+  color: #2c3e50;
+}
+
+.text-light {
+  color: #ffffff;
 }
