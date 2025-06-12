@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
-import { basalamApi } from '../services/api/basalam'
 
 function BasalamCallback() {
   const navigate = useNavigate()
@@ -21,36 +20,39 @@ function BasalamCallback() {
           throw new Error('Missing code or state parameters')
         }
 
-        // Exchange code for access token
-        console.log('Attempting to exchange code for token...')
-        const response = await basalamApi.getAccessToken(code, state)
-        console.log('Received response from token exchange:', response)
-        
-        // Check if response is a string (error message)
-        if (typeof response === 'string') {
-          throw new Error(response)
+        // The backend will handle the token exchange and send a message back
+        // We just need to wait for the message from the popup window
+        const messageHandler = (event: MessageEvent) => {
+          console.log('Message received from:', event.origin)
+          console.log('Message data:', event.data)
+          
+          const { access_token, refresh_token } = event.data
+          
+          if (access_token) {
+            console.log('Setting Basalam credentials...')
+            setBasalamCredentials({
+              access_token,
+              refresh_token
+            })
+            
+            // Remove the listener after successful connection
+            window.removeEventListener('message', messageHandler)
+            
+            // Show success message
+            alert('Successfully connected to Basalam!')
+            
+            // Navigate back to credentials page
+            navigate('/')
+          } else {
+            console.error('No access token in response')
+            alert('Failed to connect to Basalam. Please try again.')
+            navigate('/')
+          }
         }
 
-        // Check if response has the expected structure
-        if (!response.result?.response?.access_token) {
-          console.error('Invalid response format:', response)
-          throw new Error('No access token received in response')
-        }
+        // Add the event listener
+        window.addEventListener('message', messageHandler)
 
-        // Set the Basalam credentials
-        console.log('Setting Basalam credentials...')
-        setBasalamCredentials({
-          access_token: response.result.response.access_token,
-          refresh_token: response.result.response.refresh_token
-        })
-
-        // Show success message
-        alert(response.result.message || 'Successfully connected to Basalam!')
-
-        // Set reload flag and navigate back to credentials page
-        console.log('Redirecting back to credentials page...')
-        sessionStorage.setItem('shouldReloadAfterBasalam', 'true')
-        window.location.href = '/'
       } catch (error: any) {
         console.error('Error handling Basalam callback:', error)
         alert(error.message || 'Failed to connect to Basalam. Please try again.')

@@ -3,25 +3,6 @@ import type { BasalamCredentials, BasalamProduct, BasalamUserData, BasalamProduc
 import { AxiosError } from 'axios'
 
 export const basalamApi = {
-  getAccessToken: async (code: string, state: string) => {
-    try {
-      console.log('Exchanging code for token:', { code, state })
-      const response = await api.post('/basalam/client/get-user-access-token/', {
-        code,
-        state
-      })
-      console.log('Token exchange response:', response.data)
-      return response.data
-    } catch (error) {
-      console.error('Error exchanging code for access token:', error)
-      if (error instanceof AxiosError && error.response) {
-        console.error('Error response:', error.response.data)
-        console.error('Error status:', error.response.status)
-      }
-      throw error
-    }
-  },
-
   getUserData: async (credentials: BasalamCredentials): Promise<BasalamUserData | null> => {
     try {
       const response = await api.get('/basalam/client/me', {
