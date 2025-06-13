@@ -206,5 +206,29 @@ export const mixinApi = {
       }
       throw new Error('Failed to create Mixin product')
     }
-  }
+  },
+
+  getProductImage: async (credentials: MixinCredentials, productId: number): Promise<string | null> => {
+    try {
+      const response = await api.get('/images/my-mixin_image', {
+        headers: {
+          Authorization: `Bearer ${credentials.access_token}`,
+        },
+        params: {
+          url: credentials.url,
+          mixin_page: 1,
+          mixin_product_id: productId
+        },
+      })
+      
+      // Check if we have results and at least one image
+      if (response.data?.result && response.data.result.length > 0) {
+        return response.data.result[0].image
+      }
+      return null
+    } catch (error) {
+      console.error('Error fetching Mixin product image:', error)
+      return null
+    }
+  },
 }

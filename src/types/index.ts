@@ -46,6 +46,7 @@ export interface BasalamProduct {
   id: number;
   title: string;
   price: number;
+  description?: string;
   photo: BasalamPhoto;
   status: BasalamStatus;
   inventory: number;

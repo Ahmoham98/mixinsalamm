@@ -40,7 +40,7 @@ function Modal({ isOpen, onClose, onSubmit, type }: ModalProps) {
                 type="text"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                placeholder="e.g., api.mixin.ir"
+                placeholder="e.g., myshop.ir"
                 className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
               />
             </div>
