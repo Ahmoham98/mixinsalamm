@@ -804,7 +804,7 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient }:
     queryFn: async () => {
       if (!productName.trim()) return [];
       try {
-        const response = await fetch(`https://categorydetection.basalam.com/category_detection/api_v1.0/predict/?title=${encodeURIComponent(productName)}`);
+        const response = await fetch(`https://mixinsalama.liara.run/products/category-detection/?title=${encodeURIComponent(productName)}`);
         if (!response.ok) {
           throw new Error(`خطا در دریافت دسته‌بندی‌ها: ${response.statusText}`);
         }
