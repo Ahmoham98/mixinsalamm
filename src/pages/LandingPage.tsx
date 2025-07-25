@@ -273,6 +273,9 @@ function LandingPage() { // Changed function name from App to LandingPage
           <p className="text-md leading-relaxed text-gray-700">
             شماره تماس ۲: 0935-987-6543
           </p>
+          <p className="text-md leading-relaxed text-gray-700">
+            شماره تماس ۳: 0996-227-8508
+          </p>
         </div>
       </footer>
     </div>
