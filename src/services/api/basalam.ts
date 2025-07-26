@@ -1,15 +1,19 @@
-// basalam.ts
 import { api, handleApiError } from './config';
-import type { BasalamCredentials, BasalamProduct, BasalamUserData, BasalamProductsResponse } from '../../types';
+import type {
+  BasalamCredentials,
+  BasalamProduct,
+  BasalamUserData,
+  BasalamProductsResponse
+} from '../../types';
 import { AxiosError } from 'axios';
 
 export const basalamApi = {
   /**
    * دریافت اطلاعات کاربر باسلام.
-   * @param credentials اطلاعات احراز هویت باسلام (access_token).
-   * @returns اطلاعات کاربر یا null در صورت خطا.
    */
-  getUserData: async (credentials: BasalamCredentials): Promise<BasalamUserData | null> => {
+  getUserData: async (
+    credentials: BasalamCredentials
+  ): Promise<BasalamUserData | null> => {
     try {
       console.log('Fetching Basalam user data...');
       const response = await api.get('/basalam/client/me', {
@@ -17,96 +21,86 @@ export const basalamApi = {
           Authorization: `Bearer ${credentials.access_token}`,
         },
       });
-      console.log('Basalam user data fetched successfully:', response.data);
+      console.log('User data fetched:', response.data);
       return response.data;
     } catch (error) {
       handleApiError(error, 'Error fetching Basalam user data');
-      throw error; // خطا را برای مدیریت در UI پرتاب می‌کنیم
+      throw error;
     }
   },
 
   /**
-   * دریافت لیست محصولات باسلام برای یک فروشنده.
-   * @param credentials اطلاعات احراز هویت باسلام (access_token).
-   * @param vendorId شناسه فروشنده باسلام.
-   * @returns آرایه‌ای از محصولات باسلام.
+   * دریافت لیست محصولات باسلام برای فروشنده مشخص.
    */
-  getProducts: async (credentials: BasalamCredentials, vendorId: number): Promise<BasalamProduct[]> => {
+  getProducts: async (
+    credentials: BasalamCredentials,
+    vendorId: number
+  ): Promise<BasalamProduct[]> => {
     try {
-      console.log('--- Basalam Products Request Start ---');
-      console.log(`Fetching Basalam products for Vendor ID: ${vendorId}`);
-      console.log('Request URL:', `/products/my-basalam-products/${vendorId}`);
-      // Token و Headerها در تنظیمات Axios 'api' باید به درستی مدیریت شوند.
-      // لاگ کامل توکن را برای امنیت کمتر می‌کنیم.
-      console.log('Access Token is present.');
-
-      const response = await api.get<BasalamProductsResponse>(`/products/my-basalam-products/${vendorId}`, {
-        headers: {
-          Authorization: `Bearer ${credentials.access_token}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        params: {
-          basalam_page: 1, // یا هر صفحه دیگری که نیاز دارید
-        },
-      });
-
-      console.log('--- Basalam Products Response End ---');
-      console.log('Response Status:', response.status);
-
-      if (!response.data || !Array.isArray(response.data.data)) {
-        console.error('Basalam products response data is invalid:', response.data);
-        throw new Error('Unexpected response format for Basalam products.');
-      }
-
-      const validProducts = response.data.data.filter(product => {
-        const isValid = product && typeof product === 'object' && product.id && product.title && typeof product.price === 'number';
-        if (!isValid) {
-          console.warn('Invalid product found in Basalam products list, skipping:', product);
+      console.log('Fetching products for vendor:', vendorId);
+      const response = await api.get<BasalamProductsResponse>(
+        `/products/my-basalam-products/${vendorId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${credentials.access_token}`,
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+          params: {
+            basalam_page: 1,
+          },
         }
-        return isValid;
-      });
+      );
 
-      console.log(`Found ${validProducts.length} valid Basalam products.`);
+      const products = response.data?.data ?? [];
+      const validProducts = products.filter(
+        (product) =>
+          product &&
+          typeof product === 'object' &&
+          product.id &&
+          product.title &&
+          typeof product.price === 'number'
+      );
+
+      console.log(`Fetched ${validProducts.length} valid products.`);
       return validProducts;
     } catch (error) {
       handleApiError(error, 'Error fetching Basalam products');
-      throw error; // خطا را برای مدیریت در UI پرتاب می‌کنیم
+      throw error;
     }
   },
 
   /**
-   * دریافت جزئیات یک محصول باسلام با شناسه آن.
-   * @param credentials اطلاعات احراز هویت باسلام.
-   * @param productId شناسه محصول باسلام.
-   * @returns جزئیات محصول باسلام یا null.
+   * دریافت اطلاعات یک محصول با شناسه مشخص.
    */
-  getProductById: async (credentials: BasalamCredentials, productId: number): Promise<BasalamProduct | null> => {
+  getProductById: async (
+    credentials: BasalamCredentials,
+    productId: number
+  ): Promise<BasalamProduct | null> => {
     try {
-      console.log(`Fetching Basalam product with ID: ${productId}`);
+      console.log(`Fetching product with ID: ${productId}`);
       const response = await api.get(`/products/basalam/${productId}`, {
         headers: {
           Authorization: `Bearer ${credentials.access_token}`,
         },
       });
-      console.log(`Basalam product ${productId} fetched successfully.`);
       return response.data || null;
     } catch (error) {
-      handleApiError(error, `Error fetching Basalam product with ID: ${productId}`);
-      throw error; // خطا را برای مدیریت در UI پرتاب می‌کنیم
+      handleApiError(error, `Error fetching product ID: ${productId}`);
+      throw error;
     }
   },
 
   /**
-   * به‌روزرسانی اطلاعات یک محصول در باسلام.
-   * @param credentials اطلاعات احراز هویت باسلام.
-   * @param productId شناسه محصول باسلام برای به‌روزرسانی.
-   * @param productData داده‌های محصول برای به‌روزرسانی (نام و قیمت).
-   * @returns پاسخ API باسلام پس از به‌روزرسانی.
+   * به‌روزرسانی اطلاعات یک محصول باسلام.
    */
-  updateProduct: async (credentials: BasalamCredentials, productId: number, productData: { name: string; price: number }) => {
+  updateProduct: async (
+    credentials: BasalamCredentials,
+    productId: number,
+    productData: { name: string; price: number }
+  ): Promise<any> => {
     try {
-      console.log(`Updating Basalam product with ID: ${productId}`);
+      console.log(`Updating product ID: ${productId}`);
       const formData = new FormData();
       formData.append('name', productData.name);
       formData.append('price', productData.price.toString());
@@ -116,58 +110,53 @@ export const basalamApi = {
         formData,
         {
           headers: {
-            'Authorization': `Bearer ${credentials.access_token}`,
-            'Content-Type': 'multipart/form-data', // برای FormData نیاز است
-          }
+            Authorization: `Bearer ${credentials.access_token}`,
+            'Content-Type': 'multipart/form-data',
+          },
         }
       );
 
       if (!response.data) {
-        throw new Error('No data received in response after Basalam product update.');
+        throw new Error('No response data from updateProduct');
       }
 
-      console.log(`Basalam product ${productId} updated successfully.`);
       return response.data;
     } catch (error) {
-      handleApiError(error, `Error updating Basalam product with ID: ${productId}`);
-      throw error; // خطا را برای مدیریت در UI پرتاب می‌کنیم
+      handleApiError(error, `Error updating product ID: ${productId}`);
+      throw error;
     }
   },
 
   /**
-   * آپلود یک تصویر به باسلام از طریق URL.
-   * این متد فرض می‌کند که یک بک‌اند واسط (proxy) دارید که این URL را دریافت کرده، تصویر را دانلود و سپس به API باسلام آپلود می‌کند.
-   * @param credentials اطلاعات احراز هویت باسلام.
-   * @param imageUrl آدرس URL تصویر (مثلاً از میکسین).
-   * @returns شیء شامل imageId بازگردانده شده از باسلام.
+   * آپلود تصویر از طریق URL به باسلام.
    */
-  uploadImage: async (credentials: BasalamCredentials, imageUrl: string): Promise<{ imageId: string }> => {
+  uploadImage: async (
+    credentials: BasalamCredentials,
+    imageUrl: string
+  ): Promise<{ imageId: string }> => {
     try {
-      console.log(`Attempting to upload image to Basalam from URL: ${imageUrl}`);
-
-      // این آدرس باید به Endpoint آپلود تصویر در بک‌اند واسط شما اشاره کند.
-      // مثلا: https://mixinsalama.liara.run/api/upload-basalam-image
+      console.log(`Uploading image from URL: ${imageUrl}`);
       const response = await api.post(
-        '/products/upload-image-to-basalam', // این Endpoint را باید در بک‌اند خود پیاده‌سازی کنید
-        { imageUrl }, // ارسال URL تصویر به بک‌اند
+        '/products/upload-image-to-basalam',
+        { imageUrl },
         {
           headers: {
-            'Authorization': `Bearer ${credentials.access_token}`, // اگر بک‌اند به توکن باسلام نیاز دارد
+            Authorization: `Bearer ${credentials.access_token}`,
             'Content-Type': 'application/json',
           },
         }
       );
 
-      // فرض می‌کنیم بک‌اند واسط شما imageId را از باسلام گرفته و در response.data.imageId برمی‌گرداند.
-      if (response.data && response.data.imageId) {
-        console.log("Image successfully uploaded to Basalam. Received Image ID:", response.data.imageId);
-        return { imageId: response.data.imageId };
-      } else {
-        throw new Error('Invalid response from image upload proxy: imageId not found.');
+      const imageId = response.data?.imageId;
+      if (!imageId) {
+        throw new Error('No imageId returned from upload API.');
       }
+
+      console.log(`Image uploaded. ID: ${imageId}`);
+      return { imageId };
     } catch (error) {
-      handleApiError(error, `Error uploading image to Basalam from URL: ${imageUrl}`);
-      throw error; // خطا را برای مدیریت در UI پرتاب می‌کنیم
+      handleApiError(error, 'Error uploading image');
+      throw error;
     }
   },
 };
