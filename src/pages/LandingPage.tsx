@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom'; // Import useNavigate
-
+// Main App component for the landing page
+// Main App component for the landing page
+// Main App component for the landing page
+// Main App component for the landing page
 // Main App component for the landing page
 function LandingPage() { // Changed function name from App to LandingPage
   const navigate = useNavigate(); // Initialize useNavigate hook
