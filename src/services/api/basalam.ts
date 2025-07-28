@@ -1,3 +1,4 @@
+// services/api/basalam.ts
 import { api, handleApiError } from './config';
 import type {
   BasalamCredentials,
@@ -111,7 +112,7 @@ export const basalamApi = {
         {
           headers: {
             Authorization: `Bearer ${credentials.access_token}`,
-            'Content-Type': 'multipart/form-data',
+            // 'Content-Type': 'multipart/form-data' // Axios handles this automatically for FormData
           },
         }
       );
@@ -128,26 +129,38 @@ export const basalamApi = {
   },
 
   /**
-   * آپلود تصویر از طریق URL به باسلام.
+   * آپلود یک تصویر به باسلام (از طریق بک‌اند واسط).
+   * این تابع انتظار دارد یک Blob (مثلاً از یک فایل تصویری) را دریافت کند.
+   *
+   * @param credentials اعتبارنامه‌های باسلام.
+   * @param imageData Blob تصویر محصول.
+   * @param filename نام فایل تصویر (اختیاری، پیش‌فرض 'product_image.jpeg').
+   * @returns Promise حاوی imageId.
    */
   uploadImage: async (
     credentials: BasalamCredentials,
-    imageUrl: string
+    imageData: Blob, // این همچنان یک Blob می‌پذیرد، طبق بحث قبلی برای multipart/form-data
+    filename: string = 'product_image.jpeg'
   ): Promise<{ imageId: string }> => {
     try {
-      console.log(`Uploading image from URL: ${imageUrl}`);
+      console.log(`Uploading image (Blob) with filename: ${filename}`);
+      const formData = new FormData();
+      // 'photo' باید نام فیلد مورد انتظار بک‌اند شما باشد
+      formData.append('photo', imageData, filename);
+
       const response = await api.post(
-        '/products/upload-image-to-basalam',
-        { imageUrl },
+        // ****** تنها تغییر اینجاست: آدرس آپلود اصلاح شد ******
+        '/products/upload-image', // URI صحیح بر اساس بازخورد شما
+        formData,
         {
           headers: {
             Authorization: `Bearer ${credentials.access_token}`,
-            'Content-Type': 'application/json',
+            // 'Content-Type': 'multipart/form-data'  // Axios این را برای FormData به صورت خودکار تنظیم می‌کند
           },
         }
       );
 
-      const imageId = response.data?.imageId;
+      const imageId = response.data?.imageId; // فرض می‌شود پاسخ حاوی imageId است
       if (!imageId) {
         throw new Error('No imageId returned from upload API.');
       }
@@ -156,6 +169,60 @@ export const basalamApi = {
       return { imageId };
     } catch (error) {
       handleApiError(error, 'Error uploading image');
+      throw error;
+    }
+  },
+
+  /**
+   * ایجاد یک محصول جدید در باسلام.
+   */
+  createProduct: async (
+    credentials: BasalamCredentials,
+    productData: {
+      name: string;
+      category: string;
+      status: string;
+      price: number;
+      preparationDays: number;
+      weight: number;
+      packageWeight: number;
+      imageId: string;
+      description?: string;
+    }
+  ): Promise<any> => {
+    try {
+      console.log('Creating new Basalam product:', productData.name);
+      // ساخت FormData برای ارسال داده‌های محصول
+      const formData = new FormData();
+      formData.append('name', productData.name);
+      formData.append('category_id', productData.category); // اطمینان حاصل کنید نام فیلد صحیح است (category_id یا category)
+      formData.append('status', productData.status);
+      formData.append('price', productData.price.toString());
+      formData.append('preparation_days', productData.preparationDays.toString());
+      formData.append('weight', productData.weight.toString());
+      formData.append('package_weight', productData.packageWeight.toString());
+      formData.append('photo_id', productData.imageId); // اطمینان حاصل کنید نام فیلد صحیح است (photo_id یا image_id)
+      if (productData.description) {
+        formData.append('description', productData.description);
+      }
+
+      const response = await api.post(
+        '/products/create/basalam', // روت واسط بک‌اند برای ایجاد محصول باسلام
+        formData, // ارسال FormData
+        {
+          headers: {
+            Authorization: `Bearer ${credentials.access_token}`,
+            // 'Content-Type': 'multipart/form-data' // Axios این را به صورت خودکار تنظیم می‌کند
+          },
+        }
+      );
+
+      if (!response.data) {
+        throw new Error('No response data from createProduct');
+      }
+      return response.data;
+    } catch (error) {
+      handleApiError(error, 'Error creating Basalam product');
       throw error;
     }
   },
