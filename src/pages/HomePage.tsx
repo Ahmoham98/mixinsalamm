@@ -160,7 +160,7 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
         setShowBasalamButton(false)
       } else {
         setCheckMessage({
-          text: "این محصول شما در باسلام ساخته نشده است، لطفاً  ابتدا آنرا در باسلام بسازید",
+          text: "این محصول شما در باسلام ساخته نشده است، لطفاً  ابتدا آنرا در باسلام بسازید",
           isSuccess: false
         })
         changecard = 'mixin'
@@ -190,7 +190,7 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
         setShowMixinButton(false)
       } else {
         setCheckMessage({
-          text: "این محصول شما در میکسین ساخته نشده است، لطفاً  ابتدا آنرا در میکسین بسازید",
+          text: "این محصول شما در میکسین ساخته نشده است، لطفاً  ابتدا آنرا در میکسین بسازید",
           isSuccess: false
         })
         changecard = 'basalam'
@@ -804,7 +804,7 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient }:
     queryFn: async () => {
       if (!productName.trim()) return [];
       try {
-        const response = await fetch(`https://categorydetection.basalam.com/category_detection/api_v1.0/predict/?title=${encodeURIComponent(productName)}`);
+        const response = await fetch(`https://mixinsalama.liara.run/products/category-detection/?title=${encodeURIComponent(productName)}`);
         if (!response.ok) {
           throw new Error(`خطا در دریافت دسته‌بندی‌ها: ${response.statusText}`);
         }
@@ -829,52 +829,77 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient }:
     }
   }, [categorySuggestions, selectedCategory]);
 
+  // **START OF MODIFIED SECTION IN CreateBasalamProductModal**
   // Handle image upload logic when modal opens and mixinProduct has an image
   useEffect(() => {
     const uploadImageToBasalam = async () => {
       setError(null);
       setMessage(null);
-      setIsImageUploading(true);
+      setIsImageUploading(true); // Set image uploading status to true
+
       try {
         if (!basalamCredentials) {
           throw new Error('گواهی باسلام برای آپلود تصویر یافت نشد.');
         }
-        // اگر mixinProduct.imageUrl مستقیماً در آبجکت محصول موجود است، از آن استفاده کنید.
-        // در غیر این صورت، آن را از API میکسین دریافت کنید.
-        let imageUrlToUpload = mixinProduct?.imageUrl;
 
-        if (!imageUrlToUpload && mixinProduct?.id && mixinCredentials) {
-          imageUrlToUpload = await mixinApi.getProductImage(mixinCredentials, mixinProduct.id);
+        let imageUrlToFetch: string | null = null;
+
+        // Step 1: Get the Mixin product image URL
+        // If ProductModal has already added imageUrl to mixinProduct
+        if (mixinProduct?.imageUrl) {
+          imageUrlToFetch = mixinProduct.imageUrl;
+          console.log('URL تصویر از mixinProduct (که توسط ProductModal ست شده) گرفته شد:', imageUrlToFetch);
+        } else if (mixinProduct?.id && mixinCredentials) {
+          // Otherwise, fetch it from the Mixin API
+          console.log('واکشی URL تصویر از Mixin API با استفاده از product ID:', mixinProduct.id);
+          imageUrlToFetch = await mixinApi.getProductImage(mixinCredentials, mixinProduct.id);
+          console.log('URL تصویر دریافتی از Mixin API:', imageUrlToFetch);
         }
 
-        if (!imageUrlToUpload) {
-          throw new Error('تصویر محصول میکسین برای آپلود یافت نشد. لطفا مطمئن شوید که محصول میکسین دارای تصویر است.');
+        if (!imageUrlToFetch) {
+          throw new Error('تصویر محصول میکسین برای آپلود یافت نشد. لطفاً مطمئن شوید که محصول میکسین دارای تصویر است.');
         }
 
-        // ***** اینجا نقطه حیاتی است: basalamApi.uploadImage باید URL را بپذیرد یا شما باید آن را پیش‌پردازش کنید. *****
-        // فرض می‌کنیم basalamApi.uploadImage می‌تواند یک URL را دریافت کند.
-        // اگر basalamApi.uploadImage نیاز به فایل باینری دارد، باید یک بک‌اند واسط
-        // ایجاد کنید که URL را دریافت کند، تصویر را دانلود کند و سپس به باسلام آپلود کند.
-        console.log("در حال تلاش برای آپلود تصویر به باسلام از URL:", imageUrlToUpload);
-        const response = await basalamApi.uploadImage(basalamCredentials, imageUrlToUpload);
+        // Step 2: Fetch the image data from the URL and convert it to a Blob
+        console.log("در حال واکشی داده‌های تصویر از URL:", imageUrlToFetch);
+        const response = await fetch(imageUrlToFetch);
+        if (!response.ok) {
+          throw new Error(`خطا در واکشی تصویر از ${imageUrlToFetch}: ${response.statusText || response.status}`);
+        }
+        const imageBlob = await response.blob();
+        console.log("تصویر با موفقیت به Blob تبدیل شد:", imageBlob);
 
-        setImageId(response.imageId); // فرض می‌شود پاسخ شامل imageId است
+        // Step 3: Upload the Blob to the Basalam API
+        // Determine a filename - you can extract it from the URL or provide a default
+        const filename = `product_image_${mixinProduct?.id || Date.now()}.jpeg`; // Make the filename unique
+        console.log("در حال تلاش برای آپلود Blob تصویر به Basalam API با نام:", filename);
+        
+        // Call the uploadImage function which now accepts a Blob and filename
+        const uploadResponse = await basalamApi.uploadImage(basalamCredentials, imageBlob, filename);
+
+        setImageId(uploadResponse.imageId); // Assuming the response contains imageId
         setMessage("عکس با موفقیت آپلود شد.");
       } catch (err: any) {
         console.error("خطا در آپلود عکس به باسلام:", err);
         setError(`خطا در آپلود عکس: ${err.message || 'خطای ناشناخته'}`);
       } finally {
-        setIsImageUploading(false);
+        setIsImageUploading(false); // Set image uploading status to false
       }
     };
 
-    if (open && mixinProduct && (mixinProduct.imageUrl || mixinProduct.id) && basalamCredentials && mixinCredentials) {
+    // useEffect execution condition:
+    // Modal is open, mixinProduct exists, AND (imageUrl or Mixin product ID exists)
+    // AND both Basalam and Mixin credentials exist
+    // AND image has not been uploaded yet (imageId is empty)
+    // AND image upload is not currently in progress
+    if (open && mixinProduct && (mixinProduct.imageUrl || mixinProduct.id) && basalamCredentials && mixinCredentials && !imageId && !isImageUploading) {
       uploadImageToBasalam();
     } else if (open && mixinProduct && (!mixinProduct.imageUrl && !mixinProduct.id)) {
-      // اگر محصول میکسین نه URL تصویر دارد و نه ID برای دریافت، می‌توانیم پیامی نمایش دهیم
+      // If mixinProduct has neither an imageUrl nor an ID to fetch from
       setError("محصول میکسین تصویر قابل دسترسی برای آپلود ندارد.");
     }
-  }, [open, mixinProduct, basalamCredentials, mixinCredentials]);
+  }, [open, mixinProduct, basalamCredentials, mixinCredentials, imageId, isImageUploading]); // Add imageId and isImageUploading to dependencies
+  // **END OF MODIFIED SECTION IN CreateBasalamProductModal**
 
 
   const handleSubmit = async () => {
@@ -1090,8 +1115,8 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient }:
         <div className="pt-4 border-t border-gray-200 flex justify-end">
           <button
             onClick={handleSubmit}
-            disabled={isSubmitting || isImageUploading || areCategoriesLoading}
-            className={`px-6 py-2 rounded-lg shadow-md transition duration-300 ${isSubmitting || isImageUploading || areCategoriesLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75'}`}
+            disabled={isSubmitting || isImageUploading || areCategoriesLoading || !imageId} // Changed: Added `!imageId` to disable button until image is uploaded
+            className={`px-6 py-2 rounded-lg shadow-md transition duration-300 ${isSubmitting || isImageUploading || areCategoriesLoading || !imageId ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75'}`}
           >
             {isSubmitting ? "در حال ثبت..." : isImageUploading ? "در حال بارگذاری عکس..." : areCategoriesLoading ? "در حال دریافت دسته‌بندی..." : "ثبت محصول"}
           </button>
