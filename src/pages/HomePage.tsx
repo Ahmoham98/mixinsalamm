@@ -804,14 +804,19 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient }:
     queryFn: async () => {
       if (!productName.trim()) return [];
       try {
-        const response = await fetch(`https://mixinsalama.liara.run/products/category-detection/?title=${encodeURIComponent(productName)}`);
+        const response = await fetch(`/products/category-detection/?title=${encodeURIComponent(productName)}`);
         if (!response.ok) {
           throw new Error(`خطا در دریافت دسته‌بندی‌ها: ${response.statusText}`);
         }
         const data = await response.json();
-        // فرض بر این است که پاسخ شامل predictions و سپس categories است.
-        // اگر ساختار پاسخ API شما متفاوت است، این قسمت را تنظیم کنید.
-        return data.predictions?.[0]?.categories || [];
+        // اصلاح ساختار داده بر اساس ریسپانس واقعی
+        if (Array.isArray(data.result)) {
+          return data.result.map((cat: any) => ({
+            id: cat.cat_id,
+            name: cat.cat_title
+          }));
+        }
+        return [];
       } catch (err) {
         console.error("خطا در فراخوانی API دسته‌بندی باسلام:", err);
         throw err;
