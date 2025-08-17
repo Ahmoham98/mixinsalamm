@@ -348,7 +348,7 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
-      {isEditing && <LoadingModal />}
+    {isEditing && <LoadingModal />}
       <div 
         className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
@@ -399,13 +399,13 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
           <div>
             <label className="font-medium text-lg">Price:</label>
             <div className="relative">
-            <input
-              type="number"
-              value={editedProduct.price}
-              onChange={(e) => handleInputChange('price', parseFloat(e.target.value) || 0)}
-              className="mt-2 w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-right"
-              dir="rtl"
-            />
+              <input
+                type="number"
+                value={editedProduct.price}
+                onChange={(e) => handleInputChange('price', parseFloat(e.target.value) || 0)}
+                className="mt-2 w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-right"
+                dir="rtl"
+              />
               <p className="text-sm text-gray-500 mt-1 text-right">
                 {formatPrice(editedProduct.price)} تومان
               </p>
@@ -424,39 +424,39 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
         </div>
         <div className="mt-8 flex flex-col items-end gap-4">
           <div className="flex gap-4 w-full justify-end">
-          <div className="flex gap-4">
-            <button
-              onClick={handleEdit}
-              className="flex items-center gap-2 px-6 py-3 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors shadow-md"
-            >
+            <div className="flex gap-4">
+              <button
+                onClick={handleEdit}
+                className="flex items-center gap-2 px-6 py-3 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors shadow-md"
+              >
                 <span>ویرایش</span>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                viewBox="0 0 20 20"
-                fill="currentColor"
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                </svg>
+              </button>
+              <button
+                onClick={handleCheck}
+                className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-md"
               >
-                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-              </svg>
-            </button>
-            <button
-              onClick={handleCheck}
-              className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-md"
-            >
                 <span>بررسی</span>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </button>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </button>
             </div>
           </div>
           {checkMessage && (
