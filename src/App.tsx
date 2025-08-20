@@ -6,6 +6,7 @@ import CredentialsPage from './pages/CredentialsPage'
 import HomePage from './pages/HomePage'
 import BasalamCallback from './pages/BasalamCallback'
 import LandingPage from './pages/LandingPage'; // <-- **این خط را اضافه کنید**
+import SettingsPage from './pages/SettingsPage'
 
 const queryClient = new QueryClient()
 
@@ -36,6 +37,16 @@ function App() {
             element={
               <PrivateRoute>
                 <HomePage />
+              </PrivateRoute>
+            }
+          />
+
+          {/* Protected Settings route */}
+          <Route
+            path="/settings"
+            element={
+              <PrivateRoute>
+                <SettingsPage />
               </PrivateRoute>
             }
           />
