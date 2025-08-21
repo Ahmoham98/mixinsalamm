@@ -13,6 +13,8 @@ export interface MixinProduct {
   name: string;
   price: number;
   description: string;
+  weight?: number;
+  imageUrl?: string;
   // Add other fields as needed
 }
 

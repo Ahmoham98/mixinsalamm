@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '../store/authStore'
 import { mixinApi } from '../services/api/mixin'
 import { basalamApi } from '../services/api/basalam'
-import { X, ChevronDown, ChevronUp, LogOut, Loader2, Package, ShoppingCart, TrendingUp, Users, Layers, Link2, Unlink, Menu, Home, Settings, BarChart2, ChevronRight, ChevronLeft } from 'lucide-react'
+import { X, ChevronDown, ChevronUp, LogOut, Loader2, Package, Layers, Link2, Unlink, Menu, Home, Settings, BarChart2, ChevronRight, ChevronLeft } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { MixinProduct, BasalamProduct } from '../types'
 
@@ -48,6 +48,7 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
   const [showBasalamButton, setShowBasalamButton] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [productImage, setProductImage] = useState<string | null>(null)
+  const [autoSyncTimeout, setAutoSyncTimeout] = useState<NodeJS.Timeout | null>(null)
   const [editedProduct, setEditedProduct] = useState<{
     name: string;
     price: number;
@@ -57,7 +58,7 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
     price: 0,
     description: ''
   })
-  const { mixinCredentials, basalamCredentials } = useAuthStore()
+  const { mixinCredentials, basalamCredentials, settings } = useAuthStore()
   const queryClient = useQueryClient()
 
   useEffect(() => {
@@ -121,7 +122,49 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
       console.log('Running check for product:', product)
       handleCheck()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, product, type])
+
+  // Auto-sync effect
+  useEffect(() => {
+    // Only trigger auto-sync when:
+    // 1. Auto-sync is enabled in settings
+    // 2. Sync button is showing (meaning there's a price mismatch)
+    // 3. We have a product and both credentials
+    if (settings.autoSyncEnabled && showSyncButton && product && mixinCredentials && basalamCredentials) {
+      console.log('Auto-sync enabled and sync needed, starting countdown...')
+      
+      // Set a timeout for 1 second
+      const timeout = setTimeout(() => {
+        console.log('Auto-sync triggered for product:', product)
+        handleEdit() // This is the same function that manual sync button calls
+      }, 1000)
+
+      setAutoSyncTimeout(timeout)
+
+      // Cleanup timeout on unmount or when dependencies change
+      return () => {
+        clearTimeout(timeout)
+        setAutoSyncTimeout(null)
+      }
+    } else {
+      // Clear any existing timeout if conditions are not met
+      if (autoSyncTimeout) {
+        clearTimeout(autoSyncTimeout)
+        setAutoSyncTimeout(null)
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings.autoSyncEnabled, showSyncButton, product, mixinCredentials, basalamCredentials])
+
+  // Cleanup timeout when modal closes
+  useEffect(() => {
+    if (!isOpen && autoSyncTimeout) {
+      clearTimeout(autoSyncTimeout)
+      setAutoSyncTimeout(null)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen])
 
   if (!isOpen || !product) return null
 
@@ -327,7 +370,7 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
       // Ensure the Mixin product object passed to the creation modal includes its image URL
       const mixinProductWithImage = {
         ...product,
-        imageUrl: productImage // Use the already fetched or available productImage URL
+        imageUrl: productImage || undefined // Use the already fetched or available productImage URL
       };
       onOpenCreateBasalamModal(mixinProductWithImage);
       onClose();
@@ -453,24 +496,31 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
                 {checkMessage.text}
               </p>
               {showSyncButton && (
-                <button
-                  onClick={handleEdit}
-                  className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md"
-                >
-                  <span>همگام سازی</span>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
+                <div className="flex flex-col items-end gap-2">
+                  <button
+                    onClick={handleEdit}
+                    className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md"
                   >
-                    <path
-                      fillRule="evenodd"
-                      d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </button>
+                    <span>همگام سازی</span>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </button>
+                  {settings.autoSyncEnabled && autoSyncTimeout && (
+                    <div className="text-xs text-blue-600 bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
+                      همگام‌سازی خودکار در ۱ ثانیه...
+                    </div>
+                  )}
+                </div>
               )}
               {showMixinButton && (
                 <button
@@ -850,7 +900,7 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient }:
         let imageUrlToUpload = mixinProduct?.imageUrl;
 
         if (!imageUrlToUpload && mixinProduct?.id && mixinCredentials) {
-          imageUrlToUpload = await mixinApi.getProductImage(mixinCredentials, mixinProduct.id);
+          imageUrlToUpload = await mixinApi.getProductImage(mixinCredentials, mixinProduct.id) || undefined;
         }
 
         if (!imageUrlToUpload) {
@@ -1142,7 +1192,7 @@ function HomePage() {
     }
   }
 
-  const { data: userData, isLoading: isUserLoading, error: userError } = useQuery({
+  const { data: userData, isLoading: isUserLoading } = useQuery({
     queryKey: ['basalamUser'],
     queryFn: () => basalamApi.getUserData(basalamCredentials!),
     enabled: !!basalamCredentials?.access_token,
@@ -1366,10 +1416,13 @@ function HomePage() {
               {!isSidebarCollapsed && <span>آمار و گزارشات</span>}
             </a>
 
-            <a href="#" className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-[#5b9fdb]/10 rounded-lg transition-colors">
+            <button
+              onClick={() => navigate('/settings')}
+              className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-[#5b9fdb]/10 rounded-lg transition-colors"
+            >
               <Settings size={20} />
               {!isSidebarCollapsed && <span>تنظیمات</span>}
-            </a>
+            </button>
           </nav>
 
           <div className="mt-auto">
