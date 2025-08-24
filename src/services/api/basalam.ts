@@ -157,9 +157,9 @@ export const basalamApi = {
     }
   },
 
-  createProduct: async (credentials: BasalamCredentials, productData: any) => {
+  createProduct: async (credentials: BasalamCredentials, vendorId: number, productData: any) => {
     try {
-      const response = await api.post('/products/create/basalam', productData, {
+      const response = await api.post(`/products/create/basalam/${vendorId}`, productData, {
         headers: {
           'Authorization': `Bearer ${credentials.access_token}`,
           'Content-Type': 'application/json'

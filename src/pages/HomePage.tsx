@@ -813,9 +813,10 @@ interface CreateBasalamProductModalProps {
   onClose: () => void;
   mixinProduct: MixinProduct | null;
   queryClient: any; // Add queryClient to props
+  vendorId: number;
 }
 
-function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient }: CreateBasalamProductModalProps) {
+function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient, vendorId }: CreateBasalamProductModalProps) {
   const [productName, setProductName] = useState(mixinProduct?.name || "");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [status, setStatus] = useState("active");
@@ -957,7 +958,7 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient }:
       };
 
       console.log("در حال ارسال داده به باسلام برای ایجاد محصول:", payload);
-      const response = await basalamApi.createProduct(basalamCredentials, payload);
+      const response = await basalamApi.createProduct(basalamCredentials, vendorId, payload);
       console.log('Basalam product creation response:', response);
 
       setMessage("محصول با موفقیت در باسلام ثبت شد!");
@@ -1759,12 +1760,13 @@ function HomePage() {
           </div>
         )}
 
-        {isCreateBasalamModalOpen && productToCreateInBasalam && (
+        {isCreateBasalamModalOpen && productToCreateInBasalam && userData?.vendor?.id && (
           <CreateBasalamProductModal
             open={isCreateBasalamModalOpen}
             onClose={() => setIsCreateBasalamModalOpen(false)}
             mixinProduct={productToCreateInBasalam}
             queryClient={queryClient} // Pass queryClient here
+            vendorId={userData.vendor.id}
           />
         )}
       </div>
