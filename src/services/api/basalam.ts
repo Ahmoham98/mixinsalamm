@@ -147,24 +147,11 @@ export const basalamApi = {
 
   uploadImage: async (credentials: BasalamCredentials, imageUrl: string): Promise<{ id: number; url: string }> => {
     try {
-      // First, download the image from the Mixin URL
-      const imageResponse = await fetch(imageUrl)
-      if (!imageResponse.ok) {
-        throw new Error(`Failed to download image from URL: ${imageResponse.statusText}`)
-      }
-      
-      const imageBlob = await imageResponse.blob()
-      const fileName = imageUrl.split('/').pop() || 'product-image.jpg'
-      
-      // Create FormData with the file
-      const formData = new FormData()
-      formData.append('photo', imageBlob, fileName)
-      
-      // Send multipart/form-data request
-      const response = await api.post('/products/upload-image', formData, {
+      // Use the new sync-image endpoint that handles downloading and uploading on the backend
+      const response = await api.post(`/products/sync-image?image_url=${encodeURIComponent(imageUrl)}`, null, {
         headers: {
           'Authorization': `Bearer ${credentials.access_token}`,
-          // Don't set Content-Type - let the browser set it with boundary for multipart/form-data
+          'Content-Type': 'application/json'
         }
       })
       
