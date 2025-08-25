@@ -147,7 +147,7 @@ export const basalamApi = {
 
   uploadImage: async (credentials: BasalamCredentials, imageUrl: string): Promise<{ id: number; url: string }> => {
     try {
-      const response = await api.post('/products/upload-image/basalam', { imageUrl }, {
+      const response = await api.post('/products/upload-image', { imageUrl }, {
         headers: {
           'Authorization': `Bearer ${credentials.access_token}`,
           'Content-Type': 'application/json'
