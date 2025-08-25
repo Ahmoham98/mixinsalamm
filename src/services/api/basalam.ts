@@ -145,12 +145,23 @@ export const basalamApi = {
     }
   },
 
-  uploadImage: async (credentials: BasalamCredentials, imageUrl: string): Promise<{ imageId: string }> => {
+  uploadImage: async (credentials: BasalamCredentials, imageUrl: string): Promise<{ id: number; url: string }> => {
     try {
-      // For now, return a mock response since the actual implementation depends on the backend
-      console.log('Uploading image to Basalam:', imageUrl)
-      // This would typically involve downloading the image from imageUrl and uploading to Basalam
-      return { imageId: 'mock-image-id' }
+      const response = await api.post('/products/upload-image/basalam', { imageUrl }, {
+        headers: {
+          'Authorization': `Bearer ${credentials.access_token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      // Based on the user's example, the response format is:
+      // { "data": { "files": [{ "id": 253860703, "url": "...", "width": 333, "height": 500, "blur_hash": null }] } }
+      if (response.data?.data?.files?.[0]) {
+        const file = response.data.data.files[0]
+        return { id: file.id, url: file.url }
+      }
+      
+      throw new Error('Invalid response format from image upload')
     } catch (error) {
       console.error('Error uploading image to Basalam:', error)
       throw new Error('Failed to upload image to Basalam')

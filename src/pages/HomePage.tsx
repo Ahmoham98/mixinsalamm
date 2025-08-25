@@ -824,6 +824,8 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient, v
   const [preparationDays, setPreparationDays] = useState("");
   const [weight, setWeight] = useState(mixinProduct?.weight ? mixinProduct.weight.toString() : "");
   const [packageWeight, setPackageWeight] = useState("");
+  const [stock, setStock] = useState("1"); // Default to 1
+  const [sku, setSku] = useState(""); // SKU field
   const [imageId, setImageId] = useState(""); // Will store the Basalam image ID after upload
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isImageUploading, setIsImageUploading] = useState(false);
@@ -839,6 +841,8 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient, v
       setWeight(mixinProduct?.weight ? mixinProduct.weight.toString() : "");
       setPreparationDays(""); // Clear preparation days
       setPackageWeight(""); // Clear package weight
+      setStock("1"); // Default stock
+      setSku(mixinProduct?.name ? `${mixinProduct.name.replace(/\s+/g, '-').substring(0, 20)}-${Date.now()}` : ""); // Auto-generate SKU
       setSelectedCategory(""); // Clear selected category
       setImageId(""); // Clear image ID
       setError(null);
@@ -909,7 +913,7 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient, v
         console.log("در حال تلاش برای آپلود تصویر به باسلام از URL:", imageUrlToUpload);
         const response = await basalamApi.uploadImage(basalamCredentials, imageUrlToUpload);
 
-        setImageId(response.imageId); // فرض می‌شود پاسخ شامل imageId است
+        setImageId(response.id.toString()); // Use the actual id from the response
         setMessage("عکس با موفقیت آپلود شد.");
       } catch (err: any) {
         console.error("خطا در آپلود عکس به باسلام:", err);
@@ -947,14 +951,32 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient, v
 
       const payload = {
         name: productName,
-        category: selectedCategory, // Use selectedCategory (ID)
-        status,
-        price: tomanToRial(parseFloat(price)),
-        preparationDays: parseInt(preparationDays, 10),
+        category_id: parseInt(selectedCategory, 10), // Step 3: Fixed field name
+        status: status === "active" ? 1 : 0, // Step 4: Use 1/0 instead of string
+        primary_price: tomanToRial(parseFloat(price)), // Step 7: Fixed field name
+        preparation_days: parseInt(preparationDays, 10), // Step 5: Fixed field name
         weight: parseInt(weight, 10),
-        packageWeight: parseInt(packageWeight, 10),
-        imageId,
-        description: mixinProduct?.description || "", // Include description from mixinProduct
+        package_weight: parseInt(packageWeight, 10), // Step 6: Fixed field name
+        photo: parseInt(imageId, 10), // Step 1: Use imageId as photo
+        photos: [parseInt(imageId, 10)], // Step 2: Photos array
+        stock: parseInt(stock, 10), // Step 8: Stock field
+        brief: mixinProduct?.description || "", // Step 9: Brief field
+        description: mixinProduct?.description || "", // Full description
+        sku: sku, // SKU field
+        video: "", // Required field - empty for now
+        keywords: "", // Required field - empty for now
+        shipping_city_ids: [], // Required field - empty array for now
+        shipping_method_ids: [], // Required field - empty array for now
+        wholesale_prices: [], // Required field - empty array for now
+        product_attribute: [], // Required field - empty array for now
+        virtual: false, // Required field - false for physical products
+        variants: [], // Required field - empty array for now
+        shipping_data: {}, // Required field - empty object for now
+        unit_quantity: 1, // Required field - default to 1
+        unit_type: "عدد", // Required field - default unit type
+        packaging_dimensions: { width: 0, height: 0, depth: 0 }, // Required field - default dimensions
+        is_wholesale: false, // Required field - false by default
+        order: 1 // Required field - default order
       };
 
       console.log("در حال ارسال داده به باسلام برای ایجاد محصول:", payload);
@@ -1121,6 +1143,30 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient, v
               onChange={(e) => setPackageWeight(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="مثال: 550"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="stock" className="block text-sm font-medium text-gray-700 mb-1">موجودی</label>
+            <input
+              id="stock"
+              type="number"
+              value={stock}
+              onChange={(e) => setStock(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="مثال: 10"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="sku" className="block text-sm font-medium text-gray-700 mb-1">کد محصول (SKU)</label>
+            <input
+              id="sku"
+              type="text"
+              value={sku}
+              onChange={(e) => setSku(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="مثال: PRODUCT-001"
             />
           </div>
         </div>
