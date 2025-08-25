@@ -147,16 +147,34 @@ export const basalamApi = {
 
   uploadImage: async (credentials: BasalamCredentials, imageUrl: string): Promise<{ id: number; url: string }> => {
     try {
-      const response = await api.post('/products/upload-image', { imageUrl }, {
+      // First, download the image from the Mixin URL
+      const imageResponse = await fetch(imageUrl)
+      if (!imageResponse.ok) {
+        throw new Error(`Failed to download image from URL: ${imageResponse.statusText}`)
+      }
+      
+      const imageBlob = await imageResponse.blob()
+      const fileName = imageUrl.split('/').pop() || 'product-image.jpg'
+      
+      // Create FormData with the file
+      const formData = new FormData()
+      formData.append('photo', imageBlob, fileName)
+      
+      // Send multipart/form-data request
+      const response = await api.post('/products/upload-image', formData, {
         headers: {
           'Authorization': `Bearer ${credentials.access_token}`,
-          'Content-Type': 'application/json'
+          // Don't set Content-Type - let the browser set it with boundary for multipart/form-data
         }
       })
       
-      // Based on the user's example, the response format is:
-      // { "data": { "files": [{ "id": 253860703, "url": "...", "width": 333, "height": 500, "blur_hash": null }] } }
-      if (response.data?.data?.files?.[0]) {
+      // Based on the backend controller response format:
+      // { "status_code": 200, "response": { "data": { "files": [{ "id": 253860703, ... }] } } }
+      if (response.data?.response?.data?.files?.[0]) {
+        const file = response.data.response.data.files[0]
+        return { id: file.id, url: file.url }
+      } else if (response.data?.data?.files?.[0]) {
+        // Fallback for direct response format
         const file = response.data.data.files[0]
         return { id: file.id, url: file.url }
       }
@@ -164,7 +182,7 @@ export const basalamApi = {
       throw new Error('Invalid response format from image upload')
     } catch (error) {
       console.error('Error uploading image to Basalam:', error)
-      throw new Error('Failed to upload image to Basalam')
+      throw new Error(`Failed to upload image to Basalam: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   },
 
