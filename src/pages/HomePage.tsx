@@ -7,6 +7,32 @@ import { X, ChevronDown, ChevronUp, LogOut, Loader2, Package, Layers, Link2, Unl
 import { useNavigate } from 'react-router-dom'
 import type { MixinProduct, BasalamProduct } from '../types'
 
+// Utility function to convert Toman to Rial
+const tomanToRial = (toman: number): number => {
+  return toman * 10;
+};
+
+// Utility function to generate unique SKU
+const generateUniqueSKU = (productName: string, vendorId?: number): string => {
+  // Create a base from product name (first 10 chars, alphanumeric only)
+  const nameBase = productName
+    .replace(/[^a-zA-Z0-9\u0600-\u06FF]/g, '') // Keep only alphanumeric and Persian chars
+    .substring(0, 10)
+    .toUpperCase();
+  
+  // Add vendor ID if available (helps with uniqueness across vendors)
+  const vendorPart = vendorId ? `V${vendorId}` : 'VENDOR';
+  
+  // Add timestamp-based unique identifier
+  const timestamp = Date.now();
+  const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+  
+  // Format: NAMEBASE-V{VENDOR_ID}-{TIMESTAMP_LAST_6}{RANDOM_3}
+  const uniquePart = `${timestamp.toString().slice(-6)}${randomNum}`;
+  
+  return `${nameBase}-${vendorPart}-${uniquePart}`;
+};
+
 interface ProductModalProps {
   isOpen: boolean
   onClose: () => void
@@ -29,9 +55,7 @@ const rialToToman = (price: number): number => {
   return Math.floor(price / 10)
 }
 
-const tomanToRial = (price: number): number => {
-  return price * 10
-}
+
 
 const formatPrice = (price: number | null | undefined): string => {
   if (price === null || price === undefined) {
@@ -842,7 +866,7 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient, v
       setPreparationDays(""); // Clear preparation days
       setPackageWeight(""); // Clear package weight
       setStock("1"); // Default stock
-      setSku(mixinProduct?.name ? `${mixinProduct.name.replace(/\s+/g, '-').substring(0, 20)}-${Date.now()}` : ""); // Auto-generate SKU
+      setSku(mixinProduct?.name ? generateUniqueSKU(mixinProduct.name, vendorId) : ""); // Auto-generate unique SKU
       setSelectedCategory(""); // Clear selected category
       setImageId(""); // Clear image ID
       setError(null);
@@ -1000,6 +1024,12 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient, v
       console.log('Basalam product creation response:', response);
 
       setMessage("محصول با موفقیت در باسلام ثبت شد!");
+
+      // Generate new unique SKU for next product creation
+      if (mixinProduct?.name) {
+        setSku(generateUniqueSKU(mixinProduct.name, vendorId));
+        console.log("Generated new SKU for next product:", generateUniqueSKU(mixinProduct.name, vendorId));
+      }
 
       // Invalidate and refetch Basalam products after successful creation
       await queryClient.invalidateQueries({ queryKey: ['basalamProducts'] });
@@ -1176,14 +1206,25 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient, v
 
           <div>
             <label htmlFor="sku" className="block text-sm font-medium text-gray-700 mb-1">کد محصول (SKU)</label>
-            <input
-              id="sku"
-              type="text"
-              value={sku}
-              onChange={(e) => setSku(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="مثال: PRODUCT-001"
-            />
+            <div className="flex gap-2">
+              <input
+                id="sku"
+                type="text"
+                value={sku}
+                onChange={(e) => setSku(e.target.value)}
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="مثال: PRODUCT-001"
+              />
+              <button
+                type="button"
+                onClick={() => setSku(productName ? generateUniqueSKU(productName, vendorId) : "")}
+                className="px-3 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 text-sm"
+                title="تولید کد جدید"
+              >
+                🔄
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">کد محصول باید برای هر محصول منحصر به فرد باشد</p>
           </div>
         </div>
 
