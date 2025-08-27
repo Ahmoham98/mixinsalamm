@@ -938,11 +938,24 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient, v
     setMessage(null);
 
     // Basic validation
-    if (!productName.trim() || !selectedCategory || !price || !preparationDays || !weight || !packageWeight || !imageId) {
-      setError("لطفاً تمام فیلدهای اجباری را پر کنید.");
+    const missingFields = [];
+    if (!productName.trim()) missingFields.push("نام محصول");
+    if (!selectedCategory) missingFields.push("دسته‌بندی");
+    if (!price) missingFields.push("قیمت");
+    if (!preparationDays) missingFields.push("تعداد روز آماده‌سازی");
+    if (!weight) missingFields.push("وزن محصول");
+    if (!packageWeight) missingFields.push("وزن بسته‌بندی");
+    if (!stock) missingFields.push("موجودی");
+    if (!sku) missingFields.push("کد محصول");
+    if (!imageId) missingFields.push("تصویر محصول");
+
+    if (missingFields.length > 0) {
+      setError(`لطفاً فیلدهای زیر را پر کنید: ${missingFields.join(', ')}`);
       setIsSubmitting(false);
       return;
     }
+
+    console.log("Starting product creation with payload preparation...");
 
     try {
       if (!basalamCredentials) {
@@ -980,6 +993,9 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient, v
       };
 
       console.log("در حال ارسال داده به باسلام برای ایجاد محصول:", payload);
+      console.log("Vendor ID:", vendorId);
+      console.log("Basalam credentials present:", !!basalamCredentials);
+      
       const response = await basalamApi.createProduct(basalamCredentials, vendorId, payload);
       console.log('Basalam product creation response:', response);
 
