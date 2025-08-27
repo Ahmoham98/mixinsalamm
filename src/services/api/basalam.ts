@@ -155,17 +155,26 @@ export const basalamApi = {
         }
       })
       
-      // Based on the backend controller response format:
-      // { "status_code": 200, "response": { "data": { "files": [{ "id": 253860703, ... }] } } }
+      // Handle the actual response format from /sync-image endpoint
+      // Direct object format: { "id": 254575240, "urls": { "primary": "https://..." }, ... }
+      if (response.data?.id && response.data?.urls?.primary) {
+        console.log('Image upload successful:', { id: response.data.id, url: response.data.urls.primary })
+        return { 
+          id: response.data.id, 
+          url: response.data.urls.primary 
+        }
+      }
+      
+      // Fallback: check for nested response format (in case backend changes)
       if (response.data?.response?.data?.files?.[0]) {
         const file = response.data.response.data.files[0]
         return { id: file.id, url: file.url }
       } else if (response.data?.data?.files?.[0]) {
-        // Fallback for direct response format
         const file = response.data.data.files[0]
         return { id: file.id, url: file.url }
       }
       
+      console.log('Unexpected response format:', response.data)
       throw new Error('Invalid response format from image upload')
     } catch (error) {
       console.error('Error uploading image to Basalam:', error)
