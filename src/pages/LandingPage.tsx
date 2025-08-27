@@ -268,10 +268,10 @@ function LandingPage() { // Changed function name from App to LandingPage
         <div id="contact-us" className="flex-1 text-right">
           <h3 className="text-2xl font-bold text-gray-900 mb-4">تماس با ما</h3>
           <p className="text-md leading-relaxed text-gray-700 mb-2">
-            شماره تماس ۱: 0912-123-4567
+            شماره تماس : 09962278508 
           </p>
           <p className="text-md leading-relaxed text-gray-700">
-            شماره تماس ۲: 0935-987-6543
+            ایمیل: electricallover45@gmail.com
           </p>
         </div>
       </footer>
