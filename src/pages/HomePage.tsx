@@ -995,7 +995,7 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient, v
       const payload = {
         name: productName,
         category_id: parseInt(selectedCategory, 10), // Step 3: Fixed field name
-        status: status === "active" ? 1 : 0, // Step 4: Use 1/0 instead of string
+        status: status === "active" ? "2976" : "2975", // Basalam status codes: "2976" = active, "2975" = inactive
         primary_price: tomanToRial(parseFloat(price)), // Step 7: Fixed field name
         preparation_days: parseInt(preparationDays, 10), // Step 5: Fixed field name
         weight: parseInt(weight, 10),
