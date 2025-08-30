@@ -6,6 +6,7 @@ import { basalamApi } from '../services/api/basalam'
 import { X, ChevronDown, ChevronUp, LogOut, Loader2, Package, Layers, Link2, Unlink, Menu, Home, Settings, BarChart2, ChevronRight, ChevronLeft } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { MixinProduct, BasalamProduct } from '../types'
+import React, { useState } from 'react'
 
 // Utility function to convert Toman to Rial
 const tomanToRial = (toman: number): number => {
@@ -1470,410 +1471,513 @@ function HomePage() {
 
   const isLoading = isUserLoading || isMixinLoading || isBasalamLoading
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-[#5b9fdb]/10 to-[#ff6040]/10">
-      <button
-        onClick={() => {
-          setIsSidebarCollapsed(false);
-          setIsSidebarOpen(true);
-        }}
-        className={`fixed top-4 right-4 z-50 bg-white/80 backdrop-blur-md p-2 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 ${isSidebarCollapsed ? 'block' : 'hidden'}`}
-      >
-        <Menu size={24} />
-      </button>
+  // === Bulk Migration Phase 1: Eligibility, Analysis, Batch Processing ===
+  function BulkMigrationPanel({ mixinProducts, basalamProducts, onBatchCreate }: {
+    mixinProducts: any[];
+    basalamProducts: any[];
+    onBatchCreate: () => void;
+  }) {
+    // Eligibility: >=50 Mixin, <20 Basalam
+    const isEligible = (mixinProducts?.length || 0) >= 50 && (basalamProducts?.length || 0) < 20;
+    const [showModal, setShowModal] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [progress, setProgress] = useState<{ done: number; total: number; errors: any[] }>({ done: 0, total: 0, errors: [] });
+    const [batchResults, setBatchResults] = useState<any[]>([]);
 
-      <aside className={`fixed top-0 right-0 h-full bg-white/80 backdrop-blur-md shadow-lg transform transition-all duration-300 ease-in-out z-40 lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : 'translate-x-full'} ${isSidebarCollapsed ? 'w-0' : 'w-64'}`}>
-        <div className={`p-6 h-full flex flex-col ${isSidebarCollapsed ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}>
-          <div className="mb-8 flex items-center justify-between">
-            {!isSidebarCollapsed && (
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-[#ff6040] to-[#5b9fdb] bg-clip-text text-transparent">
-                میکسین سلام
-              </h2>
-            )}
-            <button
-              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-              className="p-2 hover:bg-[#5b9fdb]/10 rounded-lg transition-colors"
-            >
-              {isSidebarCollapsed ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
-            </button>
+    // Product analysis: find Mixin products not in Basalam (by name, case-insensitive)
+    const basalamNames = new Set((basalamProducts || []).map((p: any) => p.name?.trim().toLowerCase()));
+    const missingProducts = (mixinProducts || []).filter((mp: any) => !basalamNames.has(mp.name?.trim().toLowerCase()));
+
+    // Handler for batch migration
+    const handleBatchMigrate = async () => {
+      setIsProcessing(true);
+      setProgress({ done: 0, total: missingProducts.length, errors: [] });
+      setBatchResults([]);
+      const batchSize = 10;
+      let done = 0;
+      let errors: any[] = [];
+      for (let i = 0; i < missingProducts.length; i += batchSize) {
+        const batch = missingProducts.slice(i, i + batchSize);
+        // Simulate batch creation (replace with real API call in next phase)
+        try {
+          await new Promise(res => setTimeout(res, 800)); // Simulate network delay
+          // onBatchCreate(batch) // Uncomment and implement in next phase
+          setBatchResults(prev => [...prev, ...batch.map((p: any) => ({ id: p.id, status: 'success' }))]);
+        } catch (e: any) {
+          errors.push(...batch.map((p: any) => ({ id: p.id, error: e.message })));
+        }
+        done += batch.length;
+        setProgress({ done, total: missingProducts.length, errors });
+      }
+      setIsProcessing(false);
+    };
+
+    if (!isEligible) return null;
+
+    return (
+      <div className="bg-blue-100 border border-blue-300 rounded-lg p-4 mb-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-bold text-blue-700 mb-1">انتقال سریع محصولات میکسین به باسلام</h3>
+            <p className="text-blue-800 text-sm">شما واجد شرایط انتقال خودکار محصولات هستید. {missingProducts.length} محصول آماده انتقال!</p>
           </div>
-
-          <nav className="space-y-2 flex-1">
-            <a href="#" className="flex items-center gap-3 px-4 py-3 text-gray-700 bg-[#5b9fdb]/10 rounded-lg hover:bg-[#5b9fdb]/20 transition-colors">
-              <Home size={20} />
-              {!isSidebarCollapsed && <span>داشبورد</span>}
-            </a>
-
-            <a href="#" className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-[#5b9fdb]/10 rounded-lg transition-colors">
-              <Package size={20} />
-              {!isSidebarCollapsed && <span>محصولات</span>}
-            </a>
-
-            <a href="#" className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-[#5b9fdb]/10 rounded-lg transition-colors">
-              <BarChart2 size={20} />
-              {!isSidebarCollapsed && <span>آمار و گزارشات</span>}
-            </a>
-
-            <button
-              onClick={() => navigate('/settings')}
-              className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-[#5b9fdb]/10 rounded-lg transition-colors"
-            >
-              <Settings size={20} />
-              {!isSidebarCollapsed && <span>تنظیمات</span>}
-            </button>
-          </nav>
-
-          <div className="mt-auto">
-            <button
-              onClick={handleLogout}
-              className={`w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-[#ff6040] to-[#5b9fdb] text-white rounded-lg hover:from-[#ff6040]/90 hover:to-[#5b9fdb]/90 transition-all duration-200 shadow-md hover:shadow-lg ${isSidebarCollapsed ? 'px-3' : ''}`}
-            >
-              <LogOut size={20} />
-              {!isSidebarCollapsed && <span>خروج</span>}
-            </button>
-          </div>
+          <button
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            onClick={() => setShowModal(true)}
+          >
+            شروع انتقال
+          </button>
         </div>
-      </aside>
-
-      <div className={`transition-all duration-300 ${isSidebarOpen ? (isSidebarCollapsed ? 'lg:mr-0' : 'lg:mr-64') : 'mr-0'}`}>
-        <header className="sticky top-0 bg-white/60 backdrop-blur-md shadow-lg z-20 border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-8 py-4">
-            <div className="flex items-center justify-between">
-              <div className="text-center flex-1">
-                <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-[#fa6b23] to-[#fa864b] bg-clip-text text-transparent">
-                  به سایت میکسین سلام خیلی خوش آمدید
-                </h1>
-                <p className="text-gray-600">سپاس بابت اینکه ما را انتخاب کردید</p>
+        {/* Modal for migration preview and batch processing */}
+        {showModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+            <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl mx-auto">
+              <h2 className="text-xl font-bold mb-4 text-blue-700">محصولات آماده انتقال ({missingProducts.length})</h2>
+              <div className="max-h-64 overflow-y-auto border rounded mb-4">
+                <ul className="divide-y divide-gray-200">
+                  {missingProducts.map((p: any) => (
+                    <li key={p.id} className="p-2 text-gray-700">{p.name}</li>
+                  ))}
+                </ul>
               </div>
-            </div>
-          </div>
-        </header>
-
-        <main className="max-w-7xl mx-auto px-8 py-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-white/80 backdrop-blur-md rounded-xl p-6 shadow-lg border border-gray-100 transform transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-gradient-to-br from-[#5b9fdb]/10 to-[#5b9fdb]/20 rounded-lg">
-                  <Layers className="w-8 h-8 text-[#5b9fdb]" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">تعداد کل محصولات</p>
-                  <h3 className="text-3xl font-bold bg-gradient-to-r from-[#5b9fdb] to-[#5b9fdb]/80 bg-clip-text text-transparent">
-                    {mixinProducts?.length || 0}
-                  </h3>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white/80 backdrop-blur-md rounded-xl p-6 shadow-lg border border-gray-100 transform transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-gradient-to-br from-[#ff6040]/10 to-[#ff6040]/20 rounded-lg">
-                  <Link2 className="w-8 h-8 text-[#ff6040]" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">محصولات مشترک</p>
-                  <h3 className="text-3xl font-bold bg-gradient-to-r from-[#ff6040] to-[#ff6040]/80 bg-clip-text text-transparent">
-                    {commonMixinProducts?.length || 0}
-                  </h3>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white/80 backdrop-blur-md rounded-xl p-6 shadow-lg border border-gray-100 transform transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-gradient-to-br from-[#5b9fdb]/10 to-[#ff6040]/10 rounded-lg">
-                  <Unlink className="w-8 h-8 text-[#5b9fdb]" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">محصولات غیرمشترک</p>
-                  <h3 className="text-3xl font-bold bg-gradient-to-r from-[#5b9fdb] to-[#ff6040] bg-clip-text text-transparent">
-                    {uniqueMixinProducts?.length || 0}
-                  </h3>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="max-w-7xl mx-auto px-8 py-8">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-8 text-center bg-gradient-to-r from-[#ffa454] to-[#ffa454] bg-clip-text text-transparent">
-                محصولات مشترک در باسلام و میکسین
-              </h2>
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div className="bg-white/60 backdrop-blur-md rounded-xl shadow-lg p-6 border border-gray-100">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl font-semibold text-gray-800">محصولات مشترک در میکسین</h3>
-                  <button
-                    onClick={() => setIsCommonMixinSectionOpen(!isCommonMixinSectionOpen)}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                  >
-                    {isCommonMixinSectionOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-                  </button>
-                </div>
-
-                {isCommonMixinSectionOpen && (
-                  <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-                    {!mixinCredentials ? (
-                      <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">لطفا ابتدا به میکسین متصل شوید</div>
-                    ) : isMixinLoading || isBasalamLoading ? (
-                      <div className="text-center py-4">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#5b9fdb] mx-auto"></div>
-                        <p className="mt-2 text-gray-600">در حال بارگذاری محصولات...</p>
-                      </div>
-                    ) : commonMixinProducts.length === 0 ? (
-                      <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">محصول مشترکی یافت نشد</div>
-                    ) : (
-                      commonMixinProducts.map((product: MixinProduct) => (
-                        <div
-                          key={product.id}
-                          onClick={() => handleProductClick(product.id, 'mixin')}
-                          className="p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer border border-gray-100 text-right group"
-                          dir="rtl"
-                        >
-                          <h3 className="font-medium text-gray-800 group-hover:text-[#5b9fdb] transition-colors">{product.name}</h3>
-                          <p className="text-gray-600 mt-1">قیمت: {product.price ? formatPrice(product.price) : 'قیمت نامشخص'} تومان</p>
-                        </div>
-                      ))
-                    )}
+              {isProcessing ? (
+                <div className="mb-4">
+                  <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
+                    <div className="bg-blue-500 h-3 rounded-full transition-all duration-300" style={{ width: `${(progress.done / progress.total) * 100}%` }} />
                   </div>
-                )}
-              </div>
-
-              <div className="bg-white/60 backdrop-blur-md rounded-xl shadow-lg p-6 border border-gray-100">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl font-semibold text-gray-800">محصولات مشترک در باسلام</h3>
-                  <button
-                    onClick={() => setIsCommonBasalamSectionOpen(!isCommonBasalamSectionOpen)}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                  >
-                    {isCommonBasalamSectionOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-                  </button>
+                  <p className="text-sm text-blue-700">{progress.done} از {progress.total} محصول منتقل شد</p>
+                  {progress.errors.length > 0 && (
+                    <div className="text-red-600 text-xs mt-2">{progress.errors.length} خطا رخ داد</div>
+                  )}
                 </div>
-
-                {isCommonBasalamSectionOpen && (
-                  <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-                    {!basalamCredentials ? (
-                      <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">لطفا ابتدا به باسلام متصل شوید</div>
-                    ) : isUserLoading || isBasalamLoading || isMixinLoading ? (
-                      <div className="text-center py-4">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#ff6040] mx-auto"></div>
-                        <p className="mt-2 text-gray-600">در حال بارگذاری محصولات...</p>
-                      </div>
-                    ) : commonBasalamProducts.length === 0 ? (
-                      <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">محصول مشترکی یافت نشد</div>
-                    ) : (
-                      commonBasalamProducts.map((product: BasalamProduct) => (
-                        <div
-                          key={product.id}
-                          onClick={() => handleProductClick(product.id, 'basalam')}
-                          className="p-4 border border-gray-100 rounded-lg cursor-pointer hover:bg-blue-50 hover:border-blue-200 transition-all duration-200 text-right group"
-                          dir="rtl"
-                        >
-                          <h3 className="font-medium text-gray-800 group-hover:text-blue-600 transition-colors">{product.title}</h3>
-                          <p className="text-gray-600 mt-1">قیمت: {product.price ? formatPrice(rialToToman(product.price)) : 'قیمت نامشخص'} تومان</p>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-12">
-            <h2 className="text-2xl font-bold text-gray-800 mb-8 text-center bg-gradient-to-r from-[#ff9233] to-[#ffa454] bg-clip-text text-transparent">
-              محصولات غیرمشترک در باسلام و میکسین
-            </h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl font-bold text-gray-800">محصولات منحصر به میکسین</h3>
-                  <button
-                    onClick={() => setIsMixinSectionOpen(!isMixinSectionOpen)}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                  >
-                    {isMixinSectionOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-                  </button>
-                </div>
-
-                {isMixinSectionOpen && (
-                  <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-                    {!mixinCredentials ? (
-                      <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">لطفا ابتدا به میکسین متصل شوید</div>
-                    ) : isMixinLoading ? (
-                      <div className="text-center py-4">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                        <p className="mt-2 text-gray-600">در حال بارگذاری محصولات میکسین...</p>
-                      </div>
-                    ) : uniqueMixinProducts.length === 0 ? (
-                      <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">محصول منحصر به میکسین یافت نشد</div>
-                    ) : (
-                      uniqueMixinProducts.map((product: MixinProduct) => (
-                        <div
-                          key={product.id}
-                          onClick={() => handleProductClick(product.id, 'mixin')}
-                          className="p-4 border border-gray-100 rounded-lg cursor-pointer hover:bg-blue-50 hover:border-blue-200 transition-all duration-200 text-right group"
-                          dir="rtl"
-                        >
-                          <h3 className="font-medium text-gray-800 group-hover:text-blue-600 transition-colors">{product.name}</h3>
-                          <p className="text-gray-600 mt-1">قیمت: {product.price ? formatPrice(product.price) : 'قیمت نامشخص'} تومان</p>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                )}
-              </div>
-
-              <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl font-bold text-gray-800">محصولات منحصر به باسلام</h3>
-                  <button
-                    onClick={() => setIsBasalamSectionOpen(!isBasalamSectionOpen)}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                  >
-                    {isBasalamSectionOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-                  </button>
-                </div>
-
-                {isBasalamSectionOpen && (
-                  <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-                    {!basalamCredentials ? (
-                      <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">لطفا ابتدا به باسلام متصل شوید</div>
-                    ) : isUserLoading ? (
-                      <div className="text-center py-4">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                        <p className="mt-2 text-gray-600">در حال بارگذاری اطلاعات کاربر...</p>
-                      </div>
-                    ) : isBasalamLoading ? (
-                      <div className="text-center py-4">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                        <p className="mt-2 text-gray-600">در حال بارگذاری محصولات باسلام...</p>
-                      </div>
-                    ) : uniqueBasalamProducts.length === 0 ? (
-                      <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">محصول منحصر به باسلام یافت نشد</div>
-                    ) : (
-                      uniqueBasalamProducts.map((product: BasalamProduct) => (
-                        <div
-                          key={product.id}
-                          onClick={() => handleProductClick(product.id, 'basalam')}
-                          className="p-4 border border-gray-100 rounded-lg cursor-pointer hover:bg-blue-50 hover:border-blue-200 transition-all duration-200 text-right group"
-                          dir="rtl"
-                        >
-                          <h3 className="font-medium text-gray-800 group-hover:text-blue-600 transition-colors">{product.title}</h3>
-                          <p className="text-gray-600 mt-1">قیمت: {product.price ? formatPrice(rialToToman(product.price)) : 'قیمت نامشخص'} تومان</p>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </main>
-
-        <ProductModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          product={selectedProduct}
-          type={modalType}
-          mixinProducts={mixinProducts}
-          basalamProducts={basalamProducts}
-          onOpenCreateBasalamModal={handleOpenCreateBasalamModal}
-        />
-
-        {isLoading && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-white/90 backdrop-blur-md rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl border border-gray-100 transform transition-all duration-300 scale-100">
-              <div className="flex flex-col items-center">
-                <div className="w-16 h-16 border-4 border-[#5b9fdb] border-t-transparent rounded-full animate-spin mb-6"></div>
-                <h3 className="text-2xl font-bold bg-gradient-to-r from-[#ff6040] to-[#5b9fdb] bg-clip-text text-transparent mb-2">
-                  در حال بارگذاری...
-                </h3>
-                <p className="text-gray-600 text-center">
-                  لطفاً صبر کنید تا اطلاعات محصولات بارگذاری شود
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {isCreateMixinModalOpen && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-white/90 backdrop-blur-md rounded-2xl p-8 max-w-2xl w-full mx-4 shadow-2xl border border-gray-100 transform transition-all duration-300 scale-100">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold bg-gradient-to-r from-[#ff6040] to-[#5b9fdb] bg-clip-text text-transparent">
-                  ایجاد محصول در میکسین
-                </h2>
+              ) : (
                 <button
-                  onClick={() => setIsCreateMixinModalOpen(false)}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 mb-4"
+                  onClick={handleBatchMigrate}
+                  disabled={isProcessing || missingProducts.length === 0}
                 >
-                  <X size={24} className="text-gray-500" />
+                  شروع انتقال گروهی
                 </button>
-              </div>
-
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    نام محصول
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#5b9fdb] focus:ring-2 focus:ring-[#5b9fdb]/20 outline-none transition-all duration-200"
-                    placeholder="نام محصول را وارد کنید"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    قیمت (تومان)
-                  </label>
-                  <input
-                    type="number"
-                    className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#5b9fdb] focus:ring-2 focus:ring-[#5b9fdb]/20 outline-none transition-all duration-200"
-                    placeholder="قیمت محصول را وارد کنید"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    توضیحات
-                  </label>
-                  <textarea
-                    className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#5b9fdb] focus:ring-2 focus:ring-[#5b9fdb]/20 outline-none transition-all duration-200 min-h-[100px]"
-                    placeholder="توضیحات محصول را وارد کنید"
-                  />
-                </div>
-
-                <div className="flex justify-end gap-4">
-                  <button
-                    onClick={() => setIsCreateMixinModalOpen(false)}
-                    className="px-6 py-3 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-all duration-200"
-                  >
-                    انصراف
-                  </button>
-                  <button className="px-6 py-3 rounded-lg bg-gradient-to-r from-[#ff6040] to-[#5b9fdb] text-white hover:from-[#ff6040]/90 hover:to-[#5b9fdb]/90 transition-all duration-200 shadow-md hover:shadow-lg">
-                    ایجاد محصول
-                  </button>
-                </div>
-              </div>
+              )}
+              <button className="text-gray-500 hover:text-gray-700 text-sm" onClick={() => setShowModal(false)}>بستن</button>
             </div>
           </div>
-        )}
-
-        {isCreateBasalamModalOpen && productToCreateInBasalam && userData?.vendor?.id && (
-          <CreateBasalamProductModal
-            open={isCreateBasalamModalOpen}
-            onClose={() => setIsCreateBasalamModalOpen(false)}
-            mixinProduct={productToCreateInBasalam}
-            queryClient={queryClient} // Pass queryClient here
-            vendorId={userData.vendor.id}
-          />
         )}
       </div>
-    </div>
+    );
+  }
+
+  return (
+    <>
+      <BulkMigrationPanel
+        mixinProducts={mixinProducts}
+        basalamProducts={basalamProducts}
+        onBatchCreate={() => {}}
+      />
+      <div className="min-h-screen bg-gradient-to-br from-[#5b9fdb]/10 to-[#ff6040]/10">
+        <button
+          onClick={() => {
+            setIsSidebarCollapsed(false);
+            setIsSidebarOpen(true);
+          }}
+          className={`fixed top-4 right-4 z-50 bg-white/80 backdrop-blur-md p-2 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 ${isSidebarCollapsed ? 'block' : 'hidden'}`}
+        >
+          <Menu size={24} />
+        </button>
+
+        <aside className={`fixed top-0 right-0 h-full bg-white/80 backdrop-blur-md shadow-lg transform transition-all duration-300 ease-in-out z-40 lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : 'translate-x-full'} ${isSidebarCollapsed ? 'w-0' : 'w-64'}`}>
+          <div className={`p-6 h-full flex flex-col ${isSidebarCollapsed ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}>
+            <div className="mb-8 flex items-center justify-between">
+              {!isSidebarCollapsed && (
+                <h2 className="text-2xl font-bold bg-gradient-to-r from-[#ff6040] to-[#5b9fdb] bg-clip-text text-transparent">
+                  میکسین سلام
+                </h2>
+              )}
+              <button
+                onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                className="p-2 hover:bg-[#5b9fdb]/10 rounded-lg transition-colors"
+              >
+                {isSidebarCollapsed ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
+              </button>
+            </div>
+
+            <nav className="space-y-2 flex-1">
+              <a href="#" className="flex items-center gap-3 px-4 py-3 text-gray-700 bg-[#5b9fdb]/10 rounded-lg hover:bg-[#5b9fdb]/20 transition-colors">
+                <Home size={20} />
+                {!isSidebarCollapsed && <span>داشبورد</span>}
+              </a>
+
+              <a href="#" className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-[#5b9fdb]/10 rounded-lg transition-colors">
+                <Package size={20} />
+                {!isSidebarCollapsed && <span>محصولات</span>}
+              </a>
+
+              <a href="#" className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-[#5b9fdb]/10 rounded-lg transition-colors">
+                <BarChart2 size={20} />
+                {!isSidebarCollapsed && <span>آمار و گزارشات</span>}
+              </a>
+
+              <button
+                onClick={() => navigate('/settings')}
+                className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-[#5b9fdb]/10 rounded-lg transition-colors"
+              >
+                <Settings size={20} />
+                {!isSidebarCollapsed && <span>تنظیمات</span>}
+              </button>
+            </nav>
+
+            <div className="mt-auto">
+              <button
+                onClick={handleLogout}
+                className={`w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-[#ff6040] to-[#5b9fdb] text-white rounded-lg hover:from-[#ff6040]/90 hover:to-[#5b9fdb]/90 transition-all duration-200 shadow-md hover:shadow-lg ${isSidebarCollapsed ? 'px-3' : ''}`}
+              >
+                <LogOut size={20} />
+                {!isSidebarCollapsed && <span>خروج</span>}
+              </button>
+            </div>
+          </div>
+        </aside>
+
+        <div className={`transition-all duration-300 ${isSidebarOpen ? (isSidebarCollapsed ? 'lg:mr-0' : 'lg:mr-64') : 'mr-0'}`}>
+          <header className="sticky top-0 bg-white/60 backdrop-blur-md shadow-lg z-20 border-b border-gray-200">
+            <div className="max-w-7xl mx-auto px-8 py-4">
+              <div className="flex items-center justify-between">
+                <div className="text-center flex-1">
+                  <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-[#fa6b23] to-[#fa864b] bg-clip-text text-transparent">
+                    به سایت میکسین سلام خیلی خوش آمدید
+                  </h1>
+                  <p className="text-gray-600">سپاس بابت اینکه ما را انتخاب کردید</p>
+                </div>
+              </div>
+            </div>
+          </header>
+
+          <main className="max-w-7xl mx-auto px-8 py-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className="bg-white/80 backdrop-blur-md rounded-xl p-6 shadow-lg border border-gray-100 transform transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-gradient-to-br from-[#5b9fdb]/10 to-[#5b9fdb]/20 rounded-lg">
+                    <Layers className="w-8 h-8 text-[#5b9fdb]" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">تعداد کل محصولات</p>
+                    <h3 className="text-3xl font-bold bg-gradient-to-r from-[#5b9fdb] to-[#5b9fdb]/80 bg-clip-text text-transparent">
+                      {mixinProducts?.length || 0}
+                    </h3>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white/80 backdrop-blur-md rounded-xl p-6 shadow-lg border border-gray-100 transform transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-gradient-to-br from-[#ff6040]/10 to-[#ff6040]/20 rounded-lg">
+                    <Link2 className="w-8 h-8 text-[#ff6040]" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">محصولات مشترک</p>
+                    <h3 className="text-3xl font-bold bg-gradient-to-r from-[#ff6040] to-[#ff6040]/80 bg-clip-text text-transparent">
+                      {commonMixinProducts?.length || 0}
+                    </h3>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white/80 backdrop-blur-md rounded-xl p-6 shadow-lg border border-gray-100 transform transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-gradient-to-br from-[#5b9fdb]/10 to-[#ff6040]/10 rounded-lg">
+                    <Unlink className="w-8 h-8 text-[#5b9fdb]" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">محصولات غیرمشترک</p>
+                    <h3 className="text-3xl font-bold bg-gradient-to-r from-[#5b9fdb] to-[#ff6040] bg-clip-text text-transparent">
+                      {uniqueMixinProducts?.length || 0}
+                    </h3>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="max-w-7xl mx-auto px-8 py-8">
+              <div className="text-center mb-8">
+                <h2 className="text-2xl font-bold text-gray-800 mb-8 text-center bg-gradient-to-r from-[#ffa454] to-[#ffa454] bg-clip-text text-transparent">
+                  محصولات مشترک در باسلام و میکسین
+                </h2>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="bg-white/60 backdrop-blur-md rounded-xl shadow-lg p-6 border border-gray-100">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl font-semibold text-gray-800">محصولات مشترک در میکسین</h3>
+                    <button
+                      onClick={() => setIsCommonMixinSectionOpen(!isCommonMixinSectionOpen)}
+                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      {isCommonMixinSectionOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                    </button>
+                  </div>
+
+                  {isCommonMixinSectionOpen && (
+                    <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                      {!mixinCredentials ? (
+                        <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">لطفا ابتدا به میکسین متصل شوید</div>
+                      ) : isMixinLoading || isBasalamLoading ? (
+                        <div className="text-center py-4">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#5b9fdb] mx-auto"></div>
+                          <p className="mt-2 text-gray-600">در حال بارگذاری محصولات...</p>
+                        </div>
+                      ) : commonMixinProducts.length === 0 ? (
+                        <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">محصول مشترکی یافت نشد</div>
+                      ) : (
+                        commonMixinProducts.map((product: MixinProduct) => (
+                          <div
+                            key={product.id}
+                            onClick={() => handleProductClick(product.id, 'mixin')}
+                            className="p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer border border-gray-100 text-right group"
+                            dir="rtl"
+                          >
+                            <h3 className="font-medium text-gray-800 group-hover:text-[#5b9fdb] transition-colors">{product.name}</h3>
+                            <p className="text-gray-600 mt-1">قیمت: {product.price ? formatPrice(product.price) : 'قیمت نامشخص'} تومان</p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div className="bg-white/60 backdrop-blur-md rounded-xl shadow-lg p-6 border border-gray-100">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl font-semibold text-gray-800">محصولات مشترک در باسلام</h3>
+                    <button
+                      onClick={() => setIsCommonBasalamSectionOpen(!isCommonBasalamSectionOpen)}
+                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      {isCommonBasalamSectionOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                    </button>
+                  </div>
+
+                  {isCommonBasalamSectionOpen && (
+                    <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                      {!basalamCredentials ? (
+                        <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">لطفا ابتدا به باسلام متصل شوید</div>
+                      ) : isUserLoading || isBasalamLoading || isMixinLoading ? (
+                        <div className="text-center py-4">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#ff6040] mx-auto"></div>
+                          <p className="mt-2 text-gray-600">در حال بارگذاری محصولات...</p>
+                        </div>
+                      ) : commonBasalamProducts.length === 0 ? (
+                        <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">محصول مشترکی یافت نشد</div>
+                      ) : (
+                        commonBasalamProducts.map((product: BasalamProduct) => (
+                          <div
+                            key={product.id}
+                            onClick={() => handleProductClick(product.id, 'basalam')}
+                            className="p-4 border border-gray-100 rounded-lg cursor-pointer hover:bg-blue-50 hover:border-blue-200 transition-all duration-200 text-right group"
+                            dir="rtl"
+                          >
+                            <h3 className="font-medium text-gray-800 group-hover:text-blue-600 transition-colors">{product.title}</h3>
+                            <p className="text-gray-600 mt-1">قیمت: {product.price ? formatPrice(rialToToman(product.price)) : 'قیمت نامشخص'} تومان</p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-12">
+              <h2 className="text-2xl font-bold text-gray-800 mb-8 text-center bg-gradient-to-r from-[#ff9233] to-[#ffa454] bg-clip-text text-transparent">
+                محصولات غیرمشترک در باسلام و میکسین
+              </h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl font-bold text-gray-800">محصولات منحصر به میکسین</h3>
+                    <button
+                      onClick={() => setIsMixinSectionOpen(!isMixinSectionOpen)}
+                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      {isMixinSectionOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                    </button>
+                  </div>
+
+                  {isMixinSectionOpen && (
+                    <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                      {!mixinCredentials ? (
+                        <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">لطفا ابتدا به میکسین متصل شوید</div>
+                      ) : isMixinLoading ? (
+                        <div className="text-center py-4">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                          <p className="mt-2 text-gray-600">در حال بارگذاری محصولات میکسین...</p>
+                        </div>
+                      ) : uniqueMixinProducts.length === 0 ? (
+                        <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">محصول منحصر به میکسین یافت نشد</div>
+                      ) : (
+                        uniqueMixinProducts.map((product: MixinProduct) => (
+                          <div
+                            key={product.id}
+                            onClick={() => handleProductClick(product.id, 'mixin')}
+                            className="p-4 border border-gray-100 rounded-lg cursor-pointer hover:bg-blue-50 hover:border-blue-200 transition-all duration-200 text-right group"
+                            dir="rtl"
+                          >
+                            <h3 className="font-medium text-gray-800 group-hover:text-blue-600 transition-colors">{product.name}</h3>
+                            <p className="text-gray-600 mt-1">قیمت: {product.price ? formatPrice(product.price) : 'قیمت نامشخص'} تومان</p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl font-bold text-gray-800">محصولات منحصر به باسلام</h3>
+                    <button
+                      onClick={() => setIsBasalamSectionOpen(!isBasalamSectionOpen)}
+                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      {isBasalamSectionOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                    </button>
+                  </div>
+
+                  {isBasalamSectionOpen && (
+                    <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                      {!basalamCredentials ? (
+                        <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">لطفا ابتدا به باسلام متصل شوید</div>
+                      ) : isUserLoading ? (
+                        <div className="text-center py-4">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                          <p className="mt-2 text-gray-600">در حال بارگذاری اطلاعات کاربر...</p>
+                        </div>
+                      ) : isBasalamLoading ? (
+                        <div className="text-center py-4">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                          <p className="mt-2 text-gray-600">در حال بارگذاری محصولات باسلام...</p>
+                        </div>
+                      ) : uniqueBasalamProducts.length === 0 ? (
+                        <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">محصول منحصر به باسلام یافت نشد</div>
+                      ) : (
+                        uniqueBasalamProducts.map((product: BasalamProduct) => (
+                          <div
+                            key={product.id}
+                            onClick={() => handleProductClick(product.id, 'basalam')}
+                            className="p-4 border border-gray-100 rounded-lg cursor-pointer hover:bg-blue-50 hover:border-blue-200 transition-all duration-200 text-right group"
+                            dir="rtl"
+                          >
+                            <h3 className="font-medium text-gray-800 group-hover:text-blue-600 transition-colors">{product.title}</h3>
+                            <p className="text-gray-600 mt-1">قیمت: {product.price ? formatPrice(rialToToman(product.price)) : 'قیمت نامشخص'} تومان</p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </main>
+
+          <ProductModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            product={selectedProduct}
+            type={modalType}
+            mixinProducts={mixinProducts}
+            basalamProducts={basalamProducts}
+            onOpenCreateBasalamModal={handleOpenCreateBasalamModal}
+          />
+
+          {isLoading && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+              <div className="bg-white/90 backdrop-blur-md rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl border border-gray-100 transform transition-all duration-300 scale-100">
+                <div className="flex flex-col items-center">
+                  <div className="w-16 h-16 border-4 border-[#5b9fdb] border-t-transparent rounded-full animate-spin mb-6"></div>
+                  <h3 className="text-2xl font-bold bg-gradient-to-r from-[#ff6040] to-[#5b9fdb] bg-clip-text text-transparent mb-2">
+                    در حال بارگذاری...
+                  </h3>
+                  <p className="text-gray-600 text-center">
+                    لطفاً صبر کنید تا اطلاعات محصولات بارگذاری شود
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {isCreateMixinModalOpen && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+              <div className="bg-white/90 backdrop-blur-md rounded-2xl p-8 max-w-2xl w-full mx-4 shadow-2xl border border-gray-100 transform transition-all duration-300 scale-100">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold bg-gradient-to-r from-[#ff6040] to-[#5b9fdb] bg-clip-text text-transparent">
+                    ایجاد محصول در میکسین
+                  </h2>
+                  <button
+                    onClick={() => setIsCreateMixinModalOpen(false)}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <X size={24} className="text-gray-500" />
+                  </button>
+                </div>
+
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      نام محصول
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#5b9fdb] focus:ring-2 focus:ring-[#5b9fdb]/20 outline-none transition-all duration-200"
+                      placeholder="نام محصول را وارد کنید"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      قیمت (تومان)
+                    </label>
+                    <input
+                      type="number"
+                      className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#5b9fdb] focus:ring-2 focus:ring-[#5b9fdb]/20 outline-none transition-all duration-200"
+                      placeholder="قیمت محصول را وارد کنید"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      توضیحات
+                    </label>
+                    <textarea
+                      className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#5b9fdb] focus:ring-2 focus:ring-[#5b9fdb]/20 outline-none transition-all duration-200 min-h-[100px]"
+                      placeholder="توضیحات محصول را وارد کنید"
+                    />
+                  </div>
+
+                  <div className="flex justify-end gap-4">
+                    <button
+                      onClick={() => setIsCreateMixinModalOpen(false)}
+                      className="px-6 py-3 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-all duration-200"
+                    >
+                      انصراف
+                    </button>
+                    <button className="px-6 py-3 rounded-lg bg-gradient-to-r from-[#ff6040] to-[#5b9fdb] text-white hover:from-[#ff6040]/90 hover:to-[#5b9fdb]/90 transition-all duration-200 shadow-md hover:shadow-lg">
+                      ایجاد محصول
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {isCreateBasalamModalOpen && productToCreateInBasalam && userData?.vendor?.id && (
+            <CreateBasalamProductModal
+              open={isCreateBasalamModalOpen}
+              onClose={() => setIsCreateBasalamModalOpen(false)}
+              mixinProduct={productToCreateInBasalam}
+              queryClient={queryClient} // Pass queryClient here
+              vendorId={userData.vendor.id}
+            />
+          )}
+        </div>
+      </div>
+    </>
   )
 }
 
