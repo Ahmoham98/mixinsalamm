@@ -28,31 +28,31 @@ function Modal({ isOpen, onClose, onSubmit, type }: ModalProps) {
           <X size={24} />
         </button>
         <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-          Connect to {type === 'mixin' ? 'Mixin' : 'Basalam'}
+          {type === 'mixin' ? 'اتصال به میکسین' : 'Connect to Basalam'}
         </h2>
         {type === 'mixin' && (
           <>
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                URL
+                آدرس فروشگاه میکسین
               </label>
               <input
                 type="text"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                placeholder="e.g., myshop.ir"
+                placeholder="مثال: myshop.ir"
                 className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
               />
             </div>
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Access Token
+                توکن دسترسی میکسین
               </label>
               <input
                 type="text"
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
-                placeholder="Your Mixin access token"
+                placeholder="توکن دسترسی میکسین خود را وارد کنید"
                 className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
               />
             </div>
@@ -62,7 +62,7 @@ function Modal({ isOpen, onClose, onSubmit, type }: ModalProps) {
           onClick={() => onSubmit(url, token)}
           className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transform hover:scale-[1.02] transition-all duration-200 font-medium"
         >
-          Connect
+          {type === 'mixin' ? 'اتصال' : 'Connect'}
         </button>
       </div>
     </div>
