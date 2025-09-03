@@ -1446,33 +1446,41 @@ function HomePage() {
     console.log('Processing Mixin Products:', mixinProductsArray);
     console.log('Processing Basalam Products:', basalamProductsArray);
 
+    const normalize = (s: string | undefined) => (s || '').trim().toLowerCase();
+
     const commonMixinProducts = mixinProductsArray.filter((mixinProduct: MixinProduct) =>
       mixinProduct?.name && basalamProductsArray.some((basalamProduct: BasalamProduct) =>
         basalamProduct?.title &&
-        basalamProduct.title.toLowerCase() === mixinProduct.name.toLowerCase()
+        normalize(basalamProduct.title) === normalize(mixinProduct.name)
       )
     )
 
     const commonBasalamProducts = basalamProductsArray.filter((basalamProduct: BasalamProduct) =>
       basalamProduct?.title && mixinProductsArray.some((mixinProduct: MixinProduct) =>
         mixinProduct?.name &&
-        mixinProduct.name.toLowerCase() === basalamProduct.title.toLowerCase()
+        normalize(mixinProduct.name) === normalize(basalamProduct.title)
       )
     )
 
     const uniqueMixinProducts = mixinProductsArray.filter((mixinProduct: MixinProduct) =>
       mixinProduct?.name && !basalamProductsArray.some((basalamProduct: BasalamProduct) =>
         basalamProduct?.title &&
-        basalamProduct.title.toLowerCase() === mixinProduct.name.toLowerCase()
+        normalize(basalamProduct.title) === normalize(mixinProduct.name)
       )
     )
 
     const uniqueBasalamProducts = basalamProductsArray.filter((basalamProduct: BasalamProduct) =>
       basalamProduct?.title && !mixinProductsArray.some((mixinProduct: MixinProduct) =>
         mixinProduct?.name &&
-        mixinProduct.name.toLowerCase() === basalamProduct.title.toLowerCase()
+        normalize(mixinProduct.name) === normalize(basalamProduct.title)
       )
     )
+
+    // Ensure same ordering across columns by normalized name
+    commonMixinProducts.sort((a: MixinProduct, b: MixinProduct) => normalize(a.name).localeCompare(normalize(b.name)))
+    commonBasalamProducts.sort((a: BasalamProduct, b: BasalamProduct) => normalize(a.title).localeCompare(normalize(b.title)))
+    uniqueMixinProducts.sort((a: MixinProduct, b: MixinProduct) => normalize(a.name).localeCompare(normalize(b.name)))
+    uniqueBasalamProducts.sort((a: BasalamProduct, b: BasalamProduct) => normalize(a.title).localeCompare(normalize(b.title)))
 
     console.log('Common Mixin Products:', commonMixinProducts);
     console.log('Common Basalam Products:', commonBasalamProducts);
