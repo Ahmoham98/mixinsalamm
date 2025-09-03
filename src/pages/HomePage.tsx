@@ -1040,6 +1040,318 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient, v
   );
 }
 
+function BulkMigrationPanel({ mixinProducts, basalamProducts, mixinCredentials, basalamCredentials, vendorId, queryClient }: {
+  mixinProducts: any[];
+  basalamProducts: any[];
+  mixinCredentials: any;
+  basalamCredentials: any;
+  vendorId?: number;
+  queryClient: any;
+}) {
+  // Eligibility: >=20 Mixin products
+  const isEligible = (mixinProducts?.length || 0) >= 20;
+  const [showModal, setShowModal] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [progress, setProgress] = useState<{ done: number; total: number; errors: any[]; successes: number }>({ done: 0, total: 0, errors: [], successes: 0 });
+  const [results, setResults] = useState<any[]>(() => {
+    try { return JSON.parse(localStorage.getItem('bulk_migration_results') || '[]'); } catch { return []; }
+  });
+  const [concurrency, setConcurrency] = useState(3);
+  const [maxRetries] = useState(2);
+
+  // Product analysis: find Mixin products not in Basalam (by name, case-insensitive)
+  const basalamNames = new Set((basalamProducts || []).map((p: any) => (p.title || p.name)?.trim().toLowerCase()));
+  const missingProducts = (mixinProducts || []).filter((mp: any) => !basalamNames.has(mp.name?.trim().toLowerCase()));
+
+  const saveResults = (items: any[]) => {
+    const merged = [...items, ...results].slice(0, 200);
+    setResults(merged);
+    localStorage.setItem('bulk_migration_results', JSON.stringify(merged));
+  };
+
+  const exportCsv = () => {
+    const header = ['time','id','name','status','error'];
+    const rows = results.map(r => [
+      new Date(r.time).toISOString(),
+      r.id,
+      `"${(r.name || '').replace(/"/g,'""')}"`,
+      r.status,
+      `"${(r.error || '').replace(/"/g,'""')}"`
+    ].join(','));
+    const csv = [header.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `bulk-migration-results-${Date.now()}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const sleep = (ms: number) => new Promise(res => setTimeout(res, ms));
+
+  const fetchCategoryId = async (title: string): Promise<number | null> => {
+    try {
+      const resp = await fetch(`https://categorydetection.basalam.com/category_detection/api_v1.0/predict/?title=${encodeURIComponent(title)}`);
+      const data = await resp.json();
+      const id = data?.predictions?.[0]?.categories?.[0]?.id;
+      return id ? parseInt(id, 10) : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const uploadImageAndGetId = async (mixinProduct: any): Promise<number | null> => {
+    try {
+      if (!mixinCredentials || !basalamCredentials) return null;
+      let imageUrlToUpload: string | undefined = (mixinProduct as any).imageUrl;
+      if (!imageUrlToUpload && mixinProduct?.id) {
+        imageUrlToUpload = await mixinApi.getProductImage(mixinCredentials, mixinProduct.id) || undefined;
+      }
+      if (!imageUrlToUpload) return null;
+      const up = await basalamApi.uploadImage(basalamCredentials, imageUrlToUpload);
+      return up?.id ?? null;
+    } catch {
+      return null;
+    }
+  };
+
+  const createBasalamProduct = async (mixinProduct: any): Promise<{ ok: boolean; message: string; product?: any }> => {
+    if (!basalamCredentials || !vendorId) return { ok: false, message: 'Missing Basalam credentials or vendorId' };
+
+    const categoryId = await fetchCategoryId(mixinProduct.name);
+    if (!categoryId) return { ok: false, message: 'Unable to detect category' };
+
+    const imageId = await uploadImageAndGetId(mixinProduct);
+    if (!imageId) return { ok: false, message: 'Image upload failed' };
+
+    const sku = generateUniqueSKU(mixinProduct.name, vendorId);
+
+    const payload = {
+      name: mixinProduct.name,
+      category_id: categoryId,
+      status: "2976",
+      primary_price: tomanToRial(Number(mixinProduct.price || 0)),
+      preparation_days: 3,
+      weight: Number(mixinProduct.weight || 500),
+      package_weight: Number(mixinProduct.weight ? Number(mixinProduct.weight) + 50 : 550),
+      photo: imageId,
+      photos: [imageId],
+      stock: Number(mixinProduct.stock || 1),
+      brief: mixinProduct.description || '',
+      description: mixinProduct.description || '',
+      sku,
+      video: '',
+      keywords: '',
+      shipping_city_ids: [],
+      shipping_method_ids: [],
+      wholesale_prices: [],
+      product_attribute: [],
+      virtual: false,
+      variants: [],
+      shipping_data: {},
+      unit_quantity: 1,
+      unit_type: "عدد",
+      packaging_dimensions: { width: 0, height: 0, depth: 0 },
+      is_wholesale: false,
+      order: 1
+    };
+
+    try {
+      const resp = await basalamApi.createProduct(basalamCredentials, vendorId, payload);
+      return { ok: true, message: 'Created', product: resp };
+    } catch (e: any) {
+      return { ok: false, message: e?.message || 'Create failed' };
+    }
+  };
+
+  const withRetries = async (fn: () => Promise<any>) => {
+    let attempt = 0;
+    let lastErr: any = null;
+    while (attempt <= maxRetries) {
+      try {
+        return await fn();
+      } catch (e) {
+        lastErr = e;
+        attempt += 1;
+        await sleep(500 * attempt);
+      }
+    }
+    throw lastErr;
+  };
+
+  const runInBatches = async (items: any[]) => {
+    setIsProcessing(true);
+    setIsPaused(false);
+    setProgress({ done: 0, total: items.length, errors: [], successes: 0 });
+
+    let active = 0;
+    let idx = 0;
+    let done = 0;
+    let successes = 0;
+    const errors: any[] = [];
+
+    return new Promise<void>((resolve) => {
+      const next = () => {
+        if (idx >= items.length && active === 0) {
+          setIsProcessing(false);
+          setProgress({ done, total: items.length, errors, successes });
+          resolve();
+          return;
+        }
+        // If paused, do not start new tasks. Check again shortly.
+        if (isPaused) {
+          setTimeout(next, 300);
+          return;
+        }
+        while (active < concurrency && idx < items.length && !isPaused) {
+          const mp = items[idx++];
+          active += 1;
+          (async () => {
+            const res = await withRetries(() => createBasalamProduct(mp));
+            if (res?.ok) {
+              successes += 1;
+              saveResults([{ id: mp.id, name: mp.name, status: 'success', time: Date.now() }]);
+            } else {
+              errors.push({ id: mp.id, name: mp.name, error: res?.message || 'Unknown error' });
+              saveResults([{ id: mp.id, name: mp.name, status: 'error', error: res?.message || 'Unknown', time: Date.now() }]);
+            }
+            done += 1;
+            setProgress({ done, total: items.length, errors: [...errors], successes });
+          })().finally(() => {
+            active -= 1;
+            next();
+          });
+        }
+        if (active === 0 && idx < items.length) {
+          setTimeout(next, 200);
+        }
+      };
+      next();
+    });
+  };
+
+  const handleBatchMigrate = async () => {
+    if (!mixinCredentials || !basalamCredentials || !vendorId) {
+      alert('لطفاً ابتدا به میکسین و باسلام متصل شوید.');
+      return;
+    }
+    await runInBatches(missingProducts);
+    try {
+      await queryClient.invalidateQueries({ queryKey: ['basalamProducts'] });
+      await queryClient.refetchQueries({ queryKey: ['basalamProducts'] });
+    } catch {}
+  };
+
+  if (!isEligible) return null;
+
+  return (
+    <div className="bg-blue-100 border border-blue-300 rounded-lg p-4 mb-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-bold text-blue-700 mb-1">انتقال سریع محصولات میکسین به باسلام</h3>
+          <p className="text-blue-800 text-sm">شما واجد شرایط انتقال خودکار محصولات هستید. (۲۰ محصول یا بیشتر در میکسین)</p>
+          <p className="text-blue-800 text-xs">{missingProducts.length} محصول آماده انتقال!</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            onClick={() => setShowModal(true)}
+          >
+            شروع انتقال
+          </button>
+          {results.length > 0 && (
+            <button className="px-4 py-2 border border-blue-400 text-blue-700 rounded hover:bg-blue-50" onClick={exportCsv}>
+              خروجی CSV
+            </button>
+          )}
+        </div>
+      </div>
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl mx-auto">
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-xl font-bold text-blue-700">محصولات آماده انتقال ({missingProducts.length})</h2>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-gray-600">حداکثر همزمانی</label>
+                  <select className="border rounded px-2 py-1 text-sm" value={concurrency} onChange={(e) => setConcurrency(parseInt(e.target.value) || 1)}>
+                    <option value={1}>1</option>
+                    <option value={2}>2</option>
+                    <option value={3}>3</option>
+                    <option value={4}>4</option>
+                    <option value={5}>5</option>
+                  </select>
+                </div>
+                <button
+                  className={`px-3 py-1 rounded text-sm ${isPaused ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-yellow-500 text-white hover:bg-yellow-600'}`}
+                  onClick={() => setIsPaused(p => !p)}
+                  disabled={!isProcessing}
+                >
+                  {isPaused ? 'ادامه' : 'توقف موقت'}
+                </button>
+              </div>
+            </div>
+            <div className="max-h-64 overflow-y-auto border rounded mb-4">
+              <ul className="divide-y divide-gray-200">
+                {missingProducts.map((p: any) => (
+                  <li key={p.id} className="p-2 text-gray-700">{p.name}</li>
+                ))}
+              </ul>
+            </div>
+            {isProcessing ? (
+              <div className="mb-4">
+                <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
+                  <div className="bg-blue-500 h-3 rounded-full transition-all duration-300" style={{ width: `${progress.total ? (progress.done / progress.total) * 100 : 0}%` }} />
+                </div>
+                <p className="text-sm text-blue-700">{progress.done} از {progress.total} محصول منتقل شد • موفق: {progress.successes} • خطا: {progress.errors.length}</p>
+                {progress.errors.length > 0 && (
+                  <details className="mt-2">
+                    <summary className="text-red-600 text-sm cursor-pointer">مشاهده خطاها ({progress.errors.length})</summary>
+                    <ul className="mt-2 text-xs text-red-700 space-y-1 max-h-40 overflow-y-auto">
+                      {progress.errors.map((e: any, idx: number) => (
+                        <li key={idx}>#{e.id} - {e.name}: {e.error}</li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
+              </div>
+            ) : (
+              <button
+                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 mb-4"
+                onClick={handleBatchMigrate}
+                disabled={isProcessing || missingProducts.length === 0}
+              >
+                شروع انتقال گروهی واقعی
+              </button>
+            )}
+            {results.length > 0 && (
+              <div className="mt-4 border-t pt-3">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-semibold text-gray-700 text-sm">نتایج اخیر</h4>
+                  <button className="px-3 py-1 border border-blue-400 text-blue-700 rounded hover:bg-blue-50 text-xs" onClick={exportCsv}>خروجی CSV</button>
+                </div>
+                <ul className="max-h-40 overflow-y-auto text-xs space-y-1">
+                  {results.map((r) => (
+                    <li key={`${r.id}-${r.time}`} className={r.status === 'success' ? 'text-green-700' : 'text-red-700'}>
+                      {new Date(r.time).toLocaleString()} • {r.name} • {r.status === 'success' ? 'موفق' : `خطا: ${r.error}`}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <div className="flex justify-end">
+              <button className="text-gray-500 hover:text-gray-700 text-sm" onClick={() => setShowModal(false)}>بستن</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function HomePage() {
   const { mixinCredentials, basalamCredentials, clearCredentials } = useAuthStore()
@@ -1641,6 +1953,14 @@ function HomePage() {
             vendorId={userData.vendor.id}
           />
         )}
+        <BulkMigrationPanel
+          mixinProducts={mixinProducts || []}
+          basalamProducts={basalamProducts || []}
+          mixinCredentials={mixinCredentials}
+          basalamCredentials={basalamCredentials}
+          vendorId={userData?.vendor?.id}
+          queryClient={queryClient}
+        />
       </div>
     </div>
   )
