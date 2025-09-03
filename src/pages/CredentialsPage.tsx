@@ -20,6 +20,11 @@ function Modal({ isOpen, onClose, onSubmit, type }: ModalProps) {
 
   if (!isOpen) return null
 
+  // Use public path for video (move the video to public/ if not already there)
+  const tokenVideoSrc = process.env.PUBLIC_URL
+    ? process.env.PUBLIC_URL + '/how to get mixin access token .mp4'
+    : '/how to get mixin access token .mp4';
+
   return (
     <>
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
@@ -30,7 +35,7 @@ function Modal({ isOpen, onClose, onSubmit, type }: ModalProps) {
           >
             <X size={24} />
           </button>
-          <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent text-right" style={{direction:'rtl'}}>
             {type === 'mixin' ? 'اتصال به میکسین' : 'Connect to Basalam'}
           </h2>
           {type === 'mixin' && (
@@ -99,7 +104,7 @@ function Modal({ isOpen, onClose, onSubmit, type }: ModalProps) {
             >
               <X size={24} />
             </button>
-            <h3 className="text-lg font-bold mb-4 text-blue-700">راهنمای وارد کردن آدرس فروشگاه میکسین</h3>
+            <h3 className="text-lg font-bold mb-4 text-blue-700 text-right" style={{direction:'rtl'}}>راهنمای وارد کردن آدرس فروشگاه میکسین</h3>
             <ul className="text-gray-700 text-sm space-y-2 list-disc pr-4 text-right" style={{direction:'rtl'}}>
               <li>آدرس فروشگاه باید فقط نام دامنه فروشگاه شما در میکسین باشد (بدون http یا www).</li>
               <li>مثال صحیح: <span className="font-mono bg-gray-100 px-2 py-1 rounded">myshop.ir</span></li>
@@ -125,11 +130,13 @@ function Modal({ isOpen, onClose, onSubmit, type }: ModalProps) {
             >
               <X size={24} />
             </button>
-            <h3 className="text-lg font-bold mb-4 text-blue-700">راهنمای دریافت توکن دسترسی میکسین</h3>
+            <h3 className="text-lg font-bold mb-4 text-blue-700 text-right" style={{direction:'rtl'}}>راهنمای دریافت توکن دسترسی میکسین</h3>
             <video
-              src={require('../../how to get mixin access token .mp4')}
+              src={tokenVideoSrc}
               controls
               className="w-full rounded-lg border border-gray-200 mb-4"
+              style={{background:'#000'}}
+              onError={e => {e.currentTarget.poster=''; e.currentTarget.controls=false;}}
             >
               مرورگر شما از پخش ویدیو پشتیبانی نمی‌کند.
             </video>
