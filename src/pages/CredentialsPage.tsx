@@ -15,57 +15,137 @@ interface ModalProps {
 function Modal({ isOpen, onClose, onSubmit, type }: ModalProps) {
   const [url, setUrl] = useState('')
   const [token, setToken] = useState('')
+  const [showDomainGuide, setShowDomainGuide] = useState(false)
+  const [showTokenGuide, setShowTokenGuide] = useState(false)
 
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-white p-8 rounded-xl shadow-2xl w-96 relative transform transition-all duration-300 ease-in-out">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition-colors"
-        >
-          <X size={24} />
-        </button>
-        <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-          {type === 'mixin' ? 'اتصال به میکسین' : 'Connect to Basalam'}
-        </h2>
-        {type === 'mixin' && (
-          <>
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                آدرس فروشگاه میکسین
-              </label>
-              <input
-                type="text"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder="مثال: myshop.ir"
-                className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-              />
-            </div>
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                توکن دسترسی میکسین
-              </label>
-              <input
-                type="text"
-                value={token}
-                onChange={(e) => setToken(e.target.value)}
-                placeholder="توکن دسترسی میکسین خود را وارد کنید"
-                className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-              />
-            </div>
-          </>
-        )}
-        <button
-          onClick={() => onSubmit(url, token)}
-          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transform hover:scale-[1.02] transition-all duration-200 font-medium"
-        >
-          {type === 'mixin' ? 'اتصال' : 'Connect'}
-        </button>
+    <>
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="bg-white p-8 rounded-xl shadow-2xl w-96 relative transform transition-all duration-300 ease-in-out">
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition-colors"
+          >
+            <X size={24} />
+          </button>
+          <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            {type === 'mixin' ? 'اتصال به میکسین' : 'Connect to Basalam'}
+          </h2>
+          {type === 'mixin' && (
+            <>
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-gray-700 text-right w-full" style={{direction:'rtl'}}>
+                    آدرس فروشگاه میکسین
+                  </label>
+                  <button
+                    type="button"
+                    className="text-xs text-blue-600 hover:underline ml-2"
+                    onClick={() => setShowDomainGuide(true)}
+                  >
+                    راهنما
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  placeholder="مثال: myshop.ir"
+                  className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-right"
+                  dir="rtl"
+                />
+              </div>
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-gray-700 text-right w-full" style={{direction:'rtl'}}>
+                    توکن دسترسی میکسین
+                  </label>
+                  <button
+                    type="button"
+                    className="text-xs text-blue-600 hover:underline ml-2"
+                    onClick={() => setShowTokenGuide(true)}
+                  >
+                    راهنما
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  value={token}
+                  onChange={(e) => setToken(e.target.value)}
+                  placeholder="توکن دسترسی میکسین خود را وارد کنید"
+                  className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-right"
+                  dir="rtl"
+                />
+              </div>
+            </>
+          )}
+          <button
+            onClick={() => onSubmit(url, token)}
+            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transform hover:scale-[1.02] transition-all duration-200 font-medium"
+          >
+            {type === 'mixin' ? 'اتصال' : 'Connect'}
+          </button>
+        </div>
       </div>
-    </div>
+      {/* Domain Guide Modal */}
+      {showDomainGuide && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white p-8 rounded-xl shadow-2xl w-96 relative">
+            <button
+              onClick={() => setShowDomainGuide(false)}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition-colors"
+            >
+              <X size={24} />
+            </button>
+            <h3 className="text-lg font-bold mb-4 text-blue-700">راهنمای وارد کردن آدرس فروشگاه میکسین</h3>
+            <ul className="text-gray-700 text-sm space-y-2 list-disc pr-4 text-right" style={{direction:'rtl'}}>
+              <li>آدرس فروشگاه باید فقط نام دامنه فروشگاه شما در میکسین باشد (بدون http یا www).</li>
+              <li>مثال صحیح: <span className="font-mono bg-gray-100 px-2 py-1 rounded">myshop.ir</span></li>
+              <li>مثال اشتباه: <span className="font-mono bg-gray-100 px-2 py-1 rounded">https://myshop.ir</span> یا <span className="font-mono bg-gray-100 px-2 py-1 rounded">www.myshop.ir</span></li>
+              <li>در صورت داشتن سوال، با پشتیبانی تماس بگیرید.</li>
+            </ul>
+            <button
+              onClick={() => setShowDomainGuide(false)}
+              className="w-full mt-6 bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-medium"
+            >
+              بستن
+            </button>
+          </div>
+        </div>
+      )}
+      {/* Token Guide Modal with Video */}
+      {showTokenGuide && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white p-8 rounded-xl shadow-2xl w-[420px] relative">
+            <button
+              onClick={() => setShowTokenGuide(false)}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition-colors"
+            >
+              <X size={24} />
+            </button>
+            <h3 className="text-lg font-bold mb-4 text-blue-700">راهنمای دریافت توکن دسترسی میکسین</h3>
+            <video
+              src={require('../../how to get mixin access token .mp4')}
+              controls
+              className="w-full rounded-lg border border-gray-200 mb-4"
+            >
+              مرورگر شما از پخش ویدیو پشتیبانی نمی‌کند.
+            </video>
+            <p className="text-gray-700 text-sm mb-4 text-right" style={{direction:'rtl'}}>
+              در این ویدیو نحوه دریافت توکن دسترسی از پنل میکسین به صورت کامل آموزش داده شده است. لطفاً مراحل را به دقت دنبال کنید.
+            </p>
+            <button
+              onClick={() => setShowTokenGuide(false)}
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-medium"
+            >
+              بستن
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
 
