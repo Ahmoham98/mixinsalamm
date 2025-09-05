@@ -1059,6 +1059,14 @@ function BulkMigrationPanel({ mixinProducts, basalamProducts, mixinCredentials, 
   });
   const [concurrency, setConcurrency] = useState(3);
   const [maxRetries] = useState(2);
+  const [scheduledTime, setScheduledTime] = useState('');
+  const [isScheduled, setIsScheduled] = useState(false);
+  const [auditLogs, setAuditLogs] = useState<any[]>(() => {
+    try { return JSON.parse(localStorage.getItem('bulk_migration_audit_logs') || '[]'); } catch { return []; }
+  });
+  const [failedItems, setFailedItems] = useState<any[]>(() => {
+    try { return JSON.parse(localStorage.getItem('bulk_migration_failed_items') || '[]'); } catch { return []; }
+  });
 
   // Product analysis: find Mixin products not in Basalam (by name, case-insensitive)
   const basalamNames = new Set((basalamProducts || []).map((p: any) => (p.title || p.name)?.trim().toLowerCase()));
@@ -1070,14 +1078,39 @@ function BulkMigrationPanel({ mixinProducts, basalamProducts, mixinCredentials, 
     localStorage.setItem('bulk_migration_results', JSON.stringify(merged));
   };
 
+  const addAuditLog = (action: string, details: any) => {
+    const log = {
+      timestamp: Date.now(),
+      action,
+      details,
+      sessionId: Date.now().toString(36)
+    };
+    const updated = [log, ...auditLogs].slice(0, 100);
+    setAuditLogs(updated);
+    localStorage.setItem('bulk_migration_audit_logs', JSON.stringify(updated));
+  };
+
+  const saveFailedItems = (items: any[]) => {
+    const merged = [...items, ...failedItems].slice(0, 50);
+    setFailedItems(merged);
+    localStorage.setItem('bulk_migration_failed_items', JSON.stringify(merged));
+  };
+
+  const clearFailedItems = () => {
+    setFailedItems([]);
+    localStorage.removeItem('bulk_migration_failed_items');
+  };
+
   const exportCsv = () => {
-    const header = ['time','id','name','status','error'];
+    const header = ['time','id','name','status','error','retry_count','duration_ms'];
     const rows = results.map(r => [
       new Date(r.time).toISOString(),
       r.id,
       `"${(r.name || '').replace(/"/g,'""')}"`,
       r.status,
-      `"${(r.error || '').replace(/"/g,'""')}"`
+      `"${(r.error || '').replace(/"/g,'""')}"`,
+      r.retryCount || 0,
+      r.duration || 0
     ].join(','));
     const csv = [header.join(','), ...rows].join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -1085,6 +1118,26 @@ function BulkMigrationPanel({ mixinProducts, basalamProducts, mixinCredentials, 
     const a = document.createElement('a');
     a.href = url;
     a.download = `bulk-migration-results-${Date.now()}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const exportAuditLogs = () => {
+    const header = ['timestamp','action','details','session_id'];
+    const rows = auditLogs.map(log => [
+      new Date(log.timestamp).toISOString(),
+      log.action,
+      `"${JSON.stringify(log.details).replace(/"/g,'""')}"`,
+      log.sessionId
+    ].join(','));
+    const csv = [header.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `bulk-migration-audit-${Date.now()}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -1168,37 +1221,77 @@ function BulkMigrationPanel({ mixinProducts, basalamProducts, mixinCredentials, 
     }
   };
 
-  const withRetries = async (fn: () => Promise<any>) => {
+  const withRetries = async (fn: () => Promise<any>, itemId: number, itemName: string) => {
     let attempt = 0;
     let lastErr: any = null;
+    const startTime = Date.now();
+    
+    addAuditLog('ITEM_START', { itemId, itemName, attempt: 0 });
+    
     while (attempt <= maxRetries) {
       try {
-        return await fn();
+        const result = await fn();
+        const duration = Date.now() - startTime;
+        addAuditLog('ITEM_SUCCESS', { itemId, itemName, attempt, duration });
+        return { ...result, retryCount: attempt, duration };
       } catch (e) {
         lastErr = e;
         attempt += 1;
+        addAuditLog('ITEM_RETRY', { itemId, itemName, attempt, error: (e as any)?.message || 'Unknown error' });
         await sleep(500 * attempt);
       }
     }
-    throw lastErr;
+    
+    const duration = Date.now() - startTime;
+    addAuditLog('ITEM_FAILED', { itemId, itemName, attempt, error: lastErr?.message || 'Unknown error', duration });
+    throw { ...lastErr, retryCount: attempt, duration };
   };
 
-  const runInBatches = async (items: any[]) => {
+  const runInBatches = async (items: any[], resumeFromFailures = false) => {
     setIsProcessing(true);
     setIsPaused(false);
-    setProgress({ done: 0, total: items.length, errors: [], successes: 0 });
+    
+    const itemsToProcess = resumeFromFailures ? failedItems : items;
+    const sessionId = Date.now().toString(36);
+    
+    addAuditLog('BATCH_START', { 
+      sessionId, 
+      totalItems: itemsToProcess.length, 
+      concurrency, 
+      maxRetries, 
+      resumeFromFailures 
+    });
+    
+    setProgress({ done: 0, total: itemsToProcess.length, errors: [], successes: 0 });
 
     let active = 0;
     let idx = 0;
     let done = 0;
     let successes = 0;
     const errors: any[] = [];
+    const newFailedItems: any[] = [];
 
     return new Promise<void>((resolve) => {
       const next = () => {
-        if (idx >= items.length && active === 0) {
+        if (idx >= itemsToProcess.length && active === 0) {
           setIsProcessing(false);
-          setProgress({ done, total: items.length, errors, successes });
+          setProgress({ done, total: itemsToProcess.length, errors, successes });
+          
+          // Update failed items list
+          if (newFailedItems.length > 0) {
+            saveFailedItems(newFailedItems);
+          } else if (resumeFromFailures) {
+            clearFailedItems();
+          }
+          
+          addAuditLog('BATCH_COMPLETE', { 
+            sessionId, 
+            totalProcessed: done, 
+            successes, 
+            failures: errors.length,
+            failedItems: newFailedItems.length
+          });
+          
           resolve();
           return;
         }
@@ -1207,26 +1300,58 @@ function BulkMigrationPanel({ mixinProducts, basalamProducts, mixinCredentials, 
           setTimeout(next, 300);
           return;
         }
-        while (active < concurrency && idx < items.length && !isPaused) {
-          const mp = items[idx++];
+        while (active < concurrency && idx < itemsToProcess.length && !isPaused) {
+          const mp = itemsToProcess[idx++];
           active += 1;
           (async () => {
-            const res = await withRetries(() => createBasalamProduct(mp));
-            if (res?.ok) {
-              successes += 1;
-              saveResults([{ id: mp.id, name: mp.name, status: 'success', time: Date.now() }]);
-            } else {
-              errors.push({ id: mp.id, name: mp.name, error: res?.message || 'Unknown error' });
-              saveResults([{ id: mp.id, name: mp.name, status: 'error', error: res?.message || 'Unknown', time: Date.now() }]);
+            try {
+              const res = await withRetries(() => createBasalamProduct(mp), mp.id, mp.name);
+              if (res?.ok) {
+                successes += 1;
+                saveResults([{ 
+                  id: mp.id, 
+                  name: mp.name, 
+                  status: 'success', 
+                  time: Date.now(),
+                  retryCount: res.retryCount || 0,
+                  duration: res.duration || 0
+                }]);
+              } else {
+                const errorItem = { id: mp.id, name: mp.name, error: res?.message || 'Unknown error' };
+                errors.push(errorItem);
+                newFailedItems.push(mp);
+                saveResults([{ 
+                  id: mp.id, 
+                  name: mp.name, 
+                  status: 'error', 
+                  error: res?.message || 'Unknown', 
+                  time: Date.now(),
+                  retryCount: res?.retryCount || maxRetries,
+                  duration: res?.duration || 0
+                }]);
+              }
+            } catch (error: any) {
+              const errorItem = { id: mp.id, name: mp.name, error: error?.message || 'Unknown error' };
+              errors.push(errorItem);
+              newFailedItems.push(mp);
+              saveResults([{ 
+                id: mp.id, 
+                name: mp.name, 
+                status: 'error', 
+                error: error?.message || 'Unknown', 
+                time: Date.now(),
+                retryCount: error?.retryCount || maxRetries,
+                duration: error?.duration || 0
+              }]);
             }
             done += 1;
-            setProgress({ done, total: items.length, errors: [...errors], successes });
+            setProgress({ done, total: itemsToProcess.length, errors: [...errors], successes });
           })().finally(() => {
             active -= 1;
             next();
           });
         }
-        if (active === 0 && idx < items.length) {
+        if (active === 0 && idx < itemsToProcess.length) {
           setTimeout(next, 200);
         }
       };
@@ -1234,16 +1359,45 @@ function BulkMigrationPanel({ mixinProducts, basalamProducts, mixinCredentials, 
     });
   };
 
-  const handleBatchMigrate = async () => {
+  const handleBatchMigrate = async (resumeFromFailures = false) => {
     if (!mixinCredentials || !basalamCredentials || !vendorId) {
       alert('لطفاً ابتدا به میکسین و باسلام متصل شوید.');
       return;
     }
-    await runInBatches(missingProducts);
+    
+    if (isScheduled && scheduledTime) {
+      const scheduledDate = new Date(scheduledTime);
+      const now = new Date();
+      if (scheduledDate > now) {
+        const delay = scheduledDate.getTime() - now.getTime();
+        addAuditLog('SCHEDULE_SET', { scheduledTime, delayMs: delay });
+        setTimeout(() => {
+          runInBatches(missingProducts, resumeFromFailures).then(async () => {
+            try {
+              await queryClient.invalidateQueries({ queryKey: ['basalamProducts'] });
+              await queryClient.refetchQueries({ queryKey: ['basalamProducts'] });
+            } catch {}
+          });
+        }, delay);
+        setIsScheduled(false);
+        setScheduledTime('');
+        return;
+      }
+    }
+    
+    await runInBatches(missingProducts, resumeFromFailures);
     try {
       await queryClient.invalidateQueries({ queryKey: ['basalamProducts'] });
       await queryClient.refetchQueries({ queryKey: ['basalamProducts'] });
     } catch {}
+  };
+
+  const handleRetryFailed = async () => {
+    if (failedItems.length === 0) {
+      alert('هیچ محصول ناموفقی برای تلاش مجدد وجود ندارد.');
+      return;
+    }
+    await handleBatchMigrate(true);
   };
 
   if (!isEligible) return null;
@@ -1263,9 +1417,22 @@ function BulkMigrationPanel({ mixinProducts, basalamProducts, mixinCredentials, 
           >
             شروع انتقال
           </button>
+          {failedItems.length > 0 && (
+            <button
+              className="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700"
+              onClick={handleRetryFailed}
+            >
+              تلاش مجدد ({failedItems.length})
+            </button>
+          )}
           {results.length > 0 && (
             <button className="px-4 py-2 border border-blue-400 text-blue-700 rounded hover:bg-blue-50" onClick={exportCsv}>
               خروجی CSV
+            </button>
+          )}
+          {auditLogs.length > 0 && (
+            <button className="px-4 py-2 border border-green-400 text-green-700 rounded hover:bg-green-50" onClick={exportAuditLogs}>
+              گزارشات
             </button>
           )}
         </div>
@@ -1295,6 +1462,35 @@ function BulkMigrationPanel({ mixinProducts, basalamProducts, mixinCredentials, 
                 </button>
               </div>
             </div>
+            
+            {/* Scheduling Section */}
+            <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={isScheduled}
+                    onChange={(e) => setIsScheduled(e.target.checked)}
+                    className="rounded"
+                  />
+                  <span className="text-sm text-gray-700">زمان‌بندی برای ساعت کم‌ترافیک</span>
+                </label>
+                {isScheduled && (
+                  <input
+                    type="datetime-local"
+                    value={scheduledTime}
+                    onChange={(e) => setScheduledTime(e.target.value)}
+                    min={new Date().toISOString().slice(0, 16)}
+                    className="border rounded px-2 py-1 text-sm"
+                  />
+                )}
+              </div>
+              {isScheduled && scheduledTime && (
+                <p className="text-xs text-gray-600 mt-1">
+                  انتقال در ساعت {new Date(scheduledTime).toLocaleString('fa-IR')} شروع خواهد شد
+                </p>
+              )}
+            </div>
             <div className="max-h-64 overflow-y-auto border rounded mb-4">
               <ul className="divide-y divide-gray-200">
                 {missingProducts.map((p: any) => (
@@ -1322,24 +1518,60 @@ function BulkMigrationPanel({ mixinProducts, basalamProducts, mixinCredentials, 
             ) : (
               <button
                 className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 mb-4"
-                onClick={handleBatchMigrate}
+                onClick={() => handleBatchMigrate(false)}
                 disabled={isProcessing || missingProducts.length === 0}
               >
                 شروع انتقال گروهی واقعی
               </button>
             )}
+            {/* Failed Items Section */}
+            {failedItems.length > 0 && (
+              <div className="mt-4 border-t pt-3">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-semibold text-orange-700 text-sm">محصولات ناموفق ({failedItems.length})</h4>
+                  <button 
+                    className="px-3 py-1 bg-orange-600 text-white rounded hover:bg-orange-700 text-xs"
+                    onClick={handleRetryFailed}
+                  >
+                    تلاش مجدد همه
+                  </button>
+                </div>
+                <ul className="max-h-32 overflow-y-auto text-xs space-y-1">
+                  {failedItems.slice(0, 10).map((item: any) => (
+                    <li key={item.id} className="text-orange-700">
+                      {item.name} • خطا: {item.error}
+                    </li>
+                  ))}
+                  {failedItems.length > 10 && (
+                    <li className="text-gray-500">... و {failedItems.length - 10} مورد دیگر</li>
+                  )}
+                </ul>
+              </div>
+            )}
+
+            {/* Results Section */}
             {results.length > 0 && (
               <div className="mt-4 border-t pt-3">
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="font-semibold text-gray-700 text-sm">نتایج اخیر</h4>
-                  <button className="px-3 py-1 border border-blue-400 text-blue-700 rounded hover:bg-blue-50 text-xs" onClick={exportCsv}>خروجی CSV</button>
+                  <div className="flex gap-2">
+                    <button className="px-3 py-1 border border-blue-400 text-blue-700 rounded hover:bg-blue-50 text-xs" onClick={exportCsv}>خروجی CSV</button>
+                    {auditLogs.length > 0 && (
+                      <button className="px-3 py-1 border border-green-400 text-green-700 rounded hover:bg-green-50 text-xs" onClick={exportAuditLogs}>گزارشات</button>
+                    )}
+                  </div>
                 </div>
                 <ul className="max-h-40 overflow-y-auto text-xs space-y-1">
-                  {results.map((r) => (
+                  {results.slice(0, 20).map((r) => (
                     <li key={`${r.id}-${r.time}`} className={r.status === 'success' ? 'text-green-700' : 'text-red-700'}>
                       {new Date(r.time).toLocaleString()} • {r.name} • {r.status === 'success' ? 'موفق' : `خطا: ${r.error}`}
+                      {r.retryCount > 0 && ` (${r.retryCount} تلاش)`}
+                      {r.duration && ` (${r.duration}ms)`}
                     </li>
                   ))}
+                  {results.length > 20 && (
+                    <li className="text-gray-500">... و {results.length - 20} مورد دیگر</li>
+                  )}
                 </ul>
               </div>
             )}
