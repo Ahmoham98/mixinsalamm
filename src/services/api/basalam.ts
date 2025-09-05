@@ -17,18 +17,19 @@ export const basalamApi = {
     }
   },
 
-  getProducts: async (credentials: BasalamCredentials, vendorId: number): Promise<BasalamProduct[]> => {
+  getProducts: async (credentials: BasalamCredentials, vendorId: number, page: number = 1): Promise<BasalamProduct[]> => {
     try {
       console.log('=== Basalam Products Request Debug ===');
       console.log('Vendor ID:', vendorId);
       console.log('Access Token:', credentials.access_token);
+      console.log('Page:', page);
       console.log('Full Request URL:', `https://mixinsalama.liara.run/products/my-basalam-products/${vendorId}`);
       console.log('Request Headers:', {
         Authorization: `Bearer ${credentials.access_token}`,
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       });
-      console.log('Request Params:', { basalam_page: 1 });
+      console.log('Request Params:', { basalam_page: page });
       
       const response = await api.get<BasalamProductsResponse>(`/products/my-basalam-products/${vendorId}`, {
         headers: {
@@ -37,7 +38,7 @@ export const basalamApi = {
           'Accept': 'application/json',
         },
         params: {
-          basalam_page: 1,
+          basalam_page: page,
         },
       });
 
@@ -194,6 +195,39 @@ export const basalamApi = {
     } catch (error) {
       console.error('Error creating Basalam product:', error)
       throw new Error('Failed to create Basalam product')
+    }
+  },
+
+  getProductsCount: async (credentials: BasalamCredentials, vendorId: number): Promise<number> => {
+    try {
+      // Get first page to determine total count
+      const response = await api.get<BasalamProductsResponse>(`/products/my-basalam-products/${vendorId}`, {
+        headers: {
+          Authorization: `Bearer ${credentials.access_token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        params: {
+          basalam_page: 1,
+        },
+      });
+
+      // Check if response has pagination info
+      if (response.data?.total_count) {
+        return response.data.total_count;
+      }
+      
+      // If no total count, estimate based on first page
+      const firstPageProducts = response.data?.data || [];
+      if (Array.isArray(firstPageProducts) && firstPageProducts.length === 100) {
+        // If we got exactly 100 products, there might be more pages
+        return 100; // This will be updated when we implement proper counting
+      }
+      
+      return Array.isArray(firstPageProducts) ? firstPageProducts.length : 0;
+    } catch (error) {
+      console.error('Error fetching Basalam products count:', error);
+      return 0;
     }
   }
 }
