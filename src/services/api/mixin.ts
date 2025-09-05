@@ -36,11 +36,12 @@ export const mixinApi = {
     }
   },
 
-  getProducts: async (credentials: MixinCredentials): Promise<MixinProduct[]> => {
+  getProducts: async (credentials: MixinCredentials, page: number = 1): Promise<MixinProduct[]> => {
     try {
       console.log('Fetching Mixin products with credentials:', {
         url: credentials.url,
-        token: credentials.access_token
+        token: credentials.access_token,
+        page
       });
 
       const response = await api.get('/products/my-mixin-products', {
@@ -49,7 +50,7 @@ export const mixinApi = {
         },
         params: {
           mixin_url: credentials.url,
-          mixin_page: 1,
+          mixin_page: page,
         },
       });
 
@@ -229,6 +230,39 @@ export const mixinApi = {
     } catch (error) {
       console.error('Error fetching Mixin product image:', error)
       return null
+    }
+  },
+
+  getProductsCount: async (credentials: MixinCredentials): Promise<number> => {
+    try {
+      // Get first page to determine total count
+      const response = await api.get('/products/my-mixin-products', {
+        headers: {
+          Authorization: `Bearer ${credentials.access_token}`,
+        },
+        params: {
+          mixin_url: credentials.url,
+          mixin_page: 1,
+        },
+      });
+
+      // Check if response has pagination info
+      if (response.data?.total_count) {
+        return response.data.total_count;
+      }
+      
+      // If no total count, estimate based on first page
+      const firstPageProducts = response.data?.result || response.data || [];
+      if (Array.isArray(firstPageProducts) && firstPageProducts.length === 100) {
+        // If we got exactly 100 products, there might be more pages
+        // We'll need to make additional requests to get accurate count
+        return 100; // This will be updated when we implement proper counting
+      }
+      
+      return Array.isArray(firstPageProducts) ? firstPageProducts.length : 0;
+    } catch (error) {
+      console.error('Error fetching Mixin products count:', error);
+      return 0;
     }
   },
 }

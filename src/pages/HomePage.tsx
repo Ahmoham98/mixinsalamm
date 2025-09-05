@@ -1034,16 +1034,72 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient, v
   );
 }
 
-function BulkMigrationPanel({ mixinProducts, basalamProducts, mixinCredentials, basalamCredentials, vendorId, queryClient }: {
-  mixinProducts: any[];
-  basalamProducts: any[];
+function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, queryClient }: {
   mixinCredentials: any;
   basalamCredentials: any;
   vendorId?: number;
   queryClient: any;
 }) {
-  // Eligibility: >=20 Mixin products
-  const isEligible = (mixinProducts?.length || 0) >= 20;
+  // Eligibility: >=20 Mixin products (check total count, not just current page)
+  const [allMixinProducts, setAllMixinProducts] = useState<any[]>([]);
+  const [allBasalamProducts, setAllBasalamProducts] = useState<any[]>([]);
+  const [isLoadingAllProducts, setIsLoadingAllProducts] = useState(false);
+  
+  // Load all products for bulk migration
+  const loadAllProducts = async () => {
+    if (!mixinCredentials || !basalamCredentials || !vendorId) return;
+    
+    setIsLoadingAllProducts(true);
+    try {
+      // Load all Mixin products
+      let mixinPage = 1;
+      let hasMoreMixin = true;
+      const allMixin = [];
+      
+      while (hasMoreMixin) {
+        const products = await mixinApi.getProducts(mixinCredentials, mixinPage);
+        if (products.length === 0) {
+          hasMoreMixin = false;
+        } else {
+          allMixin.push(...products);
+          mixinPage++;
+          // Safety check to prevent infinite loops
+          if (mixinPage > 50) break;
+        }
+      }
+      
+      // Load all Basalam products
+      let basalamPage = 1;
+      let hasMoreBasalam = true;
+      const allBasalam = [];
+      
+      while (hasMoreBasalam) {
+        const products = await basalamApi.getProducts(basalamCredentials, vendorId, basalamPage);
+        if (products.length === 0) {
+          hasMoreBasalam = false;
+        } else {
+          allBasalam.push(...products);
+          basalamPage++;
+          // Safety check to prevent infinite loops
+          if (basalamPage > 50) break;
+        }
+      }
+      
+      setAllMixinProducts(allMixin);
+      setAllBasalamProducts(allBasalam);
+    } catch (error) {
+      console.error('Error loading all products:', error);
+    } finally {
+      setIsLoadingAllProducts(false);
+    }
+  };
+
+  // Load all products when component mounts
+  useEffect(() => {
+    loadAllProducts();
+  }, [mixinCredentials, basalamCredentials, vendorId]);
+
+  const isEligible = (allMixinProducts?.length || 0) >= 20;
   const [showModal, setShowModal] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -1063,8 +1119,8 @@ function BulkMigrationPanel({ mixinProducts, basalamProducts, mixinCredentials, 
   });
 
   // Product analysis: find Mixin products not in Basalam (by name, case-insensitive)
-  const basalamNames = new Set((basalamProducts || []).map((p: any) => (p.title || p.name)?.trim().toLowerCase()));
-  const missingProducts = (mixinProducts || []).filter((mp: any) => !basalamNames.has(mp.name?.trim().toLowerCase()));
+  const basalamNames = new Set((allBasalamProducts || []).map((p: any) => (p.title || p.name)?.trim().toLowerCase()));
+  const missingProducts = (allMixinProducts || []).filter((mp: any) => !basalamNames.has(mp.name?.trim().toLowerCase()));
 
   const saveResults = (items: any[]) => {
     const merged = [...items, ...results].slice(0, 200);
@@ -1401,8 +1457,14 @@ function BulkMigrationPanel({ mixinProducts, basalamProducts, mixinCredentials, 
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-bold text-blue-700 mb-1">انتقال سریع محصولات میکسین به باسلام</h3>
-          <p className="text-blue-800 text-sm">شما واجد شرایط انتقال خودکار محصولات هستید. (۲۰ محصول یا بیشتر در میکسین)</p>
-          <p className="text-blue-800 text-xs">{missingProducts.length} محصول آماده انتقال!</p>
+          {isLoadingAllProducts ? (
+            <p className="text-blue-800 text-sm">در حال بارگذاری تمام محصولات...</p>
+          ) : (
+            <>
+              <p className="text-blue-800 text-sm">شما واجد شرایط انتقال خودکار محصولات هستید. ({allMixinProducts.length} محصول در میکسین)</p>
+              <p className="text-blue-800 text-xs">{missingProducts.length} محصول آماده انتقال!</p>
+            </>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -1595,6 +1657,12 @@ function HomePage() {
   const [productToCreateInBasalam, setProductToCreateInBasalam] = useState<MixinProduct | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [mixinTotalCount, setMixinTotalCount] = useState(0);
+  const [basalamTotalCount, setBasalamTotalCount] = useState(0);
+  const [, setIsLoadingCounts] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -1621,21 +1689,52 @@ function HomePage() {
     staleTime: 30000,
   })
 
+  // Load total counts for pagination
+  const loadTotalCounts = async () => {
+    if (!mixinCredentials || !basalamCredentials || !userData?.vendor?.id) return;
+    
+    setIsLoadingCounts(true);
+    try {
+      const [mixinCount, basalamCount] = await Promise.all([
+        mixinApi.getProductsCount(mixinCredentials),
+        basalamApi.getProductsCount(basalamCredentials, userData.vendor.id)
+      ]);
+      setMixinTotalCount(mixinCount);
+      setBasalamTotalCount(basalamCount);
+    } catch (error) {
+      console.error('Error loading total counts:', error);
+    } finally {
+      setIsLoadingCounts(false);
+    }
+  };
+
+  // Load counts when credentials are available
+  useEffect(() => {
+    if (mixinCredentials && basalamCredentials && userData?.vendor?.id) {
+      loadTotalCounts();
+    }
+  }, [mixinCredentials, basalamCredentials, userData?.vendor?.id]);
+
+  // Reset page when credentials change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [mixinCredentials, basalamCredentials]);
+
   const { data: mixinProducts, isLoading: isMixinLoading, error: mixinError } = useQuery({
-    queryKey: ['mixinProducts'],
-    queryFn: () => mixinApi.getProducts(mixinCredentials!),
+    queryKey: ['mixinProducts', currentPage],
+    queryFn: () => mixinApi.getProducts(mixinCredentials!, currentPage),
     enabled: !!mixinCredentials?.url && !!mixinCredentials?.access_token,
     retry: 1,
     staleTime: 30000,
   })
 
   const { data: basalamProducts, isLoading: isBasalamLoading, error: basalamError } = useQuery({
-    queryKey: ['basalamProducts', userData?.vendor?.id],
+    queryKey: ['basalamProducts', userData?.vendor?.id, currentPage],
     queryFn: async () => {
       if (!userData?.vendor?.id) {
         throw new Error('Vendor ID is required to fetch Basalam products');
       }
-      return basalamApi.getProducts(basalamCredentials!, userData.vendor.id);
+      return basalamApi.getProducts(basalamCredentials!, userData.vendor.id, currentPage);
     },
     enabled: !!userData?.vendor?.id && !!basalamCredentials?.access_token,
     retry: 1,
@@ -1785,6 +1884,108 @@ function HomePage() {
 
   const isLoading = isUserLoading || isMixinLoading || isBasalamLoading
 
+  // Calculate pagination info
+  const itemsPerPage = 100;
+  const totalPages = Math.max(
+    Math.ceil(mixinTotalCount / itemsPerPage),
+    Math.ceil(basalamTotalCount / itemsPerPage)
+  );
+
+  // Pagination component
+  const PaginationComponent = () => {
+    if (totalPages <= 1) return null;
+
+    const getVisiblePages = () => {
+      const delta = 2;
+      const range = [];
+      const rangeWithDots = [];
+
+      for (let i = Math.max(2, currentPage - delta); i <= Math.min(totalPages - 1, currentPage + delta); i++) {
+        range.push(i);
+      }
+
+      if (currentPage - delta > 2) {
+        rangeWithDots.push(1, '...');
+      } else {
+        rangeWithDots.push(1);
+      }
+
+      rangeWithDots.push(...range);
+
+      if (currentPage + delta < totalPages - 1) {
+        rangeWithDots.push('...', totalPages);
+      } else {
+        rangeWithDots.push(totalPages);
+      }
+
+      return rangeWithDots;
+    };
+
+    return (
+      <div className="bg-white/80 backdrop-blur-md rounded-lg p-4 mb-6 shadow-lg">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <h3 className="text-lg font-semibold text-gray-700">صفحه‌بندی محصولات</h3>
+            <div className="text-sm text-gray-600">
+              صفحه {currentPage} از {totalPages} • میکسین: {mixinTotalCount} محصول • باسلام: {basalamTotalCount} محصول
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPage(1)}
+              disabled={currentPage === 1}
+              className="px-3 py-1 text-sm border rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              اولین
+            </button>
+            
+            <button
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1 text-sm border rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              قبلی
+            </button>
+
+            {getVisiblePages().map((page, index) => (
+              <button
+                key={index}
+                onClick={() => typeof page === 'number' && setCurrentPage(page)}
+                disabled={typeof page !== 'number'}
+                className={`px-3 py-1 text-sm border rounded ${
+                  page === currentPage
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : typeof page === 'number'
+                    ? 'hover:bg-gray-50'
+                    : 'cursor-default'
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+
+            <button
+              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1 text-sm border rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              بعدی
+            </button>
+            
+            <button
+              onClick={() => setCurrentPage(totalPages)}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1 text-sm border rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              آخرین
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#5b9fdb]/10 to-[#ff6040]/10">
       <button
@@ -1865,6 +2066,9 @@ function HomePage() {
         </header>
 
         <main className="max-w-7xl mx-auto px-8 py-8">
+          {/* Pagination Component */}
+          <PaginationComponent />
+          
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div className="bg-white/80 backdrop-blur-md rounded-xl p-6 shadow-lg border border-gray-100 transform transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
               <div className="flex items-center gap-4">
@@ -2188,8 +2392,6 @@ function HomePage() {
           />
         )}
         <BulkMigrationPanel
-          mixinProducts={mixinProducts || []}
-          basalamProducts={basalamProducts || []}
           mixinCredentials={mixinCredentials}
           basalamCredentials={basalamCredentials}
           vendorId={userData?.vendor?.id}
