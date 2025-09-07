@@ -2160,7 +2160,7 @@ function HomePage() {
                 <div>
                   <p className="text-sm text-gray-600 mb-1">تعداد کل محصولات</p>
                   <h3 className="text-3xl font-bold bg-gradient-to-r from-[#5b9fdb] to-[#5b9fdb]/80 bg-clip-text text-transparent">
-                    {mixinProducts?.length || 0}
+                    {mixinTotalCount || 0}
                   </h3>
                 </div>
               </div>
