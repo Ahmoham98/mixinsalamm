@@ -695,8 +695,11 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient, v
           throw new Error(`خطا در دریافت دسته‌بندی‌ها: ${response.statusText}`);
         }
         const data = await response.json();
-        // Updated to use the correct response structure from your backend
-        return data.result || [];
+        // Transform the response structure to match UI expectations
+        return (data.result || []).map((cat: any) => ({
+          id: cat.cat_id.toString(),
+          name: cat.cat_title
+        }));
       } catch (err) {
         console.error("خطا در فراخوانی API دسته‌بندی باسلام:", err);
         throw err;
