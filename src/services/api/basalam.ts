@@ -1,4 +1,4 @@
-import { api, handleApiError } from './config'
+import { api, handleApiError, BASE_URL } from './config'
 import type { BasalamCredentials, BasalamProduct, BasalamUserData, BasalamProductsResponse } from '../../types'
 import { AxiosError } from 'axios'
 
@@ -23,7 +23,7 @@ export const basalamApi = {
       console.log('Vendor ID:', vendorId);
       console.log('Access Token:', credentials.access_token);
       console.log('Page:', page);
-      console.log('Full Request URL:', `https://mixinsalama.liara.run/products/my-basalam-products/${vendorId}`);
+      console.log('Full Request URL:', `${BASE_URL}/products/my-basalam-products/${vendorId}`);
       console.log('Request Headers:', {
         Authorization: `Bearer ${credentials.access_token}`,
         'Content-Type': 'application/json',
