@@ -143,9 +143,9 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
 
           if (fullProduct) {
             setEditedProduct({
-              name: fullProduct.name,
+              name: cleanHtmlText(fullProduct.name),
               price: fullProduct.price,
-              description: fullProduct.description || ''
+              description: cleanHtmlText(fullProduct.description || '')
             })
             console.log('Set edited product with description:', fullProduct.description);
           }
@@ -156,9 +156,9 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
 
           if (fullProduct) {
             setEditedProduct({
-              name: product.title,
+              name: cleanHtmlText(product.title),
               price: rialToToman(product.price),
-              description: fullProduct.description || ''
+              description: cleanHtmlText(fullProduct.description || '')
             })
             console.log('Set edited product with description:', fullProduct.description);
           }
@@ -450,7 +450,7 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
               <div className="relative w-full h-full flex items-center justify-center">
                 <img
                   src={productImage}
-                  alt={isMixinProduct(product) ? product.name : product.title}
+                  alt={cleanHtmlText(isMixinProduct(product) ? product.name : product.title)}
                   className="max-w-full max-h-[300px] object-contain rounded-lg shadow-lg"
                   onError={(e) => {
                     console.error('Error loading image:', e)
@@ -2183,7 +2183,7 @@ function HomePage() {
                           className="p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer border border-gray-100 text-right group"
                           dir="rtl"
                         >
-                          <h3 className="font-medium text-gray-800 group-hover:text-[#5b9fdb] transition-colors">{product.name}</h3>
+                          <h3 className="font-medium text-gray-800 group-hover:text-[#5b9fdb] transition-colors">{cleanHtmlText(product.name)}</h3>
                           <p className="text-gray-600 mt-1">قیمت: {product.price ? formatPrice(product.price) : 'قیمت نامشخص'} تومان</p>
                         </div>
                       ))
@@ -2222,7 +2222,7 @@ function HomePage() {
                           className="p-4 border border-gray-100 rounded-lg cursor-pointer hover:bg-blue-50 hover:border-blue-200 transition-all duration-200 text-right group"
                           dir="rtl"
                         >
-                          <h3 className="font-medium text-gray-800 group-hover:text-blue-600 transition-colors">{product.title}</h3>
+                          <h3 className="font-medium text-gray-800 group-hover:text-blue-600 transition-colors">{cleanHtmlText(product.title)}</h3>
                           <p className="text-gray-600 mt-1">قیمت: {product.price ? formatPrice(rialToToman(product.price)) : 'قیمت نامشخص'} تومان</p>
                         </div>
                       ))
@@ -2269,7 +2269,7 @@ function HomePage() {
                           className="p-4 border border-gray-100 rounded-lg cursor-pointer hover:bg-blue-50 hover:border-blue-200 transition-all duration-200 text-right group"
                           dir="rtl"
                         >
-                          <h3 className="font-medium text-gray-800 group-hover:text-blue-600 transition-colors">{product.name}</h3>
+                          <h3 className="font-medium text-gray-800 group-hover:text-blue-600 transition-colors">{cleanHtmlText(product.name)}</h3>
                           <p className="text-gray-600 mt-1">قیمت: {product.price ? formatPrice(product.price) : 'قیمت نامشخص'} تومان</p>
                         </div>
                       ))
@@ -2313,7 +2313,7 @@ function HomePage() {
                           className="p-4 border border-gray-100 rounded-lg cursor-pointer hover:bg-blue-50 hover:border-blue-200 transition-all duration-200 text-right group"
                           dir="rtl"
                         >
-                          <h3 className="font-medium text-gray-800 group-hover:text-blue-600 transition-colors">{product.title}</h3>
+                          <h3 className="font-medium text-gray-800 group-hover:text-blue-600 transition-colors">{cleanHtmlText(product.title)}</h3>
                           <p className="text-gray-600 mt-1">قیمت: {product.price ? formatPrice(rialToToman(product.price)) : 'قیمت نامشخص'} تومان</p>
                         </div>
                       ))
