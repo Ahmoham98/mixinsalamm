@@ -33,7 +33,34 @@ const generateUniqueSKU = (productName: string, vendorId?: number): string => {
   return `${nameBase}-${vendorPart}-${uniquePart}`;
 };
 
-interface ProductModalProps {
+// Utility function to clean HTML markup from text
+const cleanHtmlText = (htmlText: string): string => {
+  if (!htmlText) return '';
+  
+  // Create a temporary div element to parse HTML
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = htmlText;
+  
+  // Get text content and clean up
+  let cleanText = tempDiv.textContent || tempDiv.innerText || '';
+  
+  // Replace HTML entities with their actual characters
+  cleanText = cleanText
+    .replace(/&zwnj;/g, '') // Remove zero-width non-joiner
+    .replace(/&nbsp;/g, ' ') // Replace non-breaking space with regular space
+    .replace(/&amp;/g, '&') // Replace &amp; with &
+    .replace(/&lt;/g, '<') // Replace &lt; with <
+    .replace(/&gt;/g, '>') // Replace &gt; with >
+    .replace(/&quot;/g, '"') // Replace &quot; with "
+    .replace(/&#39;/g, "'") // Replace &#39; with '
+    .replace(/&apos;/g, "'") // Replace &apos; with '
+    .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+    .trim(); // Remove leading/trailing whitespace
+  
+  return cleanText;
+};
+
+ interface ProductModalProps {
   isOpen: boolean
   onClose: () => void
   product: MixinProduct | BasalamProduct | null
@@ -776,8 +803,8 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient, v
         photo: parseInt(imageId, 10), // Step 1: Use imageId as photo
         photos: [parseInt(imageId, 10)], // Step 2: Photos array
         stock: parseInt(stock, 10), // Step 8: Stock field
-        brief: mixinProduct?.description || "", // Step 9: Brief field
-        description: mixinProduct?.description || "", // Full description
+        brief: cleanHtmlText(mixinProduct?.description || ""), // Step 9: Brief field - cleaned HTML
+        description: cleanHtmlText(mixinProduct?.description || ""), // Full description - cleaned HTML
         sku: sku, // SKU field
         video: "", // Required field - empty for now
         keywords: "", // Required field - empty for now
@@ -1244,8 +1271,8 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
       photo: imageId,
       photos: [imageId],
       stock: Number(mixinProduct.stock || 1),
-      brief: mixinProduct.description || '',
-      description: mixinProduct.description || '',
+      brief: cleanHtmlText(mixinProduct.description || ''),
+      description: cleanHtmlText(mixinProduct.description || ''),
       sku,
       video: '',
       keywords: '',
