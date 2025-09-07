@@ -690,14 +690,13 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient, v
     queryFn: async () => {
       if (!productName.trim()) return [];
       try {
-        const response = await fetch(`https://categorydetection.basalam.com/category_detection/api_v1.0/predict/?title=${encodeURIComponent(productName)}`);
+        const response = await fetch(`${BASE_URL}/products/category-detection/?title=${encodeURIComponent(productName)}`);
         if (!response.ok) {
           throw new Error(`خطا در دریافت دسته‌بندی‌ها: ${response.statusText}`);
         }
         const data = await response.json();
-        // فرض بر این است که پاسخ شامل predictions و سپس categories است.
-        // اگر ساختار پاسخ API شما متفاوت است، این قسمت را تنظیم کنید.
-        return data.predictions?.[0]?.categories || [];
+        // Updated to use the correct response structure from your backend
+        return data.result || [];
       } catch (err) {
         console.error("خطا در فراخوانی API دسته‌بندی باسلام:", err);
         throw err;
