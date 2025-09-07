@@ -1096,16 +1096,21 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
       
       while (hasMoreMixin) {
         console.log(`BulkMigration: Loading Mixin page ${mixinPage}...`);
-        const products = await mixinApi.getProducts(mixinCredentials, mixinPage);
-        console.log(`BulkMigration: Mixin page ${mixinPage} returned ${products.length} products`);
-        
-        if (products.length === 0) {
-          hasMoreMixin = false;
-        } else {
-          allMixin.push(...products);
-          mixinPage++;
-          // Safety check to prevent infinite loops
-          if (mixinPage > 50) break;
+        try {
+          const products = await mixinApi.getProducts(mixinCredentials, mixinPage);
+          console.log(`BulkMigration: Mixin page ${mixinPage} returned ${products.length} products`);
+          
+          if (products.length === 0) {
+            hasMoreMixin = false;
+          } else {
+            allMixin.push(...products);
+            mixinPage++;
+            // Safety check to prevent infinite loops
+            if (mixinPage > 50) break;
+          }
+        } catch (error: any) {
+          console.log(`BulkMigration: Mixin page ${mixinPage} failed (likely no more pages):`, error.message);
+          hasMoreMixin = false; // Stop on error (likely 404 for non-existent page)
         }
       }
       
@@ -1116,16 +1121,21 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
       
       while (hasMoreBasalam) {
         console.log(`BulkMigration: Loading Basalam page ${basalamPage}...`);
-        const products = await basalamApi.getProducts(basalamCredentials, vendorId, basalamPage);
-        console.log(`BulkMigration: Basalam page ${basalamPage} returned ${products.length} products`);
-        
-        if (products.length === 0) {
-          hasMoreBasalam = false;
-        } else {
-          allBasalam.push(...products);
-          basalamPage++;
-          // Safety check to prevent infinite loops
-          if (basalamPage > 50) break;
+        try {
+          const products = await basalamApi.getProducts(basalamCredentials, vendorId, basalamPage);
+          console.log(`BulkMigration: Basalam page ${basalamPage} returned ${products.length} products`);
+          
+          if (products.length === 0) {
+            hasMoreBasalam = false;
+          } else {
+            allBasalam.push(...products);
+            basalamPage++;
+            // Safety check to prevent infinite loops
+            if (basalamPage > 50) break;
+          }
+        } catch (error: any) {
+          console.log(`BulkMigration: Basalam page ${basalamPage} failed (likely no more pages):`, error.message);
+          hasMoreBasalam = false; // Stop on error (likely 404 for non-existent page)
         }
       }
       
@@ -1157,7 +1167,7 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
     loadAllProducts();
   }, [mixinCredentials, basalamCredentials, vendorId]);
 
-  const isEligible = (allMixinProducts?.length || 0) >= 5; // Temporarily lowered for testing
+  const isEligible = (allMixinProducts?.length || 0) >= 20;
   
   // Debug logging
   console.log('BulkMigrationPanel Debug:', {
