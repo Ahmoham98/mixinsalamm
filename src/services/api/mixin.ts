@@ -233,6 +233,29 @@ export const mixinApi = {
     }
   },
 
+  getProductImages: async (credentials: MixinCredentials, productId: number): Promise<string[]> => {
+    try {
+      const response = await api.get('/images/my-mixin_image', {
+        headers: {
+          Authorization: `Bearer ${credentials.access_token}`,
+        },
+        params: {
+          url: credentials.url,
+          mixin_page: 1,
+          mixin_product_id: productId
+        },
+      });
+      if (response.data?.result && Array.isArray(response.data.result)) {
+        // Each result should have an 'image' property
+        return response.data.result.map((img: any) => img.image).filter(Boolean);
+      }
+      return [];
+    } catch (error) {
+      console.error('Error fetching all Mixin product images:', error);
+      return [];
+    }
+  },
+
   getProductsCount: async (credentials: MixinCredentials): Promise<number> => {
     try {
       // Get first page to determine total count

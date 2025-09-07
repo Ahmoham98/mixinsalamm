@@ -1310,8 +1310,27 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
     const categoryId = await fetchCategoryId(mixinProduct.name);
     if (!categoryId) return { ok: false, message: 'Unable to detect category' };
 
-    const imageId = await uploadImageAndGetId(mixinProduct);
-    if (!imageId) return { ok: false, message: 'Image upload failed' };
+    // --- New logic for multiple images ---
+    let imageIds: number[] = [];
+    try {
+      let imageUrls: string[] = [];
+      if (mixinProduct?.id && mixinCredentials) {
+        imageUrls = await mixinApi.getProductImages(mixinCredentials, mixinProduct.id);
+      } else if (mixinProduct?.imageUrl) {
+        imageUrls = [mixinProduct.imageUrl];
+      }
+      if (!imageUrls.length) return { ok: false, message: 'No images found for upload' };
+      for (const url of imageUrls) {
+        const up = await basalamApi.uploadImage(basalamCredentials, url);
+        if (up?.id) imageIds.push(Number(up.id));
+      }
+    } catch (err) {
+      return { ok: false, message: 'Image upload failed' };
+    }
+    if (!imageIds.length) return { ok: false, message: 'Image upload failed' };
+    const mainImageId = imageIds[0];
+    const otherImageIds = imageIds.length > 1 ? imageIds.slice(1) : [];
+    // --- End new logic ---
 
     const sku = generateUniqueSKU(mixinProduct.name, vendorId);
 
@@ -1323,8 +1342,8 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
       preparation_days: 3,
       weight: Number(mixinProduct.weight || 500),
       package_weight: Number(mixinProduct.weight ? Number(mixinProduct.weight) + 50 : 550),
-      photo: imageId,
-      photos: [imageId],
+      photo: mainImageId,
+      photos: otherImageIds,
       stock: Number(mixinProduct.stock || 1),
       brief: cleanHtmlText(mixinProduct.description || ''),
       description: cleanHtmlText(mixinProduct.description || ''),
