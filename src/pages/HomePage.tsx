@@ -1077,8 +1077,16 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
   
   // Load all products for bulk migration
   const loadAllProducts = async () => {
-    if (!mixinCredentials || !basalamCredentials || !vendorId) return;
+    if (!mixinCredentials || !basalamCredentials || !vendorId) {
+      console.log('BulkMigration: Missing credentials or vendorId', {
+        mixinCredentials: !!mixinCredentials,
+        basalamCredentials: !!basalamCredentials,
+        vendorId
+      });
+      return;
+    }
     
+    console.log('BulkMigration: Starting to load all products...');
     setIsLoadingAllProducts(true);
     try {
       // Load all Mixin products
@@ -1087,7 +1095,10 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
       const allMixin = [];
       
       while (hasMoreMixin) {
+        console.log(`BulkMigration: Loading Mixin page ${mixinPage}...`);
         const products = await mixinApi.getProducts(mixinCredentials, mixinPage);
+        console.log(`BulkMigration: Mixin page ${mixinPage} returned ${products.length} products`);
+        
         if (products.length === 0) {
           hasMoreMixin = false;
         } else {
@@ -1104,7 +1115,10 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
       const allBasalam = [];
       
       while (hasMoreBasalam) {
+        console.log(`BulkMigration: Loading Basalam page ${basalamPage}...`);
         const products = await basalamApi.getProducts(basalamCredentials, vendorId, basalamPage);
+        console.log(`BulkMigration: Basalam page ${basalamPage} returned ${products.length} products`);
+        
         if (products.length === 0) {
           hasMoreBasalam = false;
         } else {
@@ -1124,8 +1138,15 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
       
       setAllMixinProducts(allMixin);
       setAllBasalamProducts(allBasalam);
-    } catch (error) {
-      console.error('Error loading all products:', error);
+    } catch (error: any) {
+      console.error('BulkMigration: Error loading all products:', error);
+      console.error('BulkMigration: Error details:', {
+        message: error?.message,
+        stack: error?.stack,
+        mixinCredentials: !!mixinCredentials,
+        basalamCredentials: !!basalamCredentials,
+        vendorId
+      });
     } finally {
       setIsLoadingAllProducts(false);
     }
