@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '../store/authStore'
 import { mixinApi } from '../services/api/mixin'
 import { basalamApi } from '../services/api/basalam'
+import { BASE_URL } from '../services/api/config'
 import { X, ChevronDown, ChevronUp, LogOut, Loader2, Package, Layers, Link2, Unlink, Menu, Home, Settings, BarChart2, ChevronRight, ChevronLeft } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { MixinProduct, BasalamProduct } from '../types'
@@ -60,7 +61,7 @@ const cleanHtmlText = (htmlText: string): string => {
   return cleanText;
 };
 
- interface ProductModalProps {
+interface ProductModalProps {
   isOpen: boolean
   onClose: () => void
   product: MixinProduct | BasalamProduct | null
@@ -1225,7 +1226,7 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
 
   const fetchCategoryId = async (title: string): Promise<number | null> => {
     try {
-      const resp = await fetch(`https://categorydetection.basalam.com/category_detection/api_v1.0/predict/?title=${encodeURIComponent(title)}`);
+      const resp = await fetch(`${BASE_URL}/products/category-detection/?title=${encodeURIComponent(title)}`);
       const data = await resp.json();
       console.log('Category detection response:', data);
       const id = data?.result?.[0]?.cat_id;
