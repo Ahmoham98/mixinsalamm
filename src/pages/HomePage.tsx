@@ -1115,6 +1115,13 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
         }
       }
       
+      console.log('Loaded products for bulk migration:', {
+        mixinProducts: allMixin.length,
+        basalamProducts: allBasalam.length,
+        mixinPages: mixinPage - 1,
+        basalamPages: basalamPage - 1
+      });
+      
       setAllMixinProducts(allMixin);
       setAllBasalamProducts(allBasalam);
     } catch (error) {
@@ -1129,7 +1136,18 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
     loadAllProducts();
   }, [mixinCredentials, basalamCredentials, vendorId]);
 
-  const isEligible = (allMixinProducts?.length || 0) >= 20;
+  const isEligible = (allMixinProducts?.length || 0) >= 5; // Temporarily lowered for testing
+  
+  // Debug logging
+  console.log('BulkMigrationPanel Debug:', {
+    mixinProductsCount: allMixinProducts?.length || 0,
+    basalamProductsCount: allBasalamProducts?.length || 0,
+    isEligible,
+    isLoadingAllProducts,
+    mixinCredentials: !!mixinCredentials,
+    basalamCredentials: !!basalamCredentials,
+    vendorId
+  });
   const [showModal, setShowModal] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
