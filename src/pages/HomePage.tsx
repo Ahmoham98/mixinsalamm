@@ -1227,9 +1227,12 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
     try {
       const resp = await fetch(`https://categorydetection.basalam.com/category_detection/api_v1.0/predict/?title=${encodeURIComponent(title)}`);
       const data = await resp.json();
-      const id = data?.predictions?.[0]?.categories?.[0]?.id;
+      console.log('Category detection response:', data);
+      const id = data?.result?.[0]?.cat_id;
+      console.log('Extracted category ID:', id);
       return id ? parseInt(id, 10) : null;
-    } catch {
+    } catch (error) {
+      console.error('Category detection error:', error);
       return null;
     }
   };
