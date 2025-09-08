@@ -113,6 +113,27 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
   const { mixinCredentials, basalamCredentials, settings } = useAuthStore()
   const queryClient = useQueryClient()
 
+  // --- Multi-image state for Mixin products ---
+  const [mixinProductImages, setMixinProductImages] = useState<string[]>([]);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  // Fetch all images for Mixin product on open
+  useEffect(() => {
+    const fetchImages = async () => {
+      if (isOpen && product && type === 'mixin' && isMixinProduct(product) && mixinCredentials) {
+        const images = await mixinApi.getProductImages(mixinCredentials, product.id);
+        setMixinProductImages(images);
+        setCurrentImageIndex(0);
+        setProductImage(images[0] || null);
+      } else if (isOpen && product && type === 'basalam' && isBasalamProduct(product)) {
+        setProductImage(product.photo.md);
+        setMixinProductImages([]);
+        setCurrentImageIndex(0);
+      }
+    };
+    fetchImages();
+  }, [isOpen, product, type, mixinCredentials]);
+
   useEffect(() => {
     const fetchProductImage = async () => {
       if (isOpen && product) {
@@ -430,6 +451,18 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
       window.open('https://basalam.com/', '_blank');
     }
   }
+
+  // --- Multi-image navigation handlers ---
+  const handlePrevImage = () => {
+    setCurrentImageIndex((prev) =>
+      mixinProductImages.length > 0 ? (prev - 1 + mixinProductImages.length) % mixinProductImages.length : 0
+    );
+  };
+  const handleNextImage = () => {
+    setCurrentImageIndex((prev) =>
+      mixinProductImages.length > 0 ? (prev + 1) % mixinProductImages.length : 0
+    );
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
