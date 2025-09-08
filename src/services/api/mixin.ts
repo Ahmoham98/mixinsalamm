@@ -1,6 +1,5 @@
-import { api, handleApiError } from './config'
+import { api } from './config'
 import type { MixinCredentials, MixinProduct, MixinValidationResponse } from '../../types'
-import { AxiosError } from 'axios'
 
 export const mixinApi = {
   validateCredentials: async (url: string, token: string): Promise<MixinValidationResponse> => {
@@ -246,8 +245,10 @@ export const mixinApi = {
         },
       });
       if (response.data?.result && Array.isArray(response.data.result)) {
-        // Each result should have an 'image' property
-        return response.data.result.map((img: any) => img.image).filter(Boolean);
+        // Ensure the default image (main) comes first
+        const items = [...response.data.result];
+        items.sort((a: any, b: any) => ((b?.default ? 1 : 0) - (a?.default ? 1 : 0)));
+        return items.map((img: any) => img.image).filter(Boolean);
       }
       return [];
     } catch (error) {
