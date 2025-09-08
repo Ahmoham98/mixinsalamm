@@ -50,6 +50,7 @@ export interface BasalamProduct {
   price: number;
   description?: string;
   photo: BasalamPhoto;
+  photos?: BasalamPhoto[];
   status: BasalamStatus;
   inventory: number;
   primary_price: number | null;

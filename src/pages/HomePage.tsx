@@ -454,12 +454,8 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
 
   const handleBasalamAction = () => {
     if (type === 'mixin' && isMixinProduct(product) && showBasalamButton) {
-      // Ensure the Mixin product object passed to the creation modal includes its image URL
-      const mixinProductWithImage = {
-        ...product,
-        imageUrl: productImage || undefined // Use the already fetched or available productImage URL
-      };
-      onOpenCreateBasalamModal(mixinProductWithImage);
+      // Always pass the full product object (with id) so the create modal can fetch all images
+      onOpenCreateBasalamModal(product);
       onClose();
     } else {
       window.open('https://basalam.com/', '_blank');
