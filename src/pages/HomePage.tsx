@@ -490,7 +490,7 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
 
         <div className="mb-6">
           <div className="w-full min-h-[200px] bg-gray-50 rounded-lg overflow-hidden flex items-center justify-center p-4">
-            {type === 'mixin' && mixinProductImages.length > 0 ? (
+            {mixinProductImages.length > 0 ? (
               <div className="flex flex-col items-center w-full">
                 <img
                   src={mixinProductImages[currentImageIndex]}
@@ -508,7 +508,7 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
                   </div>
                 )}
               </div>
-            ) : type === 'basalam' && productImage ? (
+            ) : productImage ? (
               <div className="relative w-full h-full flex items-center justify-center">
                 <img
                   src={productImage}
