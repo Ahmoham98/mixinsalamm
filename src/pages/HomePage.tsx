@@ -718,7 +718,8 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient, v
   const [packageWeight, setPackageWeight] = useState("");
   const [stock, setStock] = useState("1"); // Default to 1
   const [sku, setSku] = useState(""); // SKU field
-  const [imageId, setImageId] = useState(""); // Will store the Basalam image ID after upload
+  const [mixinImageUrls, setMixinImageUrls] = useState<string[]>([]); // All mixin image URLs
+  const [uploadedImageIds, setUploadedImageIds] = useState<number[]>([]); // All uploaded Basalam image IDs
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isImageUploading, setIsImageUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -736,7 +737,8 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient, v
       setStock("1"); // Default stock
       setSku(mixinProduct?.name ? generateUniqueSKU(mixinProduct.name, vendorId) : ""); // Auto-generate unique SKU
       setSelectedCategory(""); // Clear selected category
-      setImageId(""); // Clear image ID
+      setMixinImageUrls([]);
+      setUploadedImageIds([]);
       setError(null);
       setMessage(null);
       setIsSubmitting(false);
@@ -778,9 +780,9 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient, v
     }
   }, [categorySuggestions, selectedCategory]);
 
-  // Handle image upload logic when modal opens and mixinProduct has an image
+  // Handle image fetch and upload logic when modal opens
   useEffect(() => {
-    const uploadImageToBasalam = async () => {
+    const fetchAndUploadAllImages = async () => {
       setError(null);
       setMessage(null);
       setIsImageUploading(true);
@@ -788,27 +790,32 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient, v
         if (!basalamCredentials) {
           throw new Error('گواهی باسلام برای آپلود تصویر یافت نشد.');
         }
-        // اگر mixinProduct.imageUrl مستقیماً در آبجکت محصول موجود است، از آن استفاده کنید.
-        // در غیر این صورت، آن را از API میکسین دریافت کنید.
-        let imageUrlToUpload = mixinProduct?.imageUrl;
-
-        if (!imageUrlToUpload && mixinProduct?.id && mixinCredentials) {
-          imageUrlToUpload = await mixinApi.getProductImage(mixinCredentials, mixinProduct.id) || undefined;
+        // جمع‌آوری همه URL های تصاویر میکسین
+        let urls: string[] = [];
+        if (mixinProduct?.id && mixinCredentials) {
+          urls = await mixinApi.getProductImages(mixinCredentials, mixinProduct.id);
+        } else if (mixinProduct?.imageUrl) {
+          urls = [mixinProduct.imageUrl];
         }
 
-        if (!imageUrlToUpload) {
-          throw new Error('تصویر محصول میکسین برای آپلود یافت نشد. لطفا مطمئن شوید که محصول میکسین دارای تصویر است.');
+        if (!urls || urls.length === 0) {
+          throw new Error('هیچ تصویری برای محصول میکسین یافت نشد.');
         }
 
-        // ***** اینجا نقطه حیاتی است: basalamApi.uploadImage باید URL را بپذیرد یا شما باید آن را پیش‌پردازش کنید. *****
-        // فرض می‌کنیم basalamApi.uploadImage می‌تواند یک URL را دریافت کند.
-        // اگر basalamApi.uploadImage نیاز به فایل باینری دارد، باید یک بک‌اند واسط
-        // ایجاد کنید که URL را دریافت کند، تصویر را دانلود کند و سپس به باسلام آپلود کند.
-        console.log("در حال تلاش برای آپلود تصویر به باسلام از URL:", imageUrlToUpload);
-        const response = await basalamApi.uploadImage(basalamCredentials, imageUrlToUpload);
+        setMixinImageUrls(urls);
 
-        setImageId(response.id.toString()); // Use the actual id from the response
-        setMessage("عکس با موفقیت آپلود شد.");
+        // آپلود همه تصاویر به باسلام (به ترتیب)
+        const ids: number[] = [];
+        for (const u of urls) {
+          console.log('Uploading image to Basalam via sync-image:', u);
+          const up = await basalamApi.uploadImage(basalamCredentials, u);
+          if (up?.id) ids.push(Number(up.id));
+        }
+        if (ids.length === 0) {
+          throw new Error('آپلود تصاویر به باسلام ناموفق بود.');
+        }
+        setUploadedImageIds(ids);
+        setMessage("همه تصاویر با موفقیت آپلود شدند.");
       } catch (err: any) {
         console.error("خطا در آپلود عکس به باسلام:", err);
         setError(`خطا در آپلود عکس: ${err.message || 'خطای ناشناخته'}`);
@@ -818,7 +825,7 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient, v
     };
 
     if (open && mixinProduct && (mixinProduct.imageUrl || mixinProduct.id) && basalamCredentials && mixinCredentials) {
-      uploadImageToBasalam();
+      fetchAndUploadAllImages();
     } else if (open && mixinProduct && (!mixinProduct.imageUrl && !mixinProduct.id)) {
       // اگر محصول میکسین نه URL تصویر دارد و نه ID برای دریافت، می‌توانیم پیامی نمایش دهیم
       setError("محصول میکسین تصویر قابل دسترسی برای آپلود ندارد.");
@@ -841,7 +848,7 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient, v
     if (!packageWeight) missingFields.push("وزن بسته‌بندی");
     if (!stock) missingFields.push("موجودی");
     if (!sku) missingFields.push("کد محصول");
-    if (!imageId) missingFields.push("تصویر محصول");
+    if (!uploadedImageIds.length) missingFields.push("تصاویر محصول");
 
     if (missingFields.length > 0) {
       setError(`لطفاً فیلدهای زیر را پر کنید: ${missingFields.join(', ')}`);
@@ -864,8 +871,8 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient, v
         preparation_days: parseInt(preparationDays, 10), // Step 5: Fixed field name
         weight: parseInt(weight, 10),
         package_weight: parseInt(packageWeight, 10), // Step 6: Fixed field name
-        photo: parseInt(imageId, 10), // Step 1: Use imageId as photo
-        photos: [parseInt(imageId, 10)], // Step 2: Photos array
+        photo: uploadedImageIds[0], // اولین تصویر به عنوان عکس اصلی
+        photos: uploadedImageIds.length > 1 ? uploadedImageIds.slice(1) : [], // سایر تصاویر
         stock: parseInt(stock, 10), // Step 8: Stock field
         brief: cleanHtmlText(mixinProduct?.description || ""), // Step 9: Brief field - cleaned HTML
         description: cleanHtmlText(mixinProduct?.description || ""), // Full description - cleaned HTML
@@ -949,13 +956,23 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient, v
                 <Loader2 className="animate-spin h-8 w-8 text-gray-500" />
                 <span className="sr-only">در حال بارگذاری عکس...</span>
               </div>
-            ) : mixinProduct?.imageUrl ? (
-              <img
-                src={mixinProduct.imageUrl}
-                alt="تصویر محصول"
-                className="w-32 h-32 object-cover rounded-md shadow-sm border border-gray-200"
-                onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = "https://placehold.co/150x150/CCCCCC/666666?text=No+Image"; }}
-              />
+            ) : (mixinImageUrls && mixinImageUrls.length > 0) ? (
+              <div className="grid grid-cols-2 gap-2 max-w-[180px]">
+                {mixinImageUrls.slice(0, 4).map((u, idx) => (
+                  <img
+                    key={idx}
+                    src={u}
+                    alt={cleanHtmlText(mixinProduct?.name || 'تصویر محصول')}
+                    className="w-20 h-20 object-cover rounded-md shadow-sm border border-gray-200"
+                    onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = "https://placehold.co/80x80/CCCCCC/666666?text=No+Image"; }}
+                  />
+                ))}
+                {mixinImageUrls.length > 4 && (
+                  <div className="w-20 h-20 flex items-center justify-center text-xs text-gray-600 bg-gray-100 rounded-md border border-gray-200">
+                    +{mixinImageUrls.length - 4}
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="flex items-center justify-center w-32 h-32 bg-gray-200 text-gray-500 rounded-md border border-gray-300">
                 بدون تصویر
@@ -1350,20 +1367,7 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
     }
   };
 
-  const uploadImageAndGetId = async (mixinProduct: any): Promise<number | null> => {
-    try {
-      if (!mixinCredentials || !basalamCredentials) return null;
-      let imageUrlToUpload: string | undefined = (mixinProduct as any).imageUrl;
-      if (!imageUrlToUpload && mixinProduct?.id) {
-        imageUrlToUpload = await mixinApi.getProductImage(mixinCredentials, mixinProduct.id) || undefined;
-      }
-      if (!imageUrlToUpload) return null;
-      const up = await basalamApi.uploadImage(basalamCredentials, imageUrlToUpload);
-      return up?.id ?? null;
-    } catch {
-      return null;
-    }
-  };
+  
 
   const createBasalamProduct = async (mixinProduct: any): Promise<{ ok: boolean; message: string; product?: any }> => {
     if (!basalamCredentials || !vendorId) return { ok: false, message: 'Missing Basalam credentials or vendorId' };
