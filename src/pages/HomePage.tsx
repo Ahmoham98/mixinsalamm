@@ -126,9 +126,23 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
         setCurrentImageIndex(0);
         setProductImage(images[0] || null);
       } else if (isOpen && product && type === 'basalam' && isBasalamProduct(product)) {
-        setProductImage(product.photo.md);
-        setMixinProductImages([]);
+        // Collect all image URLs for Basalam product
+        const images: string[] = [];
+        if (product.photo && (product.photo.md || product.photo.original)) {
+          images.push(product.photo.md || product.photo.original);
+        }
+        if (Array.isArray(product.photos)) {
+          for (const p of product.photos) {
+            if (p && (p.md || p.original)) {
+              const url = p.md || p.original;
+              // Avoid duplicate of main photo
+              if (!images.includes(url)) images.push(url);
+            }
+          }
+        }
+        setMixinProductImages(images);
         setCurrentImageIndex(0);
+        setProductImage(images[0] || null);
       }
     };
     fetchImages();
@@ -480,7 +494,25 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
 
         <div className="mb-6">
           <div className="w-full min-h-[200px] bg-gray-50 rounded-lg overflow-hidden flex items-center justify-center p-4">
-            {productImage ? (
+            {type === 'mixin' && mixinProductImages.length > 0 ? (
+              <div className="flex flex-col items-center w-full">
+                <img
+                  src={mixinProductImages[currentImageIndex]}
+                  alt={cleanHtmlText(isMixinProduct(product) ? product.name : product.title)}
+                  className="max-w-full max-h-[300px] object-contain rounded-lg shadow-lg"
+                  onError={(e) => {
+                    console.error('Error loading image:', e)
+                  }}
+                />
+                {mixinProductImages.length > 1 && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <button onClick={handlePrevImage} className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300">قبلی</button>
+                    <span className="text-sm text-gray-600">{currentImageIndex + 1} / {mixinProductImages.length}</span>
+                    <button onClick={handleNextImage} className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300">بعدی</button>
+                  </div>
+                )}
+              </div>
+            ) : type === 'basalam' && productImage ? (
               <div className="relative w-full h-full flex items-center justify-center">
                 <img
                   src={productImage}
