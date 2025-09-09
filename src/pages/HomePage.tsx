@@ -1916,7 +1916,8 @@ function HomePage() {
           const items = await basalamApi.getProducts(basalamCredentials, userData.vendor.id, p);
           if (!items || items.length === 0) break;
           basalamAll.push(...items);
-          if (items.length < 100) break;
+          // Do not short-circuit by count; Basalam page size is not 100.
+          // We rely on empty next page or 404 to stop the loop.
         } catch (e: any) {
           if (e?.response?.status === 404) break;
           throw e;
