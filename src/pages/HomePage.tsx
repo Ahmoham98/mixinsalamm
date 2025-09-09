@@ -931,6 +931,7 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient, v
           queryClient.refetchQueries({ queryKey: ['basalamProducts'] }),
           queryClient.refetchQueries({ queryKey: ['mixinProducts'] }),
         ]);
+        // Global lists will refresh via effect on query data changes
       } catch {}
 
       setTimeout(onClose, 2000); // Close the modal after a short delay
@@ -1883,6 +1884,53 @@ function HomePage() {
   const [mixinTotalCount, setMixinTotalCount] = useState(0);
   const [basalamTotalCount, setBasalamTotalCount] = useState(0);
   const [, setIsLoadingCounts] = useState(false);
+  // Global full lists for cross-page comparison
+  const [globalMixinProducts, setGlobalMixinProducts] = useState<MixinProduct[]>([]);
+  const [globalBasalamProducts, setGlobalBasalamProducts] = useState<BasalamProduct[]>([]);
+  const [isLoadingGlobalLists, setIsLoadingGlobalLists] = useState(false);
+
+  // Load all products across all pages for comparison
+  const loadAllProductsForComparison = async () => {
+    if (!mixinCredentials || !basalamCredentials || !userData?.vendor?.id) return;
+    setIsLoadingGlobalLists(true);
+    try {
+      // Fetch all Mixin pages
+      const mixinAll: MixinProduct[] = [];
+      for (let p = 1; p <= 100; p += 1) {
+        try {
+          const items = await mixinApi.getProducts(mixinCredentials, p);
+          if (!items || items.length === 0) break;
+          mixinAll.push(...items);
+          if (items.length < 100) break;
+        } catch (e: any) {
+          // Stop on 404 (no more pages)
+          if (e?.response?.status === 404) break;
+          throw e;
+        }
+      }
+
+      // Fetch all Basalam pages
+      const basalamAll: BasalamProduct[] = [];
+      for (let p = 1; p <= 100; p += 1) {
+        try {
+          const items = await basalamApi.getProducts(basalamCredentials, userData.vendor.id, p);
+          if (!items || items.length === 0) break;
+          basalamAll.push(...items);
+          if (items.length < 100) break;
+        } catch (e: any) {
+          if (e?.response?.status === 404) break;
+          throw e;
+        }
+      }
+
+      setGlobalMixinProducts(mixinAll);
+      setGlobalBasalamProducts(basalamAll);
+    } catch (error) {
+      console.warn('Failed to load all products for comparison:', error);
+    } finally {
+      setIsLoadingGlobalLists(false);
+    }
+  };
 
   // No-op here; we refresh inline where needed to avoid hoisting issues
 
@@ -1934,6 +1982,8 @@ function HomePage() {
   useEffect(() => {
     if (mixinCredentials && basalamCredentials && userData?.vendor?.id) {
       loadTotalCounts();
+      // Also load global lists in background for cross-page comparison
+      loadAllProductsForComparison();
     }
   }, [mixinCredentials, basalamCredentials, userData?.vendor?.id]);
 
@@ -1978,7 +2028,11 @@ function HomePage() {
   }, [mixinProducts, basalamProducts, userData, mixinCredentials, basalamCredentials, mixinError, basalamError, isMixinLoading, isBasalamLoading, isUserLoading]);
 
   const getCommonProducts = () => {
-    if (!mixinProducts || !basalamProducts) {
+    // Prefer full global lists when available; fall back to current page
+    const mixinSource = (globalMixinProducts && globalMixinProducts.length > 0) ? globalMixinProducts : (Array.isArray(mixinProducts) ? mixinProducts : (mixinProducts as any)?.data || []);
+    const basalamSource = (globalBasalamProducts && globalBasalamProducts.length > 0) ? globalBasalamProducts : (Array.isArray(basalamProducts) ? basalamProducts : (basalamProducts as any)?.data || []);
+
+    if (!mixinSource || !basalamSource) {
       return {
         commonMixinProducts: [],
         commonBasalamProducts: [],
@@ -1987,8 +2041,8 @@ function HomePage() {
       }
     }
 
-    const mixinProductsArray = Array.isArray(mixinProducts) ? mixinProducts : (mixinProducts as any).data || [];
-    const basalamProductsArray = Array.isArray(basalamProducts) ? basalamProducts : (basalamProducts as any).data || [];
+    const mixinProductsArray = mixinSource;
+    const basalamProductsArray = basalamSource;
 
     console.log('Processing Mixin Products:', mixinProductsArray);
     console.log('Processing Basalam Products:', basalamProductsArray);
