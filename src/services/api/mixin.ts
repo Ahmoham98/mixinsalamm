@@ -259,32 +259,46 @@ export const mixinApi = {
 
   getProductsCount: async (credentials: MixinCredentials): Promise<number> => {
     try {
-      // Get first page to determine total count
-      const response = await api.get('/products/my-mixin-products', {
-        headers: {
-          Authorization: `Bearer ${credentials.access_token}`,
-        },
-        params: {
-          mixin_url: credentials.url,
-          mixin_page: 1,
-        },
-      });
+      let page = 1;
+      let total = 0;
+      // Loop through pages until no results or backend signals end (404 or empty)
+      // Safety cap to avoid infinite loops
+      const maxPages = 100;
+      while (page <= maxPages) {
+        const response = await api.get('/products/my-mixin-products', {
+          headers: {
+            Authorization: `Bearer ${credentials.access_token}`,
+          },
+          params: {
+            mixin_url: credentials.url,
+            mixin_page: page,
+          },
+        });
 
-      // Check if response has pagination info
-      if (response.data?.total_count) {
-        return response.data.total_count;
+        const items = (response.data?.result && Array.isArray(response.data.result))
+          ? response.data.result
+          : (Array.isArray(response.data?.data) ? response.data.data : (Array.isArray(response.data) ? response.data : []));
+
+        if (!items || items.length === 0) {
+          break;
+        }
+        total += items.length;
+
+        // If pagination metadata exists, use it to exit early
+        const totalPages = Number(response.data?.total_pages || response.data?.total_page);
+        const currentPage = Number(response.data?.current_page || page);
+        if (totalPages && currentPage >= totalPages) {
+          break;
+        }
+
+        page += 1;
       }
-      
-      // If no total count, estimate based on first page
-      const firstPageProducts = response.data?.result || response.data || [];
-      if (Array.isArray(firstPageProducts) && firstPageProducts.length === 100) {
-        // If we got exactly 100 products, there might be more pages
-        // We'll need to make additional requests to get accurate count
-        return 100; // This will be updated when we implement proper counting
+      return total;
+    } catch (error: any) {
+      // If we hit a 404 after finishing pages, return accumulated count
+      if (error?.response?.status === 404) {
+        return 0; // caller can trigger a recount later; avoid throwing
       }
-      
-      return Array.isArray(firstPageProducts) ? firstPageProducts.length : 0;
-    } catch (error) {
       console.error('Error fetching Mixin products count:', error);
       return 0;
     }

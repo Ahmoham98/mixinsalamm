@@ -200,32 +200,39 @@ export const basalamApi = {
 
   getProductsCount: async (credentials: BasalamCredentials, vendorId: number): Promise<number> => {
     try {
-      // Get first page to determine total count
-      const response = await api.get<BasalamProductsResponse>(`/products/my-basalam-products/${vendorId}`, {
-        headers: {
-          Authorization: `Bearer ${credentials.access_token}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        params: {
-          basalam_page: 1,
-        },
-      });
+      let page = 1;
+      let total = 0;
+      const maxPages = 100;
+      while (page <= maxPages) {
+        const response = await api.get<BasalamProductsResponse>(`/products/my-basalam-products/${vendorId}`, {
+          headers: {
+            Authorization: `Bearer ${credentials.access_token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          params: {
+            basalam_page: page,
+          },
+        });
 
-      // Check if response has pagination info
-      if (response.data?.total_count) {
-        return response.data.total_count;
+        const items = Array.isArray(response.data?.data) ? response.data.data : [];
+        if (!items || items.length === 0) {
+          break;
+        }
+        total += items.length;
+
+        const totalPages = Number(response.data?.total_page);
+        const currentPage = Number(response.data?.page || page);
+        if (totalPages && currentPage >= totalPages) {
+          break;
+        }
+        page += 1;
       }
-      
-      // If no total count, estimate based on first page
-      const firstPageProducts = response.data?.data || [];
-      if (Array.isArray(firstPageProducts) && firstPageProducts.length === 100) {
-        // If we got exactly 100 products, there might be more pages
-        return 100; // This will be updated when we implement proper counting
+      return total;
+    } catch (error: any) {
+      if (error?.response?.status === 404) {
+        return 0;
       }
-      
-      return Array.isArray(firstPageProducts) ? firstPageProducts.length : 0;
-    } catch (error) {
       console.error('Error fetching Basalam products count:', error);
       return 0;
     }
