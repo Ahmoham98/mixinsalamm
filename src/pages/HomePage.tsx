@@ -888,7 +888,20 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient, v
         shipping_data: {}, // Required field - empty object for now
         unit_quantity: 1, // Required field - default to 1
         unit_type: "عدد", // Required field - default unit type
-        packaging_dimensions: { width: 0, height: 0, depth: 0 }, // Required field - default dimensions
+        // If available, include packaging dimensions from Mixin details
+        packaging_dimensions: ((): { height: number; length: number; width: number } => {
+          const h = (mixinProduct as any)?.height != null ? Number((mixinProduct as any).height) : undefined;
+          const l = (mixinProduct as any)?.length != null ? Number((mixinProduct as any).length) : undefined;
+          const w = (mixinProduct as any)?.width != null ? Number((mixinProduct as any).width) : undefined;
+          if ((h && h > 0) || (l && l > 0) || (w && w > 0)) {
+            return {
+              height: h || 0,
+              length: l || 0,
+              width: w || 0,
+            };
+          }
+          return { width: 0, height: 0, depth: 0 } as any;
+        })(),
         is_wholesale: false, // Required field - false by default
         order: 1 // Required field - default order
       };
@@ -1399,6 +1412,26 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
 
     const sku = generateUniqueSKU(mixinProduct.name, vendorId);
 
+    // Try to fetch full Mixin product to get optional dimensions
+    let packagingDimensionsFromMixin: { height?: number; length?: number; width?: number } | null = null;
+    try {
+      if (mixinCredentials && mixinProduct?.id) {
+        const full = await mixinApi.getProductById(mixinCredentials, mixinProduct.id);
+        const lengthVal = full?.length != null ? Number(full.length) : undefined;
+        const widthVal = full?.width != null ? Number(full.width) : undefined;
+        const heightVal = full?.height != null ? Number(full.height) : undefined;
+        if ((lengthVal && lengthVal > 0) || (widthVal && widthVal > 0) || (heightVal && heightVal > 0)) {
+          packagingDimensionsFromMixin = {
+            height: heightVal,
+            length: lengthVal,
+            width: widthVal,
+          };
+        }
+      }
+    } catch (e) {
+      // ignore optional fetch errors
+    }
+
     const payload = {
       name: mixinProduct.name,
       category_id: categoryId,
@@ -1424,7 +1457,11 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
       shipping_data: {},
       unit_quantity: 1,
       unit_type: "عدد",
-      packaging_dimensions: { width: 0, height: 0, depth: 0 },
+      packaging_dimensions: packagingDimensionsFromMixin ? {
+        height: packagingDimensionsFromMixin.height || 0,
+        length: packagingDimensionsFromMixin.length || 0,
+        width: packagingDimensionsFromMixin.width || 0,
+      } : { width: 0, height: 0, depth: 0 },
       is_wholesale: false,
       order: 1
     };

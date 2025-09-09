@@ -15,6 +15,9 @@ export interface MixinProduct {
   description: string;
   weight?: number;
   imageUrl?: string;
+  length?: number | null;
+  width?: number | null;
+  height?: number | null;
   // Add other fields as needed
 }
 
