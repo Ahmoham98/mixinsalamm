@@ -921,9 +921,17 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient, v
         console.log("Generated new SKU for next product:", generateUniqueSKU(mixinProduct.name, vendorId));
       }
 
-      // Invalidate and refetch Basalam products after successful creation
-      await queryClient.invalidateQueries({ queryKey: ['basalamProducts'] });
-      await queryClient.refetchQueries({ queryKey: ['basalamProducts'] });
+      // Refresh lists and counts after successful creation
+      try {
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['basalamProducts'] }),
+          queryClient.invalidateQueries({ queryKey: ['mixinProducts'] }),
+        ]);
+        await Promise.all([
+          queryClient.refetchQueries({ queryKey: ['basalamProducts'] }),
+          queryClient.refetchQueries({ queryKey: ['mixinProducts'] }),
+        ]);
+      } catch {}
 
       setTimeout(onClose, 2000); // Close the modal after a short delay
     } catch (err: any) {
@@ -1545,6 +1553,10 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
             failedItems: newFailedItems.length
           });
           
+          // Refresh product lists on batch completion
+          queryClient.invalidateQueries({ queryKey: ['basalamProducts'] });
+          queryClient.invalidateQueries({ queryKey: ['mixinProducts'] });
+          
           resolve();
           return;
         }
@@ -1714,7 +1726,12 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
                 </div>
                 <button
                   className={`px-3 py-1 rounded text-sm ${isPaused ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-yellow-500 text-white hover:bg-yellow-600'}`}
-                  onClick={() => setIsPaused(p => !p)}
+                  onClick={() => {
+                    setIsPaused(p => !p);
+                    // When pausing, refresh lists to reflect current state so counts and common/unique update promptly
+                    queryClient.invalidateQueries({ queryKey: ['basalamProducts'] });
+                    queryClient.invalidateQueries({ queryKey: ['mixinProducts'] });
+                  }}
                   disabled={!isProcessing}
                 >
                   {isPaused ? 'ادامه' : 'توقف موقت'}
@@ -1866,6 +1883,8 @@ function HomePage() {
   const [mixinTotalCount, setMixinTotalCount] = useState(0);
   const [basalamTotalCount, setBasalamTotalCount] = useState(0);
   const [, setIsLoadingCounts] = useState(false);
+
+  // No-op here; we refresh inline where needed to avoid hoisting issues
 
   const handleLogout = async () => {
     try {
