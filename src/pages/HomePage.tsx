@@ -113,8 +113,6 @@ interface ProductModalProps {
   basalamProducts: BasalamProduct[] | undefined
   globalMixinProducts: MixinProduct[]
   globalBasalamProducts: BasalamProduct[]
-  recentlyUpdatedProducts: Set<number>
-  setRecentlyUpdatedProducts: React.Dispatch<React.SetStateAction<Set<number>>>
   onOpenCreateBasalamModal: (product: MixinProduct) => void
 }
 
@@ -139,7 +137,7 @@ const formatPrice = (price: number | null | undefined): string => {
   return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
 }
 
-function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamProducts, globalMixinProducts, globalBasalamProducts, recentlyUpdatedProducts, setRecentlyUpdatedProducts, onOpenCreateBasalamModal }: ProductModalProps) {
+function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamProducts, globalMixinProducts, globalBasalamProducts, onOpenCreateBasalamModal }: ProductModalProps) {
   const [checkMessage, setCheckMessage] = useState<{ text: string; isSuccess: boolean } | null>(null)
   const [editMessage, setEditMessage] = useState<{ text: string; isSuccess: boolean } | null>(null)
   const [showSyncButton, setShowSyncButton] = useState(false)
@@ -148,11 +146,6 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
   const [isEditing, setIsEditing] = useState(false)
   const [productImage, setProductImage] = useState<string | null>(null)
   const [autoSyncTimeout, setAutoSyncTimeout] = useState<NodeJS.Timeout | null>(null)
-  const [syncStatus, setSyncStatus] = useState<{
-    isSyncing: boolean;
-    platform: 'mixin' | 'basalam' | 'both' | null;
-    message: string;
-  }>({ isSyncing: false, platform: null, message: '' })
   const [editedProduct, setEditedProduct] = useState<{
     name: string;
     price: number;
@@ -410,42 +403,6 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
         type
       })
 
-      // === OPTIMISTIC UPDATES ===
-      // Update the UI immediately for better user experience
-      const updateOptimisticProduct = (productId: number, updates: Partial<MixinProduct | BasalamProduct>) => {
-        // Update current page products
-        queryClient.setQueryData(['mixinProducts'], (oldData: any) => {
-          if (!oldData) return oldData
-          const data = Array.isArray(oldData) ? oldData : oldData.data || []
-          return data.map((p: MixinProduct) => 
-            p.id === productId ? { ...p, ...updates } : p
-          )
-        })
-
-        queryClient.setQueryData(['basalamProducts'], (oldData: any) => {
-          if (!oldData) return oldData
-          const data = Array.isArray(oldData) ? oldData : oldData.data || []
-          return data.map((p: BasalamProduct) => 
-            p.id === productId ? { ...p, ...updates } : p
-          )
-        })
-
-        // Update global products arrays
-        queryClient.setQueryData(['globalMixinProducts'], (oldData: MixinProduct[] | undefined) => {
-          if (!oldData) return oldData
-          return oldData.map((p: MixinProduct) => 
-            p.id === productId ? { ...p, ...updates } : p
-          )
-        })
-
-        queryClient.setQueryData(['globalBasalamProducts'], (oldData: BasalamProduct[] | undefined) => {
-          if (!oldData) return oldData
-          return oldData.map((p: BasalamProduct) => 
-            p.id === productId ? { ...p, ...updates } : p
-          )
-        })
-      }
-
       let mixinProductId = productId
       let basalamProductId = productId
 
@@ -475,36 +432,7 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
 
       console.log('Using product IDs:', { mixinProductId, basalamProductId })
 
-      // Apply optimistic updates
-      if (changecard.includes('mixin')) {
-        updateOptimisticProduct(mixinProductId, {
-          name: editedProduct.name,
-          price: Number(editedProduct.price),
-          description: editedProduct.description || ''
-        })
-      }
-
-      if (changecard.includes('basalam')) {
-        updateOptimisticProduct(basalamProductId, {
-          title: editedProduct.name,
-          price: tomanToRial(editedProduct.price)
-        })
-      }
-
-      // Set initial sync status
-      const platforms = []
-      if (changecard.includes('mixin')) platforms.push('میکسین')
-      if (changecard.includes('basalam')) platforms.push('باسلام')
-      setSyncStatus({
-        isSyncing: true,
-        platform: changecard.includes('mixin') && changecard.includes('basalam') ? 'both' : 
-                  changecard.includes('mixin') ? 'mixin' : 'basalam',
-        message: `در حال همگام‌سازی با ${platforms.join(' و ')}...`
-      })
-
-      // === ACTUAL API CALLS ===
       if (changecard.includes('mixin') && mixinCredentials) {
-        setSyncStatus(prev => ({ ...prev, message: 'در حال به‌روزرسانی میکسین...' }))
         console.log('Updating Mixin product...')
         const originalProduct = await mixinApi.getProductById(mixinCredentials, mixinProductId)
         if (!originalProduct) {
@@ -525,7 +453,6 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
       }
 
       if (changecard.includes('basalam') && basalamCredentials) {
-        setSyncStatus(prev => ({ ...prev, message: 'در حال به‌روزرسانی باسلام...' }))
         console.log('Updating Basalam product...')
         const basalamProductData = {
           name: editedProduct.name,
@@ -548,87 +475,19 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
         isSuccess: true
       })
 
-      setSyncStatus(prev => ({ ...prev, message: 'همگام‌سازی تکمیل شد!' }))
-      
-      // Track recently updated products
-      setRecentlyUpdatedProducts(prev => {
-        const newSet = new Set(prev)
-        if (changecard.includes('mixin')) newSet.add(mixinProductId)
-        if (changecard.includes('basalam')) newSet.add(basalamProductId)
-        return newSet
-      })
-      
-      // Clear the "recently updated" indicator after 3 seconds
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['mixinProducts'] }),
+        queryClient.invalidateQueries({ queryKey: ['basalamProducts'] })
+      ])
+
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ['mixinProducts'] }),
+        queryClient.refetchQueries({ queryKey: ['basalamProducts'] })
+      ])
+
       setTimeout(() => {
-        setRecentlyUpdatedProducts(prev => {
-          const newSet = new Set(prev)
-          if (changecard.includes('mixin')) newSet.delete(mixinProductId)
-          if (changecard.includes('basalam')) newSet.delete(basalamProductId)
-          return newSet
-        })
-      }, 3000)
-
-      // === SMART CACHE UPDATES ===
-      // Instead of full refresh, selectively update only the changed products
-      const updateSpecificProduct = async (productId: number, platform: 'mixin' | 'basalam') => {
-        try {
-          if (platform === 'mixin' && mixinCredentials) {
-            const updatedProduct = await mixinApi.getProductById(mixinCredentials, productId)
-            if (updatedProduct) {
-              // Update specific product in cache
-              queryClient.setQueryData(['mixinProducts'], (oldData: any) => {
-                if (!oldData) return oldData
-                const data = Array.isArray(oldData) ? oldData : oldData.data || []
-                return data.map((p: MixinProduct) => 
-                  p.id === productId ? updatedProduct : p
-                )
-              })
-              
-              queryClient.setQueryData(['globalMixinProducts'], (oldData: MixinProduct[] | undefined) => {
-                if (!oldData) return oldData
-                return oldData.map((p: MixinProduct) => 
-                  p.id === productId ? updatedProduct : p
-                )
-              })
-            }
-          } else if (platform === 'basalam' && basalamCredentials) {
-            const updatedProduct = await basalamApi.getProductById(basalamCredentials, productId)
-            if (updatedProduct) {
-              // Update specific product in cache
-              queryClient.setQueryData(['basalamProducts'], (oldData: any) => {
-                if (!oldData) return oldData
-                const data = Array.isArray(oldData) ? oldData : oldData.data || []
-                return data.map((p: BasalamProduct) => 
-                  p.id === productId ? updatedProduct : p
-                )
-              })
-              
-              queryClient.setQueryData(['globalBasalamProducts'], (oldData: BasalamProduct[] | undefined) => {
-                if (!oldData) return oldData
-                return oldData.map((p: BasalamProduct) => 
-                  p.id === productId ? updatedProduct : p
-                )
-              })
-            }
-          }
-        } catch (error) {
-          console.error(`Error fetching updated ${platform} product:`, error)
-        }
-      }
-
-      // Update specific products instead of full refresh
-      if (changecard.includes('mixin')) {
-        await updateSpecificProduct(mixinProductId, 'mixin')
-      }
-      if (changecard.includes('basalam')) {
-        await updateSpecificProduct(basalamProductId, 'basalam')
-      }
-
-      // Clear sync status after a delay
-      setTimeout(() => {
-        setSyncStatus({ isSyncing: false, platform: null, message: '' })
         onClose()
-      }, 2000)
+      }, 1000)
 
     } catch (error) {
       console.error('Error updating product:', error)
@@ -636,12 +495,6 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
         text: error instanceof Error ? error.message : 'Failed to update product. Please try again.',
         isSuccess: false
       })
-      
-      // Revert optimistic updates on error
-      queryClient.invalidateQueries({ queryKey: ['mixinProducts'] })
-      queryClient.invalidateQueries({ queryKey: ['basalamProducts'] })
-      queryClient.invalidateQueries({ queryKey: ['globalMixinProducts'] })
-      queryClient.invalidateQueries({ queryKey: ['globalBasalamProducts'] })
     } finally {
       setIsEditing(false)
     }
@@ -684,15 +537,7 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
             <X size={24} />
           </button>
-          <div className="flex items-center gap-2">
-            <h2 className="text-xl font-semibold">جزئیات محصول</h2>
-            {product && recentlyUpdatedProducts.has(product.id) && (
-              <div className="flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span>تازه به‌روزرسانی شده</span>
-              </div>
-            )}
-          </div>
+          <h2 className="text-xl font-semibold">جزئیات محصول</h2>
         </div>
 
         <div className="mb-6">
@@ -889,12 +734,6 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
               {editMessage.text}
             </p>
           )}
-          {syncStatus.isSyncing && (
-            <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-              <span className="text-sm text-blue-700 font-medium">{syncStatus.message}</span>
-            </div>
-          )}
         </div>
       </div>
     </div>
@@ -919,10 +758,9 @@ interface CreateBasalamProductModalProps {
   mixinProduct: MixinProduct | null;
   queryClient: any; // Add queryClient to props
   vendorId: number;
-  loadAllProductsForComparison: () => Promise<void>;
 }
 
-function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient, vendorId, loadAllProductsForComparison }: CreateBasalamProductModalProps) {
+function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient, vendorId }: CreateBasalamProductModalProps) {
   const [productName, setProductName] = useState(mixinProduct?.name || "");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [status, setStatus] = useState("active");
@@ -2151,9 +1989,6 @@ function HomePage() {
     mixin: { current: 0, total: 0, status: 'idle' }, // idle, loading, completed, error
     basalam: { current: 0, total: 0, status: 'idle' }
   });
-  
-  // Track recently updated products for visual indicators
-  const [recentlyUpdatedProducts, setRecentlyUpdatedProducts] = useState<Set<number>>(new Set());
 
   // Load all products across all pages for comparison
   const loadAllProductsForComparison = async () => {
@@ -2754,19 +2589,9 @@ function HomePage() {
                         <div
                           key={product.id}
                           onClick={() => handleProductClick(product.id, 'mixin')}
-                          className={`p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer border text-right group relative ${
-                            recentlyUpdatedProducts.has(product.id) 
-                              ? 'border-green-300 bg-green-50' 
-                              : 'border-gray-100'
-                          }`}
+                          className="p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer border border-gray-100 text-right group"
                           dir="rtl"
                         >
-                          {recentlyUpdatedProducts.has(product.id) && (
-                            <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-                              <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-                              <span>تازه</span>
-                            </div>
-                          )}
                           <h3 className="font-medium text-gray-800 group-hover:text-[#5b9fdb] transition-colors">{cleanHtmlText(product.name)}</h3>
                           <p className="text-gray-600 mt-1">قیمت: {product.price ? formatPrice(product.price) : 'قیمت نامشخص'} تومان</p>
                         </div>
@@ -2918,8 +2743,6 @@ function HomePage() {
           basalamProducts={basalamProducts}
           globalMixinProducts={globalMixinProducts}
           globalBasalamProducts={globalBasalamProducts}
-          recentlyUpdatedProducts={recentlyUpdatedProducts}
-          setRecentlyUpdatedProducts={setRecentlyUpdatedProducts}
           onOpenCreateBasalamModal={handleOpenCreateBasalamModal}
         />
 
@@ -3071,7 +2894,6 @@ function HomePage() {
             mixinProduct={productToCreateInBasalam}
             queryClient={queryClient} // Pass queryClient here
             vendorId={userData.vendor.id}
-            loadAllProductsForComparison={loadAllProductsForComparison}
           />
         )}
         <BulkMigrationPanel
