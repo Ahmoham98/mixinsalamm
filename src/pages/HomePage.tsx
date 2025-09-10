@@ -61,6 +61,49 @@ const cleanHtmlText = (htmlText: string): string => {
   return cleanText;
 };
 
+// Utility function to get unit quantity based on unit type ID
+const getUnitQuantity = (unitTypeId: number): number => {
+  const unitTypeMap: { [key: number]: number } = {
+    6375: 10,   // مترمربع
+    6374: 100,  // میلی‌متر
+    6373: 1,    // جلد
+    6332: 30,   // فوت
+    6331: 10,   // اینچ
+    6330: 1,    // سیر
+    6329: 10,   // اصله
+    6328: 5,    // کلاف
+    6327: 1,    // قالب
+    6326: 2,    // شاخه
+    6325: 1,    // بوته
+    6324: 2,    // دست
+    6323: 1,    // بطری
+    6322: 1,    // تخته
+    6321: 1,    // کارتن
+    6320: 1,    // توپ
+    6319: 1,    // بسته
+    6318: 2,    // جفت
+    6317: 2,    // جین
+    6316: 1,    // طاقه
+    6315: 1,    // قواره
+    6314: 10,   // انس
+    6313: 100,  // سی‌سی
+    6312: 100,  // میلی‌لیتر
+    6311: 1,    // لیتر
+    6310: 1,    // تکه (اسلایس)
+    6309: 2,    // مثقال
+    6308: 10,   // سانتی‌متر
+    6307: 10,   // متر
+    6306: 10,   // گرم
+    6305: 500,  // کیلو‌گرم
+    6304: 1,    // عددی
+    6392: 1,    // رول
+    6438: 1,    // سوت
+    6466: 1,    // قیراط
+  };
+  
+  return unitTypeMap[unitTypeId] || 1; // Default to 1 if not found
+};
+
 interface ProductModalProps {
   isOpen: boolean
   onClose: () => void
@@ -863,6 +906,20 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient, v
         throw new Error('گواهی باسلام برای ایجاد محصول یافت نشد.');
       }
 
+      // Fetch unit type for the selected category
+      let unitTypeId: number | null = null;
+      let unitQuantity: number = 1;
+      
+      try {
+        const unitTypeResponse = await basalamApi.getCategoryUnitType(basalamCredentials, parseInt(selectedCategory, 10));
+        if (unitTypeResponse?.unit_type?.id) {
+          unitTypeId = unitTypeResponse.unit_type.id;
+          unitQuantity = getUnitQuantity(unitTypeId);
+        }
+      } catch (error) {
+        console.warn('Failed to fetch unit type for category:', error);
+      }
+
       const payload = {
         name: productName,
         category_id: parseInt(selectedCategory, 10), // Step 3: Fixed field name
@@ -886,8 +943,14 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient, v
         virtual: false, // Required field - false for physical products
         variants: [], // Required field - empty array for now
         shipping_data: {}, // Required field - empty object for now
-        unit_quantity: 1, // Required field - default to 1
-        unit_type: "عدد", // Required field - default unit type
+        // Unit type and quantity - only include if we have unit type data
+        ...(unitTypeId ? {
+          unit_quantity: unitQuantity,
+          unit_type: unitTypeId
+        } : {
+          unit_quantity: 1,
+          unit_type: 6304 // Default to "عددی" if no unit type found
+        }),
         // If available, include packaging dimensions from Mixin details
         packaging_dimensions: ((): { height: number; length: number; width: number } => {
           const h = (mixinProduct as any)?.height != null ? Number((mixinProduct as any).height) : undefined;
@@ -1441,6 +1504,20 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
       // ignore optional fetch errors
     }
 
+    // Fetch unit type for the category
+    let unitTypeId: number | null = null;
+    let unitQuantity: number = 1;
+    
+    try {
+      const unitTypeResponse = await basalamApi.getCategoryUnitType(basalamCredentials, categoryId);
+      if (unitTypeResponse?.unit_type?.id) {
+        unitTypeId = unitTypeResponse.unit_type.id;
+        unitQuantity = getUnitQuantity(unitTypeId);
+      }
+    } catch (error) {
+      console.warn('Failed to fetch unit type for category:', error);
+    }
+
     const payload = {
       name: mixinProduct.name,
       category_id: categoryId,
@@ -1464,8 +1541,14 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
       virtual: false,
       variants: [],
       shipping_data: {},
-      unit_quantity: 1,
-      unit_type: "عدد",
+      // Unit type and quantity - only include if we have unit type data
+      ...(unitTypeId ? {
+        unit_quantity: unitQuantity,
+        unit_type: unitTypeId
+      } : {
+        unit_quantity: 1,
+        unit_type: 6304 // Default to "عددی" if no unit type found
+      }),
       packaging_dimensions: packagingDimensionsFromMixin ? {
         height: packagingDimensionsFromMixin.height || 0,
         length: packagingDimensionsFromMixin.length || 0,

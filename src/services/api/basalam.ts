@@ -236,5 +236,27 @@ export const basalamApi = {
       console.error('Error fetching Basalam products count:', error);
       return 0;
     }
+  },
+
+  getCategoryUnitType: async (credentials: BasalamCredentials, categoryId: number): Promise<{ unit_type: { id: number; title: string } | null } | null> => {
+    try {
+      const response = await api.get(`/products/category-unit-type?category_id=${categoryId}`, {
+        headers: {
+          Authorization: `Bearer ${credentials.access_token}`,
+        },
+      });
+      
+      // Handle both response formats
+      if (response.data?.unit_type) {
+        return response.data;
+      } else if (response.data?.data?.[0]?.unit_type) {
+        return response.data.data[0];
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error fetching category unit type:', error);
+      return null;
+    }
   }
 }
