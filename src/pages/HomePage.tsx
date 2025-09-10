@@ -111,6 +111,8 @@ interface ProductModalProps {
   type: 'mixin' | 'basalam'
   mixinProducts: MixinProduct[] | undefined
   basalamProducts: BasalamProduct[] | undefined
+  globalMixinProducts: MixinProduct[]
+  globalBasalamProducts: BasalamProduct[]
   onOpenCreateBasalamModal: (product: MixinProduct) => void
 }
 
@@ -135,7 +137,7 @@ const formatPrice = (price: number | null | undefined): string => {
   return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
 }
 
-function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamProducts, onOpenCreateBasalamModal }: ProductModalProps) {
+function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamProducts, globalMixinProducts, globalBasalamProducts, onOpenCreateBasalamModal }: ProductModalProps) {
   const [checkMessage, setCheckMessage] = useState<{ text: string; isSuccess: boolean } | null>(null)
   const [editMessage, setEditMessage] = useState<{ text: string; isSuccess: boolean } | null>(null)
   const [showSyncButton, setShowSyncButton] = useState(false)
@@ -310,10 +312,16 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
     let changecard = ''
     let priceMismatch = false
 
+    // Use the same logic as getCommonProducts to get the correct product arrays
+    const mixinSource = (globalMixinProducts && globalMixinProducts.length > 0) ? globalMixinProducts : (Array.isArray(mixinProducts) ? mixinProducts : (mixinProducts as any)?.data || []);
+    const basalamSource = (globalBasalamProducts && globalBasalamProducts.length > 0) ? globalBasalamProducts : (Array.isArray(basalamProducts) ? basalamProducts : (basalamProducts as any)?.data || []);
+
+    const normalize = (s: string | undefined) => (s || '').trim().toLowerCase();
+
     if (type === 'mixin' && isMixinProduct(product)) {
       currentProductName = product.name
-      const matchingBasalamProduct = basalamProducts?.find(
-        basalamProduct => basalamProduct.title.toLowerCase() === currentProductName.toLowerCase()
+      const matchingBasalamProduct = basalamSource.find(
+        (basalamProduct: BasalamProduct) => basalamProduct?.title && normalize(basalamProduct.title) === normalize(currentProductName)
       )
 
       if (matchingBasalamProduct) {
@@ -342,8 +350,8 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
       setShowMixinButton(false)
     } else if (type === 'basalam' && isBasalamProduct(product)) {
       currentProductName = product.title
-      const matchingMixinProduct = mixinProducts?.find(
-        mixinProduct => mixinProduct.name.toLowerCase() === currentProductName.toLowerCase()
+      const matchingMixinProduct = mixinSource.find(
+        (mixinProduct: MixinProduct) => mixinProduct?.name && normalize(mixinProduct.name) === normalize(currentProductName)
       )
 
       if (matchingMixinProduct) {
@@ -375,6 +383,7 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
     setShowSyncButton(priceMismatch)
     localStorage.setItem('changecard', changecard)
     console.log('Updated changecard:', changecard, 'for product:', currentProductName)
+    console.log('Using product arrays:', { mixinSource: mixinSource.length, basalamSource: basalamSource.length })
   }
 
   const handleEdit = async () => {
@@ -994,7 +1003,10 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient, v
           queryClient.refetchQueries({ queryKey: ['basalamProducts'] }),
           queryClient.refetchQueries({ queryKey: ['mixinProducts'] }),
         ]);
-        // Global lists will refresh via effect on query data changes
+        // Also refresh global lists for cross-page comparison
+        setTimeout(() => {
+          loadAllProductsForComparison();
+        }, 1000);
       } catch {}
 
       setTimeout(onClose, 2000); // Close the modal after a short delay
@@ -2729,6 +2741,8 @@ function HomePage() {
           type={modalType}
           mixinProducts={mixinProducts}
           basalamProducts={basalamProducts}
+          globalMixinProducts={globalMixinProducts}
+          globalBasalamProducts={globalBasalamProducts}
           onOpenCreateBasalamModal={handleOpenCreateBasalamModal}
         />
 
