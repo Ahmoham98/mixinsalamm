@@ -1971,46 +1971,116 @@ function HomePage() {
   const [globalMixinProducts, setGlobalMixinProducts] = useState<MixinProduct[]>([]);
   const [globalBasalamProducts, setGlobalBasalamProducts] = useState<BasalamProduct[]>([]);
   const [isLoadingGlobalLists, setIsLoadingGlobalLists] = useState(false);
+  
+  // Loading progress tracking
+  const [loadingProgress, setLoadingProgress] = useState({
+    mixin: { current: 0, total: 0, status: 'idle' }, // idle, loading, completed, error
+    basalam: { current: 0, total: 0, status: 'idle' }
+  });
 
   // Load all products across all pages for comparison
   const loadAllProductsForComparison = async () => {
     if (!mixinCredentials || !basalamCredentials || !userData?.vendor?.id) return;
     setIsLoadingGlobalLists(true);
+    
+    // Reset progress
+    setLoadingProgress({
+      mixin: { current: 0, total: 0, status: 'loading' },
+      basalam: { current: 0, total: 0, status: 'loading' }
+    });
+    
     try {
       // Fetch all Mixin pages
       const mixinAll: MixinProduct[] = [];
-      for (let p = 1; p <= 100; p += 1) {
+      
+      // First, get total pages for Mixin
+      try {
+        const firstPage = await mixinApi.getProducts(mixinCredentials, 1);
+        if (firstPage.length > 0) {
+          mixinAll.push(...firstPage);
+          setLoadingProgress(prev => ({
+            ...prev,
+            mixin: { current: 1, total: 1, status: 'loading' }
+          }));
+        }
+      } catch (e) {
+        setLoadingProgress(prev => ({
+          ...prev,
+          mixin: { current: 0, total: 0, status: 'error' }
+        }));
+      }
+      
+      // Continue fetching remaining Mixin pages
+      for (let p = 2; p <= 100; p += 1) {
         try {
           const items = await mixinApi.getProducts(mixinCredentials, p);
           if (!items || items.length === 0) break;
           mixinAll.push(...items);
+          setLoadingProgress(prev => ({
+            ...prev,
+            mixin: { current: p, total: Math.max(prev.mixin.total, p), status: 'loading' }
+          }));
           if (items.length < 100) break;
         } catch (e: any) {
-          // Stop on 404 (no more pages)
           if (e?.response?.status === 404) break;
           throw e;
         }
       }
+      
+      setLoadingProgress(prev => ({
+        ...prev,
+        mixin: { ...prev.mixin, status: 'completed' }
+      }));
 
       // Fetch all Basalam pages
       const basalamAll: BasalamProduct[] = [];
-      for (let p = 1; p <= 100; p += 1) {
+      
+      // First, get total pages for Basalam
+      try {
+        const firstPage = await basalamApi.getProducts(basalamCredentials, userData.vendor.id, 1);
+        if (firstPage.length > 0) {
+          basalamAll.push(...firstPage);
+          setLoadingProgress(prev => ({
+            ...prev,
+            basalam: { current: 1, total: 1, status: 'loading' }
+          }));
+        }
+      } catch (e) {
+        setLoadingProgress(prev => ({
+          ...prev,
+          basalam: { current: 0, total: 0, status: 'error' }
+        }));
+      }
+      
+      // Continue fetching remaining Basalam pages
+      for (let p = 2; p <= 100; p += 1) {
         try {
           const items = await basalamApi.getProducts(basalamCredentials, userData.vendor.id, p);
           if (!items || items.length === 0) break;
           basalamAll.push(...items);
-          // Do not short-circuit by count; Basalam page size is not 100.
-          // We rely on empty next page or 404 to stop the loop.
+          setLoadingProgress(prev => ({
+            ...prev,
+            basalam: { current: p, total: Math.max(prev.basalam.total, p), status: 'loading' }
+          }));
         } catch (e: any) {
           if (e?.response?.status === 404) break;
           throw e;
         }
       }
+      
+      setLoadingProgress(prev => ({
+        ...prev,
+        basalam: { ...prev.basalam, status: 'completed' }
+      }));
 
       setGlobalMixinProducts(mixinAll);
       setGlobalBasalamProducts(basalamAll);
     } catch (error) {
       console.warn('Failed to load all products for comparison:', error);
+      setLoadingProgress(prev => ({
+        mixin: { ...prev.mixin, status: 'error' },
+        basalam: { ...prev.basalam, status: 'error' }
+      }));
     } finally {
       setIsLoadingGlobalLists(false);
     }
@@ -2242,7 +2312,7 @@ function HomePage() {
     setIsCreateBasalamModalOpen(true);
   };
 
-  const isLoading = isUserLoading || isMixinLoading || isBasalamLoading
+  const isLoading = isUserLoading || isMixinLoading || isBasalamLoading || isLoadingGlobalLists
 
   // Calculate pagination info
   const itemsPerPage = 100;
@@ -2662,17 +2732,78 @@ function HomePage() {
           onOpenCreateBasalamModal={handleOpenCreateBasalamModal}
         />
 
-        {isLoading && (
+        {(isLoading || isLoadingGlobalLists) && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-white/90 backdrop-blur-md rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl border border-gray-100 transform transition-all duration-300 scale-100">
+            <div className="bg-white/90 backdrop-blur-md rounded-2xl p-8 max-w-lg w-full mx-4 shadow-2xl border border-gray-100 transform transition-all duration-300 scale-100">
               <div className="flex flex-col items-center">
                 <div className="w-16 h-16 border-4 border-[#5b9fdb] border-t-transparent rounded-full animate-spin mb-6"></div>
                 <h3 className="text-2xl font-bold bg-gradient-to-r from-[#ff6040] to-[#5b9fdb] bg-clip-text text-transparent mb-2">
                   در حال بارگذاری...
                 </h3>
-                <p className="text-gray-600 text-center">
+                <p className="text-gray-600 text-center mb-6">
                   لطفاً صبر کنید تا اطلاعات محصولات بارگذاری شود
                 </p>
+                
+                {/* Progress tracking for both platforms */}
+                <div className="w-full space-y-4">
+                  {/* Mixin Progress */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3 rtl:space-x-reverse">
+                      <div className={`w-3 h-3 rounded-full ${
+                        loadingProgress.mixin.status === 'completed' ? 'bg-green-500' :
+                        loadingProgress.mixin.status === 'error' ? 'bg-red-500' :
+                        loadingProgress.mixin.status === 'loading' ? 'bg-blue-500 animate-pulse' :
+                        'bg-gray-300'
+                      }`}></div>
+                      <span className="text-sm font-medium text-gray-700">میکسین</span>
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {loadingProgress.mixin.status === 'loading' && loadingProgress.mixin.total > 0 ? 
+                        `${loadingProgress.mixin.current} از ${loadingProgress.mixin.total}` :
+                        loadingProgress.mixin.status === 'completed' ? 'تکمیل شد' :
+                        loadingProgress.mixin.status === 'error' ? 'خطا' : 'در انتظار'
+                      }
+                    </div>
+                  </div>
+                  
+                  {/* Basalam Progress */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3 rtl:space-x-reverse">
+                      <div className={`w-3 h-3 rounded-full ${
+                        loadingProgress.basalam.status === 'completed' ? 'bg-green-500' :
+                        loadingProgress.basalam.status === 'error' ? 'bg-red-500' :
+                        loadingProgress.basalam.status === 'loading' ? 'bg-blue-500 animate-pulse' :
+                        'bg-gray-300'
+                      }`}></div>
+                      <span className="text-sm font-medium text-gray-700">باسلام</span>
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {loadingProgress.basalam.status === 'loading' && loadingProgress.basalam.total > 0 ? 
+                        `${loadingProgress.basalam.current} از ${loadingProgress.basalam.total}` :
+                        loadingProgress.basalam.status === 'completed' ? 'تکمیل شد' :
+                        loadingProgress.basalam.status === 'error' ? 'خطا' : 'در انتظار'
+                      }
+                    </div>
+                  </div>
+                  
+                  {/* Overall Progress Bar */}
+                  {(loadingProgress.mixin.status === 'loading' || loadingProgress.basalam.status === 'loading') && (
+                    <div className="w-full bg-gray-200 rounded-full h-2 mt-4">
+                      <div 
+                        className="bg-gradient-to-r from-[#ff6040] to-[#5b9fdb] h-2 rounded-full transition-all duration-500"
+                        style={{
+                          width: `${(() => {
+                            const mixinProgress = loadingProgress.mixin.status === 'completed' ? 50 : 
+                              loadingProgress.mixin.status === 'loading' ? 25 : 0;
+                            const basalamProgress = loadingProgress.basalam.status === 'completed' ? 50 : 
+                              loadingProgress.basalam.status === 'loading' ? 25 : 0;
+                            return mixinProgress + basalamProgress;
+                          })()}%`
+                        }}
+                      ></div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
