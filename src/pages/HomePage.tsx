@@ -1809,8 +1809,8 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
         </div>
       </div>
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl mx-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40" onClick={() => setShowModal(false)}>
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl mx-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-2">
               <h2 className="text-xl font-bold text-blue-700">محصولات آماده انتقال ({missingProducts.length})</h2>
               <div className="flex items-center gap-3">
