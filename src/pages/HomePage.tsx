@@ -38,63 +38,69 @@ const generateUniqueSKU = (productName: string, vendorId?: number): string => {
 const cleanHtmlText = (htmlText: string): string => {
   if (!htmlText) return '';
   
-  // Create a temporary div element to parse HTML
-  const tempDiv = document.createElement('div');
-  tempDiv.innerHTML = htmlText;
-  
-  // Function to recursively extract text while preserving line breaks and structure
-  function extractTextWithLineBreaks(element: Element): string {
-    let text = '';
-    for (const node of element.childNodes) {
-      if (node.nodeType === Node.TEXT_NODE) {
-        text += node.nodeValue;
-      } else if (node.nodeType === Node.ELEMENT_NODE) {
-        const element = node as Element;
-        if (element.tagName === 'BR') {
-          text += '\n';
-        } else if (element.tagName === 'P' || element.tagName === 'DIV') {
-          const childText = extractTextWithLineBreaks(element);
-          if (childText.trim()) {
-            text += '\n' + childText + '\n';
+  try {
+    // Create a temporary div element to parse HTML
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = htmlText;
+    
+    // Function to recursively extract text while preserving line breaks and structure
+    function extractTextWithLineBreaks(element: Element): string {
+      let text = '';
+      for (const node of element.childNodes) {
+        if (node.nodeType === Node.TEXT_NODE) {
+          text += node.nodeValue;
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+          const element = node as Element;
+          if (element.tagName === 'BR') {
+            text += '\n';
+          } else if (element.tagName === 'P' || element.tagName === 'DIV') {
+            const childText = extractTextWithLineBreaks(element);
+            if (childText.trim()) {
+              text += '\n' + childText + '\n';
+            }
+          } else if (element.tagName === 'LI') {
+            text += '• ' + extractTextWithLineBreaks(element) + '\n';
+          } else if (element.tagName === 'UL' || element.tagName === 'OL') {
+            text += '\n' + extractTextWithLineBreaks(element) + '\n';
+          } else {
+            text += extractTextWithLineBreaks(element);
           }
-        } else if (element.tagName === 'LI') {
-          text += '• ' + extractTextWithLineBreaks(element) + '\n';
-        } else if (element.tagName === 'UL' || element.tagName === 'OL') {
-          text += '\n' + extractTextWithLineBreaks(element) + '\n';
-        } else {
-          text += extractTextWithLineBreaks(element);
         }
       }
+      return text;
     }
-    return text;
+    
+    // Extract text with preserved line breaks and structure
+    let extractedText = extractTextWithLineBreaks(tempDiv);
+    
+    // Decode HTML entities using a textarea element
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = extractedText;
+    extractedText = textarea.value;
+    
+    // Clean up specific entities
+    extractedText = extractedText
+      .replace(/&zwnj;/g, '') // Remove zero-width non-joiner
+      .replace(/&nbsp;/g, ' ') // Replace non-breaking space
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&apos;/g, "'");
+    
+    // Normalize whitespace but preserve intentional line breaks
+    extractedText = extractedText
+      .replace(/[ \t]+/g, ' ') // Replace multiple spaces/tabs with single space
+      .replace(/\n\s*\n\s*\n/g, '\n\n') // Replace multiple newlines with double newline
+      .trim(); // Remove leading/trailing whitespace
+    
+    return extractedText;
+  } catch (error) {
+    console.error('Error in cleanHtmlText:', error);
+    // Fallback to simple text extraction if DOM operations fail
+    return htmlText.replace(/<[^>]*>/g, '').replace(/&[^;]+;/g, ' ').trim();
   }
-  
-  // Extract text with preserved line breaks and structure
-  let extractedText = extractTextWithLineBreaks(tempDiv);
-  
-  // Decode HTML entities using a textarea element
-  const textarea = document.createElement('textarea');
-  textarea.innerHTML = extractedText;
-  extractedText = textarea.value;
-  
-  // Clean up specific entities
-  extractedText = extractedText
-    .replace(/&zwnj;/g, '') // Remove zero-width non-joiner
-    .replace(/&nbsp;/g, ' ') // Replace non-breaking space
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&apos;/g, "'");
-  
-  // Normalize whitespace but preserve intentional line breaks
-  extractedText = extractedText
-    .replace(/[ \t]+/g, ' ') // Replace multiple spaces/tabs with single space
-    .replace(/\n\s*\n\s*\n/g, '\n\n') // Replace multiple newlines with double newline
-    .trim(); // Remove leading/trailing whitespace
-  
-  return extractedText;
 };
 
 // Utility function to get unit quantity based on unit type ID
@@ -1603,6 +1609,19 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
       }
     }
 
+    // Build brief with same fallback to keep consistency with manual creation
+    const initialBrief = cleanHtmlText(mixinProduct.description || "");
+    const finalBrief = initialBrief || finalDescription;
+
+    // Debug logging for bulk creation
+    console.log(`Bulk creation for ${mixinProduct.name}:`, {
+      originalDescription: mixinProduct.description?.substring(0, 100) + '...',
+      finalDescriptionLength: finalDescription.length,
+      finalBriefLength: finalBrief.length,
+      finalDescription: finalDescription.substring(0, 200) + '...',
+      finalBrief: finalBrief.substring(0, 200) + '...'
+    });
+
     const payload = {
       name: mixinProduct.name,
       category_id: categoryId,
@@ -1614,7 +1633,7 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
       photo: mainImageId,
       photos: otherImageIds,
       stock: Number(mixinProduct.stock || 1),
-      brief: cleanHtmlText(mixinProduct.description || ''),
+      brief: finalBrief, // Use the same fallback logic as manual creation
       description: finalDescription,
       sku,
       video: '',
