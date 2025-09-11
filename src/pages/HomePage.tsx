@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '../store/authStore'
 import { mixinApi } from '../services/api/mixin'
@@ -1358,6 +1358,8 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
   const [showModal, setShowModal] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const isPausedRef = useRef(false);
+  useEffect(() => { isPausedRef.current = isPaused; }, [isPaused]);
   const [progress, setProgress] = useState<{ done: number; total: number; errors: any[]; successes: number }>({ done: 0, total: 0, errors: [], successes: 0 });
   const [results, setResults] = useState<any[]>(() => {
     try { return JSON.parse(localStorage.getItem('bulk_migration_results') || '[]'); } catch { return []; }
@@ -1608,6 +1610,7 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
   const runInBatches = async (items: any[], resumeFromFailures = false) => {
     setIsProcessing(true);
     setIsPaused(false);
+    isPausedRef.current = false;
     
     const itemsToProcess = resumeFromFailures ? failedItems : items;
     const sessionId = Date.now().toString(36);
@@ -1658,11 +1661,11 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
           return;
         }
         // If paused, do not start new tasks. Check again shortly.
-        if (isPaused) {
+        if (isPausedRef.current) {
           setTimeout(next, 300);
           return;
         }
-        while (active < concurrency && idx < itemsToProcess.length && !isPaused) {
+        while (active < concurrency && idx < itemsToProcess.length && !isPausedRef.current) {
           const mp = itemsToProcess[idx++];
           active += 1;
           (async () => {
@@ -1824,7 +1827,11 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
                 <button
                   className={`px-3 py-1 rounded text-sm ${isPaused ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-yellow-500 text-white hover:bg-yellow-600'}`}
                   onClick={() => {
-                    setIsPaused(p => !p);
+                    setIsPaused(p => {
+                      const next = !p;
+                      isPausedRef.current = next;
+                      return next;
+                    });
                     // When pausing, refresh lists to reflect current state so counts and common/unique update promptly
                     queryClient.invalidateQueries({ queryKey: ['basalamProducts'] });
                     queryClient.invalidateQueries({ queryKey: ['mixinProducts'] });
