@@ -406,25 +406,30 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
       let mixinProductId = productId
       let basalamProductId = productId
 
-      if (type === 'mixin' && basalamProducts) {
+      // Use global arrays when available to match across all pages
+      const mixinSource: MixinProduct[] = (globalMixinProducts && globalMixinProducts.length > 0)
+        ? globalMixinProducts
+        : (Array.isArray(mixinProducts) ? mixinProducts : (mixinProducts as any)?.data || [])
+      const basalamSource: BasalamProduct[] = (globalBasalamProducts && globalBasalamProducts.length > 0)
+        ? globalBasalamProducts
+        : (Array.isArray(basalamProducts) ? basalamProducts : (basalamProducts as any)?.data || [])
+      const normalize = (s: string | undefined) => (s || '').trim().toLowerCase()
+
+      if (type === 'mixin') {
         const originalMixinProduct = await mixinApi.getProductById(mixinCredentials!, productId)
         if (originalMixinProduct) {
-          const basalamProduct = basalamProducts.find(
-            p => p.title.toLowerCase() === originalMixinProduct.name.toLowerCase()
-          )
-          if (basalamProduct) {
-            basalamProductId = basalamProduct.id
+          const match = basalamSource.find(p => p?.title && normalize(p.title) === normalize(originalMixinProduct.name))
+          if (match) {
+            basalamProductId = match.id
             console.log('Found Basalam product ID:', basalamProductId, 'for Mixin product:', originalMixinProduct.name)
           }
         }
-      } else if (type === 'basalam' && mixinProducts) {
+      } else if (type === 'basalam') {
         const originalBasalamProduct = await basalamApi.getProductById(basalamCredentials!, productId)
         if (originalBasalamProduct) {
-          const mixinProduct = mixinProducts.find(
-            p => p.name.toLowerCase() === originalBasalamProduct.title.toLowerCase()
-          )
-          if (mixinProduct) {
-            mixinProductId = mixinProduct.id
+          const match = mixinSource.find(p => p?.name && normalize(p.name) === normalize(originalBasalamProduct.title))
+          if (match) {
+            mixinProductId = match.id
             console.log('Found Mixin product ID:', mixinProductId, 'for Basalam product:', originalBasalamProduct.title)
           }
         }
@@ -1003,10 +1008,6 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient, v
           queryClient.refetchQueries({ queryKey: ['basalamProducts'] }),
           queryClient.refetchQueries({ queryKey: ['mixinProducts'] }),
         ]);
-        // Also refresh global lists for cross-page comparison
-        setTimeout(() => {
-          loadAllProductsForComparison();
-        }, 1000);
       } catch {}
 
       setTimeout(onClose, 2000); // Close the modal after a short delay
