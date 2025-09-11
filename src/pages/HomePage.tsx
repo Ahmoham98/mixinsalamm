@@ -34,7 +34,7 @@ const generateUniqueSKU = (productName: string, vendorId?: number): string => {
   return `${nameBase}-${vendorPart}-${uniquePart}`;
 };
 
-// Utility function to clean HTML markup from text
+// Utility function to clean HTML markup from text with improved structure preservation
 const cleanHtmlText = (htmlText: string): string => {
   if (!htmlText) return '';
   
@@ -42,23 +42,59 @@ const cleanHtmlText = (htmlText: string): string => {
   const tempDiv = document.createElement('div');
   tempDiv.innerHTML = htmlText;
   
-  // Get text content and clean up
-  let cleanText = tempDiv.textContent || tempDiv.innerText || '';
+  // Function to recursively extract text while preserving line breaks and structure
+  function extractTextWithLineBreaks(element: Element): string {
+    let text = '';
+    for (const node of element.childNodes) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        text += node.nodeValue;
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+        const element = node as Element;
+        if (element.tagName === 'BR') {
+          text += '\n';
+        } else if (element.tagName === 'P' || element.tagName === 'DIV') {
+          const childText = extractTextWithLineBreaks(element);
+          if (childText.trim()) {
+            text += '\n' + childText + '\n';
+          }
+        } else if (element.tagName === 'LI') {
+          text += '• ' + extractTextWithLineBreaks(element) + '\n';
+        } else if (element.tagName === 'UL' || element.tagName === 'OL') {
+          text += '\n' + extractTextWithLineBreaks(element) + '\n';
+        } else {
+          text += extractTextWithLineBreaks(element);
+        }
+      }
+    }
+    return text;
+  }
   
-  // Replace HTML entities with their actual characters
-  cleanText = cleanText
+  // Extract text with preserved line breaks and structure
+  let extractedText = extractTextWithLineBreaks(tempDiv);
+  
+  // Decode HTML entities using a textarea element
+  const textarea = document.createElement('textarea');
+  textarea.innerHTML = extractedText;
+  extractedText = textarea.value;
+  
+  // Clean up specific entities
+  extractedText = extractedText
     .replace(/&zwnj;/g, '') // Remove zero-width non-joiner
-    .replace(/&nbsp;/g, ' ') // Replace non-breaking space with regular space
-    .replace(/&amp;/g, '&') // Replace &amp; with &
-    .replace(/&lt;/g, '<') // Replace &lt; with <
-    .replace(/&gt;/g, '>') // Replace &gt; with >
-    .replace(/&quot;/g, '"') // Replace &quot; with "
-    .replace(/&#39;/g, "'") // Replace &#39; with '
-    .replace(/&apos;/g, "'") // Replace &apos; with '
-    .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+    .replace(/&nbsp;/g, ' ') // Replace non-breaking space
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'");
+  
+  // Normalize whitespace but preserve intentional line breaks
+  extractedText = extractedText
+    .replace(/[ \t]+/g, ' ') // Replace multiple spaces/tabs with single space
+    .replace(/\n\s*\n\s*\n/g, '\n\n') // Replace multiple newlines with double newline
     .trim(); // Remove leading/trailing whitespace
   
-  return cleanText;
+  return extractedText;
 };
 
 // Utility function to get unit quantity based on unit type ID
