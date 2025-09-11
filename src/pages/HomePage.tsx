@@ -949,6 +949,10 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient, v
         }
       }
 
+      // Build brief with same fallback to keep UI consistent
+      const initialBrief = cleanHtmlText(mixinProduct?.description || "")
+      const finalBrief = initialBrief || finalDescription
+
       const payload = {
         name: productName,
         category_id: parseInt(selectedCategory, 10), // Step 3: Fixed field name
@@ -960,7 +964,7 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient, v
         photo: uploadedImageIds[0], // اولین تصویر به عنوان عکس اصلی
         photos: uploadedImageIds.length > 1 ? uploadedImageIds.slice(1) : [], // سایر تصاویر
         stock: parseInt(stock, 10), // Step 8: Stock field
-        brief: cleanHtmlText(mixinProduct?.description || ""), // Step 9: Brief field - cleaned HTML
+        brief: finalBrief, // Keep brief in sync with description fallback
         description: finalDescription, // Full description with fallback to SEO or default
         sku: sku, // SKU field
         video: "", // Required field - empty for now
