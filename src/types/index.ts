@@ -13,6 +13,7 @@ export interface MixinProduct {
   name: string;
   price: number;
   description: string;
+  seo_description?: string;
   weight?: number;
   imageUrl?: string;
   length?: number | null;

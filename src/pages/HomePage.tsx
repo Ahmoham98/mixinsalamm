@@ -934,6 +934,21 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient, v
         console.warn('Failed to fetch unit type for category:', error);
       }
 
+      // Determine final description with fallback: description -> seo_description -> default
+      let finalDescription = cleanHtmlText((mixinProduct?.description || '').trim())
+      if (!finalDescription) {
+        try {
+          if (mixinCredentials && mixinProduct?.id) {
+            const full = await mixinApi.getProductById(mixinCredentials, mixinProduct.id)
+            finalDescription = cleanHtmlText((full as any)?.seo_description || '') || 'بدون توضیحات'
+          } else {
+            finalDescription = 'بدون توضیحات'
+          }
+        } catch {
+          finalDescription = 'بدون توضیحات'
+        }
+      }
+
       const payload = {
         name: productName,
         category_id: parseInt(selectedCategory, 10), // Step 3: Fixed field name
@@ -946,7 +961,7 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient, v
         photos: uploadedImageIds.length > 1 ? uploadedImageIds.slice(1) : [], // سایر تصاویر
         stock: parseInt(stock, 10), // Step 8: Stock field
         brief: cleanHtmlText(mixinProduct?.description || ""), // Step 9: Brief field - cleaned HTML
-        description: cleanHtmlText(mixinProduct?.description || ""), // Full description - cleaned HTML
+        description: finalDescription, // Full description with fallback to SEO or default
         sku: sku, // SKU field
         video: "", // Required field - empty for now
         keywords: "", // Required field - empty for now
@@ -1533,6 +1548,21 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
       console.warn('Failed to fetch unit type for category:', error);
     }
 
+    // Determine final description with fallback: description -> seo_description -> default
+    let finalDescription = cleanHtmlText((mixinProduct.description || '').trim())
+    if (!finalDescription) {
+      try {
+        if (mixinCredentials && mixinProduct?.id) {
+          const full = await mixinApi.getProductById(mixinCredentials, mixinProduct.id);
+          finalDescription = cleanHtmlText((full as any)?.seo_description || '') || 'بدون توضیحات';
+        } else {
+          finalDescription = 'بدون توضیحات';
+        }
+      } catch {
+        finalDescription = 'بدون توضیحات';
+      }
+    }
+
     const payload = {
       name: mixinProduct.name,
       category_id: categoryId,
@@ -1545,7 +1575,7 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
       photos: otherImageIds,
       stock: Number(mixinProduct.stock || 1),
       brief: cleanHtmlText(mixinProduct.description || ''),
-      description: cleanHtmlText(mixinProduct.description || ''),
+      description: finalDescription,
       sku,
       video: '',
       keywords: '',
