@@ -1,4 +1,4 @@
-import { api, handleApiError, BASE_URL } from './config'
+import { api, BASE_URL } from './config'
 import type { BasalamCredentials, BasalamProduct, BasalamUserData, BasalamProductsResponse } from '../../types'
 import { AxiosError } from 'axios'
 
@@ -113,11 +113,14 @@ export const basalamApi = {
     }
   },
 
-  updateProduct: async (credentials: BasalamCredentials, productId: number, productData: { name: string; price: number }) => {
+  updateProduct: async (credentials: BasalamCredentials, productId: number, productData: { name: string; price: number; description?: string }) => {
     try {
     const formData = new FormData()
     formData.append('name', productData.name)
     formData.append('price', productData.price.toString())
+    if (productData.description !== undefined) {
+      formData.append('description', productData.description)
+    }
 
       const response = await api.patch(
         `/products/update/basalam/${productId}`,

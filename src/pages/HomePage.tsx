@@ -431,12 +431,14 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
     let currentProductName = ''
     let changecard = ''
     let priceMismatch = false
+    let descriptionMismatch = false
 
     // Use the same logic as getCommonProducts to get the correct product arrays
     const mixinSource = (globalMixinProducts && globalMixinProducts.length > 0) ? globalMixinProducts : (Array.isArray(mixinProducts) ? mixinProducts : (mixinProducts as any)?.data || []);
     const basalamSource = (globalBasalamProducts && globalBasalamProducts.length > 0) ? globalBasalamProducts : (Array.isArray(basalamProducts) ? basalamProducts : (basalamProducts as any)?.data || []);
 
     const normalize = (s: string | undefined) => (s || '').trim().toLowerCase();
+    const normalizeDescription = (s: string | undefined) => cleanHtmlText(s || '').trim();
 
     if (type === 'mixin' && isMixinProduct(product)) {
       currentProductName = product.name
@@ -445,12 +447,27 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
       )
 
       if (matchingBasalamProduct) {
+        // Check price mismatch
         if (rialToToman(matchingBasalamProduct.price) !== product.price) {
+          priceMismatch = true
+        }
+        
+        // Check description mismatch
+        const mixinDescription = normalizeDescription(product.description)
+        const basalamDescription = normalizeDescription(matchingBasalamProduct.description)
+        if (mixinDescription !== basalamDescription) {
+          descriptionMismatch = true
+        }
+
+        if (priceMismatch || descriptionMismatch) {
+          const mismatchTypes = []
+          if (priceMismatch) mismatchTypes.push('قیمت')
+          if (descriptionMismatch) mismatchTypes.push('توضیحات')
+          
           setCheckMessage({
-            text: "قیمت محصول شما تغییر کرده، قیمت محصول دیگر را همگام سازی کنید",
+            text: `${mismatchTypes.join(' و ')} محصول شما تغییر کرده، ${mismatchTypes.join(' و ')} محصول دیگر را همگام سازی کنید`,
             isSuccess: false
           })
-          priceMismatch = true
         } else {
           setCheckMessage({
             text: "محصول شما هم در باسلام و هم در میکسین وحود دارد",
@@ -475,12 +492,27 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
       )
 
       if (matchingMixinProduct) {
+        // Check price mismatch
         if (matchingMixinProduct.price !== rialToToman(product.price)) {
+          priceMismatch = true
+        }
+        
+        // Check description mismatch
+        const mixinDescription = normalizeDescription(matchingMixinProduct.description)
+        const basalamDescription = normalizeDescription(product.description)
+        if (mixinDescription !== basalamDescription) {
+          descriptionMismatch = true
+        }
+
+        if (priceMismatch || descriptionMismatch) {
+          const mismatchTypes = []
+          if (priceMismatch) mismatchTypes.push('قیمت')
+          if (descriptionMismatch) mismatchTypes.push('توضیحات')
+          
           setCheckMessage({
-            text: "قیمت محصول شما تغییر کرده، قیمت محصول دیگر را همگام سازی کنید",
+            text: `${mismatchTypes.join(' و ')} محصول شما تغییر کرده، ${mismatchTypes.join(' و ')} محصول دیگر را همگام سازی کنید`,
             isSuccess: false
           })
-          priceMismatch = true
         } else {
           setCheckMessage({
             text: "محصول شما هم در باسلام و هم در میکسین وحود دارد",
@@ -500,9 +532,10 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
       setShowBasalamButton(false)
     }
 
-    setShowSyncButton(priceMismatch)
+    setShowSyncButton(priceMismatch || descriptionMismatch)
     localStorage.setItem('changecard', changecard)
     console.log('Updated changecard:', changecard, 'for product:', currentProductName)
+    console.log('Mismatches detected:', { priceMismatch, descriptionMismatch })
     console.log('Using product arrays:', { mixinSource: mixinSource.length, basalamSource: basalamSource.length })
   }
 
@@ -581,7 +614,8 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
         console.log('Updating Basalam product...')
         const basalamProductData = {
           name: editedProduct.name,
-          price: tomanToRial(editedProduct.price)
+          price: tomanToRial(editedProduct.price),
+          description: editedProduct.description
         }
         try {
           console.log('Sending Basalam update request with data:', {
