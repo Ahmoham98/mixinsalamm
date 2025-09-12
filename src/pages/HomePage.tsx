@@ -34,7 +34,7 @@ const generateUniqueSKU = (productName: string, vendorId?: number): string => {
   return `${nameBase}-${vendorPart}-${uniquePart}`;
 };
 
-// Utility function to clean HTML markup from text with improved structure preservation
+// Utility function to clean HTML markup from text with improved structure preservation and emoji support
 const cleanHtmlText = (htmlText: string): string => {
   if (!htmlText) return '';
   
@@ -43,7 +43,7 @@ const cleanHtmlText = (htmlText: string): string => {
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = htmlText;
     
-    // Function to recursively extract text while preserving line breaks and structure
+    // Function to recursively extract text while preserving line breaks, structure, and emojis
     function extractTextWithLineBreaks(element: Element): string {
       let text = '';
       for (const node of element.childNodes) {
@@ -62,6 +62,15 @@ const cleanHtmlText = (htmlText: string): string => {
             text += '• ' + extractTextWithLineBreaks(element) + '\n';
           } else if (element.tagName === 'UL' || element.tagName === 'OL') {
             text += '\n' + extractTextWithLineBreaks(element) + '\n';
+          } else if (element.tagName === 'IMG') {
+            // Handle emoji images - try to extract alt text or use a fallback
+            const alt = element.getAttribute('alt') || '';
+            const src = element.getAttribute('src') || '';
+            if (alt) {
+              text += alt;
+            } else if (src.includes('emoji') || src.includes('smiley')) {
+              text += '😊'; // Fallback emoji
+            }
           } else {
             text += extractTextWithLineBreaks(element);
           }
@@ -73,12 +82,12 @@ const cleanHtmlText = (htmlText: string): string => {
     // Extract text with preserved line breaks and structure
     let extractedText = extractTextWithLineBreaks(tempDiv);
     
-    // Decode HTML entities using a textarea element
+    // Decode HTML entities using a textarea element (this preserves emojis)
     const textarea = document.createElement('textarea');
     textarea.innerHTML = extractedText;
     extractedText = textarea.value;
     
-    // Clean up specific entities
+    // Clean up specific entities while preserving emojis
     extractedText = extractedText
       .replace(/&zwnj;/g, '') // Remove zero-width non-joiner
       .replace(/&nbsp;/g, ' ') // Replace non-breaking space
@@ -89,7 +98,43 @@ const cleanHtmlText = (htmlText: string): string => {
       .replace(/&#39;/g, "'")
       .replace(/&apos;/g, "'");
     
-    // Normalize whitespace but preserve intentional line breaks
+    // Handle emoji HTML entities (like &#128512; for 😀)
+    extractedText = extractedText.replace(/&#(\d+);/g, (match, dec) => {
+      const codePoint = parseInt(dec, 10);
+      // Check if it's an emoji Unicode range
+      if (codePoint >= 0x1F600 && codePoint <= 0x1F64F || // Emoticons
+          codePoint >= 0x1F300 && codePoint <= 0x1F5FF || // Misc Symbols and Pictographs
+          codePoint >= 0x1F680 && codePoint <= 0x1F6FF || // Transport and Map
+          codePoint >= 0x1F1E0 && codePoint <= 0x1F1FF || // Regional indicator symbols
+          codePoint >= 0x2600 && codePoint <= 0x26FF ||   // Misc symbols
+          codePoint >= 0x2700 && codePoint <= 0x27BF ||   // Dingbats
+          codePoint >= 0xFE00 && codePoint <= 0xFE0F ||   // Variation Selectors
+          codePoint >= 0x1F900 && codePoint <= 0x1F9FF || // Supplemental Symbols and Pictographs
+          codePoint >= 0x1F018 && codePoint <= 0x1F0F5) { // Playing cards
+        return String.fromCodePoint(codePoint);
+      }
+      return match; // Keep other numeric entities as is
+    });
+    
+    // Handle emoji HTML entities with 'x' prefix (like &#x1F600; for 😀)
+    extractedText = extractedText.replace(/&#x([0-9A-Fa-f]+);/g, (match, hex) => {
+      const codePoint = parseInt(hex, 16);
+      // Check if it's an emoji Unicode range
+      if (codePoint >= 0x1F600 && codePoint <= 0x1F64F || // Emoticons
+          codePoint >= 0x1F300 && codePoint <= 0x1F5FF || // Misc Symbols and Pictographs
+          codePoint >= 0x1F680 && codePoint <= 0x1F6FF || // Transport and Map
+          codePoint >= 0x1F1E0 && codePoint <= 0x1F1FF || // Regional indicator symbols
+          codePoint >= 0x2600 && codePoint <= 0x26FF ||   // Misc symbols
+          codePoint >= 0x2700 && codePoint <= 0x27BF ||   // Dingbats
+          codePoint >= 0xFE00 && codePoint <= 0xFE0F ||   // Variation Selectors
+          codePoint >= 0x1F900 && codePoint <= 0x1F9FF || // Supplemental Symbols and Pictographs
+          codePoint >= 0x1F018 && codePoint <= 0x1F0F5) { // Playing cards
+        return String.fromCodePoint(codePoint);
+      }
+      return match; // Keep other hex entities as is
+    });
+    
+    // Normalize whitespace but preserve intentional line breaks and emojis
     extractedText = extractedText
       .replace(/[ \t]+/g, ' ') // Replace multiple spaces/tabs with single space
       .replace(/\n\s*\n\s*\n/g, '\n\n') // Replace multiple newlines with double newline
@@ -99,7 +144,40 @@ const cleanHtmlText = (htmlText: string): string => {
   } catch (error) {
     console.error('Error in cleanHtmlText:', error);
     // Fallback to simple text extraction if DOM operations fail
-    return htmlText.replace(/<[^>]*>/g, '').replace(/&[^;]+;/g, ' ').trim();
+    // This fallback also handles emojis
+    let fallbackText = htmlText.replace(/<[^>]*>/g, '');
+    // Decode emoji entities in fallback
+    fallbackText = fallbackText.replace(/&#(\d+);/g, (match, dec) => {
+      const codePoint = parseInt(dec, 10);
+      if (codePoint >= 0x1F600 && codePoint <= 0x1F64F || 
+          codePoint >= 0x1F300 && codePoint <= 0x1F5FF || 
+          codePoint >= 0x1F680 && codePoint <= 0x1F6FF || 
+          codePoint >= 0x1F1E0 && codePoint <= 0x1F1FF || 
+          codePoint >= 0x2600 && codePoint <= 0x26FF ||   
+          codePoint >= 0x2700 && codePoint <= 0x27BF ||   
+          codePoint >= 0xFE00 && codePoint <= 0xFE0F ||   
+          codePoint >= 0x1F900 && codePoint <= 0x1F9FF || 
+          codePoint >= 0x1F018 && codePoint <= 0x1F0F5) {
+        return String.fromCodePoint(codePoint);
+      }
+      return match;
+    });
+    fallbackText = fallbackText.replace(/&#x([0-9A-Fa-f]+);/g, (match, hex) => {
+      const codePoint = parseInt(hex, 16);
+      if (codePoint >= 0x1F600 && codePoint <= 0x1F64F || 
+          codePoint >= 0x1F300 && codePoint <= 0x1F5FF || 
+          codePoint >= 0x1F680 && codePoint <= 0x1F6FF || 
+          codePoint >= 0x1F1E0 && codePoint <= 0x1F1FF || 
+          codePoint >= 0x2600 && codePoint <= 0x26FF ||   
+          codePoint >= 0x2700 && codePoint <= 0x27BF ||   
+          codePoint >= 0xFE00 && codePoint <= 0xFE0F ||   
+          codePoint >= 0x1F900 && codePoint <= 0x1F9FF || 
+          codePoint >= 0x1F018 && codePoint <= 0x1F0F5) {
+        return String.fromCodePoint(codePoint);
+      }
+      return match;
+    });
+    return fallbackText.replace(/&[^;]+;/g, ' ').trim();
   }
 };
 
@@ -1343,7 +1421,7 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
             allMixin.push(...products);
             mixinPage++;
             // Safety check to prevent infinite loops
-            if (mixinPage > 50) break;
+            if (mixinPage > 250) break;
           }
         } catch (error: any) {
           console.log(`BulkMigration: Mixin page ${mixinPage} failed (likely no more pages):`, error.message);
@@ -1368,7 +1446,7 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
             allBasalam.push(...products);
             basalamPage++;
             // Safety check to prevent infinite loops
-            if (basalamPage > 50) break;
+            if (basalamPage > 5200) break;
           }
         } catch (error: any) {
           console.log(`BulkMigration: Basalam page ${basalamPage} failed (likely no more pages):`, error.message);
@@ -1714,9 +1792,9 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
     
     setProgress({ done: 0, total: itemsToProcess.length, errors: [], successes: 0 });
 
-    let active = 0;
-    let idx = 0;
-    let done = 0;
+    let active = 0;  //Current processing items
+    let idx = 0;  //Next item to process 
+    let done = 0;  //Completed items
     let successes = 0;
     const errors: any[] = [];
     const newFailedItems: any[] = [];
