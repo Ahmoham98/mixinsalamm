@@ -1614,14 +1614,30 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
     const categoryId = await fetchCategoryId(mixinProduct.name);
     if (!categoryId) return { ok: false, message: 'Unable to detect category' };
 
+    // --- CRITICAL FIX: Fetch full product details for complete description ---
+    let fullMixinProduct = mixinProduct;
+    try {
+      if (mixinCredentials && mixinProduct?.id) {
+        console.log(`Bulk creation: Fetching full details for product ${mixinProduct.id} (${mixinProduct.name})`);
+        const full = await mixinApi.getProductById(mixinCredentials, mixinProduct.id);
+        if (full) {
+          fullMixinProduct = full;
+          console.log(`Bulk creation: Full product details fetched. Description length: ${full.description?.length || 0}, SEO description length: ${full.seo_description?.length || 0}`);
+        }
+      }
+    } catch (e) {
+      console.warn('Bulk creation: Failed to fetch full product details, using paginated data:', e);
+      // Continue with paginated data if full fetch fails
+    }
+
     // --- New logic for multiple images ---
     let imageIds: number[] = [];
     try {
       let imageUrls: string[] = [];
-      if (mixinProduct?.id && mixinCredentials) {
-        imageUrls = await mixinApi.getProductImages(mixinCredentials, mixinProduct.id);
-      } else if (mixinProduct?.imageUrl) {
-        imageUrls = [mixinProduct.imageUrl];
+      if (fullMixinProduct?.id && mixinCredentials) {
+        imageUrls = await mixinApi.getProductImages(mixinCredentials, fullMixinProduct.id);
+      } else if (fullMixinProduct?.imageUrl) {
+        imageUrls = [fullMixinProduct.imageUrl];
       }
       if (!imageUrls.length) return { ok: false, message: 'No images found for upload' };
       for (const url of imageUrls) {
@@ -1636,16 +1652,15 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
     const otherImageIds = imageIds.length > 1 ? imageIds.slice(1) : [];
     // --- End new logic ---
 
-    const sku = generateUniqueSKU(mixinProduct.name, vendorId);
+    const sku = generateUniqueSKU(fullMixinProduct.name, vendorId);
 
-    // Try to fetch full Mixin product to get optional dimensions
+    // Try to fetch full Mixin product to get optional dimensions (now using fullMixinProduct)
     let packagingDimensionsFromMixin: { height?: number; length?: number; width?: number } | null = null;
     try {
-      if (mixinCredentials && mixinProduct?.id) {
-        const full = await mixinApi.getProductById(mixinCredentials, mixinProduct.id);
-        const lengthVal = full?.length != null ? Number(full.length) : undefined;
-        const widthVal = full?.width != null ? Number(full.width) : undefined;
-        const heightVal = full?.height != null ? Number(full.height) : undefined;
+      if (mixinCredentials && fullMixinProduct?.id) {
+        const lengthVal = fullMixinProduct?.length != null ? Number(fullMixinProduct.length) : undefined;
+        const widthVal = fullMixinProduct?.width != null ? Number(fullMixinProduct.width) : undefined;
+        const heightVal = fullMixinProduct?.height != null ? Number(fullMixinProduct.height) : undefined;
         if ((lengthVal && lengthVal > 0) || (widthVal && widthVal > 0) || (heightVal && heightVal > 0)) {
           packagingDimensionsFromMixin = {
             height: heightVal,
@@ -1673,44 +1688,42 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
     }
 
     // Determine final description with fallback: description -> seo_description -> default
-    let finalDescription = cleanHtmlText((mixinProduct.description || '').trim())
+    // Now using fullMixinProduct which has complete data
+    let finalDescription = cleanHtmlText((fullMixinProduct.description || '').trim())
     if (!finalDescription) {
       try {
-        if (mixinCredentials && mixinProduct?.id) {
-          const full = await mixinApi.getProductById(mixinCredentials, mixinProduct.id);
-          finalDescription = cleanHtmlText((full as any)?.seo_description || '') || 'بدون توضیحات';
-        } else {
-          finalDescription = 'بدون توضیحات';
-        }
+        // Use seo_description from the full product data we already fetched
+        finalDescription = cleanHtmlText((fullMixinProduct as any)?.seo_description || '') || 'بدون توضیحات';
       } catch {
         finalDescription = 'بدون توضیحات';
       }
     }
 
     // Build brief with same fallback to keep consistency with manual creation
-    const initialBrief = cleanHtmlText(mixinProduct.description || "");
+    const initialBrief = cleanHtmlText(fullMixinProduct.description || "");
     const finalBrief = initialBrief || finalDescription;
 
     // Debug logging for bulk creation
-    console.log(`Bulk creation for ${mixinProduct.name}:`, {
-      originalDescription: mixinProduct.description?.substring(0, 100) + '...',
+    console.log(`Bulk creation for ${fullMixinProduct.name}:`, {
+      originalDescription: fullMixinProduct.description?.substring(0, 100) + '...',
       finalDescriptionLength: finalDescription.length,
       finalBriefLength: finalBrief.length,
       finalDescription: finalDescription.substring(0, 200) + '...',
-      finalBrief: finalBrief.substring(0, 200) + '...'
+      finalBrief: finalBrief.substring(0, 200) + '...',
+      dataSource: 'fullMixinProduct'
     });
 
     const payload = {
-      name: mixinProduct.name,
+      name: fullMixinProduct.name,
       category_id: categoryId,
       status: "2976",
-      primary_price: tomanToRial(Number(mixinProduct.price || 0)),
+      primary_price: tomanToRial(Number(fullMixinProduct.price || 0)),
       preparation_days: 3,
-      weight: Number(mixinProduct.weight || 500),
-      package_weight: Number(mixinProduct.weight ? Number(mixinProduct.weight) + 50 : 550),
+      weight: Number(fullMixinProduct.weight || 500),
+      package_weight: Number(fullMixinProduct.weight ? Number(fullMixinProduct.weight) + 50 : 550),
       photo: mainImageId,
       photos: otherImageIds,
-      stock: Number(mixinProduct.stock || 1),
+      stock: Number(fullMixinProduct.stock || 1),
       brief: finalBrief, // Use the same fallback logic as manual creation
       description: finalDescription,
       sku,
