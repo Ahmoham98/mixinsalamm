@@ -658,7 +658,32 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
 
       console.log('Using product IDs:', { mixinProductId, basalamProductId })
 
-      if (changecard.includes('mixin') && mixinCredentials) {
+      // Determine what needs to be synced based on the current product type and edited fields
+      const needsMixinUpdate = changecard.includes('mixin') && mixinCredentials
+      const needsBasalamUpdate = changecard.includes('basalam') && basalamCredentials
+
+      console.log('Sync analysis:', {
+        changecard,
+        needsMixinUpdate,
+        needsBasalamUpdate,
+        currentProductType: type,
+        editedProduct: {
+          name: editedProduct.name,
+          price: editedProduct.price,
+          descriptionLength: editedProduct.description.length
+        }
+      })
+
+      // For description-only sync, we need to ensure we're updating the OTHER product
+      // with the CURRENT product's description
+      console.log('Description sync strategy:', {
+        currentProductType: type,
+        currentProductDescription: editedProduct.description.substring(0, 100) + '...',
+        willUpdateMixin: needsMixinUpdate,
+        willUpdateBasalam: needsBasalamUpdate
+      })
+
+      if (needsMixinUpdate) {
         console.log('Updating Mixin product...')
         const originalProduct = await mixinApi.getProductById(mixinCredentials, mixinProductId)
         if (!originalProduct) {
@@ -676,9 +701,18 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
         console.log('Sending Mixin update request with data:', mixinProductData)
         const mixinResponse = await mixinApi.updateProduct(mixinCredentials, mixinProductId, mixinProductData)
         console.log('Mixin update response:', mixinResponse)
+        
+        // Verify the update by fetching the updated product
+        console.log('Verifying Mixin product update...')
+        const updatedMixinProduct = await mixinApi.getProductById(mixinCredentials, mixinProductId)
+        console.log('Updated Mixin product description:', {
+          originalLength: editedProduct.description.length,
+          updatedLength: updatedMixinProduct?.description?.length || 0,
+          updatedDescription: updatedMixinProduct?.description?.substring(0, 100) + '...'
+        })
       }
 
-      if (changecard.includes('basalam') && basalamCredentials) {
+      if (needsBasalamUpdate) {
         console.log('Updating Basalam product...')
         const basalamProductData = {
           name: editedProduct.name,
@@ -690,10 +724,20 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
             productId: basalamProductId,
             data: basalamProductData,
             descriptionLength: editedProduct.description.length,
-            descriptionPreview: editedProduct.description.substring(0, 100) + '...'
+            descriptionPreview: editedProduct.description.substring(0, 100) + '...',
+            fullDescription: editedProduct.description
           })
           const basalamResponse = await basalamApi.updateProduct(basalamCredentials, basalamProductId, basalamProductData)
           console.log('Basalam update response:', basalamResponse)
+          
+          // Verify the update by fetching the updated product
+          console.log('Verifying Basalam product update...')
+          const updatedBasalamProduct = await basalamApi.getProductById(basalamCredentials, basalamProductId)
+          console.log('Updated Basalam product description:', {
+            originalLength: editedProduct.description.length,
+            updatedLength: updatedBasalamProduct?.description?.length || 0,
+            updatedDescription: updatedBasalamProduct?.description?.substring(0, 100) + '...'
+          })
         } catch (error) {
           console.error('Error updating Basalam product:', error)
         }
