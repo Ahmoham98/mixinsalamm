@@ -372,7 +372,7 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
   useEffect(() => {
     if (isOpen && product) {
       console.log('Running check for product:', product)
-      handleCheck()
+      handleCheck().catch(console.error)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, product, type])
@@ -427,7 +427,7 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
     }))
   }
 
-  const handleCheck = () => {
+  const handleCheck = async () => {
     let currentProductName = ''
     let changecard = ''
     let priceMismatch = false
@@ -452,9 +452,43 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
           priceMismatch = true
         }
         
-        // Check description mismatch
-        const mixinDescription = normalizeDescription(product.description)
-        const basalamDescription = normalizeDescription(matchingBasalamProduct.description)
+        // Fetch full product details for accurate description comparison
+        let fullMixinProduct = product;
+        let fullBasalamProduct = matchingBasalamProduct;
+        
+        try {
+          if (mixinCredentials) {
+            const fullMixin = await mixinApi.getProductById(mixinCredentials, product.id);
+            if (fullMixin) fullMixinProduct = fullMixin;
+          }
+        } catch (e) {
+          console.warn('Failed to fetch full Mixin product for comparison:', e);
+        }
+        
+        try {
+          if (basalamCredentials) {
+            const fullBasalam = await basalamApi.getProductById(basalamCredentials, matchingBasalamProduct.id);
+            if (fullBasalam) fullBasalamProduct = fullBasalam;
+          }
+        } catch (e) {
+          console.warn('Failed to fetch full Basalam product for comparison:', e);
+        }
+        
+        // Check description mismatch using full product details
+        const mixinDescription = normalizeDescription(fullMixinProduct.description)
+        const basalamDescription = normalizeDescription(fullBasalamProduct.description)
+        
+        // Debug logging for description comparison
+        console.log('Description comparison debug (with full details):', {
+          mixinProductName: product.name,
+          mixinDescription: mixinDescription.substring(0, 100) + '...',
+          basalamDescription: basalamDescription.substring(0, 100) + '...',
+          mixinLength: mixinDescription.length,
+          basalamLength: basalamDescription.length,
+          areEqual: mixinDescription === basalamDescription,
+          dataSource: 'fullProductDetails'
+        });
+        
         if (mixinDescription !== basalamDescription) {
           descriptionMismatch = true
         }
@@ -497,9 +531,43 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
           priceMismatch = true
         }
         
-        // Check description mismatch
-        const mixinDescription = normalizeDescription(matchingMixinProduct.description)
-        const basalamDescription = normalizeDescription(product.description)
+        // Fetch full product details for accurate description comparison
+        let fullMixinProduct = matchingMixinProduct;
+        let fullBasalamProduct = product;
+        
+        try {
+          if (mixinCredentials) {
+            const fullMixin = await mixinApi.getProductById(mixinCredentials, matchingMixinProduct.id);
+            if (fullMixin) fullMixinProduct = fullMixin;
+          }
+        } catch (e) {
+          console.warn('Failed to fetch full Mixin product for comparison:', e);
+        }
+        
+        try {
+          if (basalamCredentials) {
+            const fullBasalam = await basalamApi.getProductById(basalamCredentials, product.id);
+            if (fullBasalam) fullBasalamProduct = fullBasalam;
+          }
+        } catch (e) {
+          console.warn('Failed to fetch full Basalam product for comparison:', e);
+        }
+        
+        // Check description mismatch using full product details
+        const mixinDescription = normalizeDescription(fullMixinProduct.description)
+        const basalamDescription = normalizeDescription(fullBasalamProduct.description)
+        
+        // Debug logging for description comparison
+        console.log('Description comparison debug (Basalam with full details):', {
+          basalamProductName: product.title,
+          mixinDescription: mixinDescription.substring(0, 100) + '...',
+          basalamDescription: basalamDescription.substring(0, 100) + '...',
+          mixinLength: mixinDescription.length,
+          basalamLength: basalamDescription.length,
+          areEqual: mixinDescription === basalamDescription,
+          dataSource: 'fullProductDetails'
+        });
+        
         if (mixinDescription !== basalamDescription) {
           descriptionMismatch = true
         }
@@ -620,7 +688,9 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
         try {
           console.log('Sending Basalam update request with data:', {
             productId: basalamProductId,
-            data: basalamProductData
+            data: basalamProductData,
+            descriptionLength: editedProduct.description.length,
+            descriptionPreview: editedProduct.description.substring(0, 100) + '...'
           })
           const basalamResponse = await basalamApi.updateProduct(basalamCredentials, basalamProductId, basalamProductData)
           console.log('Basalam update response:', basalamResponse)
