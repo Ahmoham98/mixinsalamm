@@ -114,11 +114,15 @@ export const mixinApi = {
         price: Number(productData.price),
         description: productData.description,
         stock: productData.stock,
-        Weight: productData.weight,
+        weight: productData.weight,
         extra_fields: []  // Always set extra_fields to empty array
       }
 
       console.log('Sending update request with data:', updatedData)
+      console.log('Request URL:', `/products/update/mixin/${productId}`)
+      console.log('Request params:', { mixin_url: credentials.url })
+      console.log('Weight field value:', updatedData.weight)
+      console.log('Stock field value:', updatedData.stock)
 
       const response = await api.put(
         `/products/update/mixin/${productId}`,
