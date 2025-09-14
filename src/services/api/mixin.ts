@@ -1,5 +1,6 @@
 import { api } from './config'
 import type { MixinCredentials, MixinProduct, MixinValidationResponse } from '../../types'
+import { Weight } from 'lucide-react';
 
 export const mixinApi = {
   validateCredentials: async (url: string, token: string): Promise<MixinValidationResponse> => {
@@ -113,6 +114,8 @@ export const mixinApi = {
         name: productData.name,
         price: Number(productData.price),
         description: productData.description,
+        stock: productData.stock,
+        Weight: productData.weight,
         extra_fields: []  // Always set extra_fields to empty array
       }
 
