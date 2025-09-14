@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom'; // Import useNavigate
 
 // Main App component for the landing page
@@ -7,9 +7,9 @@ function LandingPage() { // Changed function name from App to LandingPage
 
   // Array of placeholder images - Ensure these paths are correct relative to your public folder
   const images = [
-    '/my-image-2.png', // Correct path for image in public/ (This image will be in nth-child(1))
-    '/my-image-3.png', // Correct path for image in public/ (This image will be in nth-child(2))
-    '/my-image-3.png'  // Correct path for image in public/ (This image will be in nth-child(3))
+    '/my-image-2.png', // Correct path for image in public/ (This image will be in nth-child(1)) - Mixin logo
+    '/my-image-3.png', // Correct path for image in public/ (This image will be in nth-child(2)) - Basalam logo
+    '/mixinsalam_image.jpg'  // Mixinsalam logo (This image will be in nth-child(3))
   ];
 
   // State to track scroll position and header visibility
@@ -49,7 +49,7 @@ function LandingPage() { // Changed function name from App to LandingPage
     // Changed overall background from bg-gray-50 to bg-white to match sections
     <div dir="rtl" className="min-h-screen bg-white text-gray-800 flex flex-col items-center p-4 sm:p-6 lg:p-8" style={{ fontFamily: "'Vazirmatn', sans-serif" }}>
       {/* Import Vazirmatn and Roboto fonts */}
-      <style jsx global>{`
+      <style>{`
         @import url('https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.0.0/Vazirmatn-Variable.css');
         @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap'); /* Added Roboto font */
 
