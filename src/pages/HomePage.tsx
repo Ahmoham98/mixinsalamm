@@ -618,6 +618,17 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
   const handleEdit = async () => {
     try {
       setIsEditing(true)
+      
+      // Validation for weight field
+      if (editedProduct.weight <= 0) {
+        setEditMessage({
+          text: 'وزن محصول نمی‌تواند صفر یا کمتر از صفر باشد',
+          isSuccess: false
+        })
+        setIsEditing(false)
+        return
+      }
+      
       const changecard = localStorage.getItem('changecard') || ''
       const productId = product?.id
 

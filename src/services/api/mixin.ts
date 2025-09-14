@@ -1,6 +1,5 @@
 import { api } from './config'
 import type { MixinCredentials, MixinProduct, MixinValidationResponse } from '../../types'
-import { Weight } from 'lucide-react';
 
 export const mixinApi = {
   validateCredentials: async (url: string, token: string): Promise<MixinValidationResponse> => {
@@ -96,7 +95,7 @@ export const mixinApi = {
     }
   },
 
-  updateProduct: async (credentials: MixinCredentials, productId: number, productData: any) => {
+  updateProduct: async (credentials: MixinCredentials, productId: number, productData: { name: string; price: number; description: string; stock: number; weight: number }) => {
     if (!credentials.url) {
       throw new Error('Mixin URL not found in credentials')
     }

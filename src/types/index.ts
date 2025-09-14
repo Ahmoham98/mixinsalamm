@@ -15,6 +15,7 @@ export interface MixinProduct {
   description: string;
   seo_description?: string;
   weight?: number;
+  stock?: number;
   imageUrl?: string;
   length?: number | null;
   width?: number | null;
