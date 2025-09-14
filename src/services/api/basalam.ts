@@ -113,30 +113,29 @@ export const basalamApi = {
     }
   },
 
-  updateProduct: async (credentials: BasalamCredentials, productId: number, productData: { name: string; price: number; description?: string }) => {
+  updateProduct: async (credentials: BasalamCredentials, productId: number, productData: { name: string; price: number; description?: string; inventory: number; net_weight: number }) => {
     try {
-    const formData = new FormData()
-    formData.append('name', productData.name)
-    formData.append('price', productData.price.toString())
-    if (productData.description !== undefined) {
-      formData.append('description', productData.description)
-    }
-
+      const formData = new FormData()
+      formData.append('name', productData.name)
+      formData.append('price', productData.price.toString())
+      formData.append('inventory', productData.inventory.toString()) // stock
+      formData.append('net_weight', productData.net_weight.toString()) // weight
+      if (productData.description !== undefined) {
+        formData.append('description', productData.description)
+      }
       const response = await api.patch(
         `/products/update/basalam/${productId}`,
         formData,
-      {
-        headers: {
+        {
+          headers: {
             'Authorization': `Bearer ${credentials.access_token}`,
             'Content-Type': 'multipart/form-data'
           }
-      }
-    )
-
+        }
+      )
       if (!response.data) {
         throw new Error('No data received in response')
       }
-
       return response.data
     } catch (error) {
       console.error('Error updating Basalam product:', error)

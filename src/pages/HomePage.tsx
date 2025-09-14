@@ -694,18 +694,27 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
           name: editedProduct.name,
           price: tomanToRial(editedProduct.price),
           description: editedProduct.description,
-          net_weight: Number(editedProduct.weight),
-          inventory: Number(editedProduct.stock),
+          inventory: Number(editedProduct.stock), // stock
+          net_weight: Number(editedProduct.weight), // weight
         }
         try {
           console.log('Sending Basalam update request with data:', {
             productId: basalamProductId,
             data: basalamProductData,
             descriptionLength: editedProduct.description.length,
-            descriptionPreview: editedProduct.description.substring(0, 100) + '...'
+            descriptionPreview: editedProduct.description.substring(0, 100) + '...',
+            fullDescription: editedProduct.description
           })
           const basalamResponse = await basalamApi.updateProduct(basalamCredentials, basalamProductId, basalamProductData)
           console.log('Basalam update response:', basalamResponse)
+          // Verify the update by fetching the updated product
+          console.log('Verifying Basalam product update...')
+          const updatedBasalamProduct = await basalamApi.getProductById(basalamCredentials, basalamProductId)
+          console.log('Updated Basalam product description:', {
+            originalLength: editedProduct.description.length,
+            updatedLength: updatedBasalamProduct?.description?.length || 0,
+            updatedDescription: updatedBasalamProduct?.description?.substring(0, 100) + '...'
+          })
         } catch (error) {
           console.error('Error updating Basalam product:', error)
         }
