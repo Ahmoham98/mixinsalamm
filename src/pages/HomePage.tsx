@@ -851,8 +851,8 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
         </div>
 
         <div className="space-y-4">
-          <div>
-            <label className="font-medium text-lg">Name/Title:</label>
+          <div dir="rtl">
+            <label className="font-medium text-lg text-right block">نام محصول:</label>
             <input
               type="text"
               value={editedProduct.name}
@@ -861,8 +861,8 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
               dir="rtl"
             />
           </div>
-          <div>
-            <label className="font-medium text-lg">Price:</label>
+          <div dir="rtl">
+            <label className="font-medium text-lg text-right block">قیمت:</label>
             <div className="relative">
               <input
                 type="number"
@@ -876,8 +876,8 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
               </p>
             </div>
           </div>
-          <div>
-            <label className="font-medium text-lg">Description:</label>
+          <div dir="rtl">
+            <label className="font-medium text-lg text-right block">توضیحات:</label>
             <textarea
               value={editedProduct.description}
               onChange={(e) => handleInputChange('description', e.target.value)}
@@ -886,8 +886,8 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
               dir="rtl"
             />
           </div>
-          <div>
-            <label className="font-medium text-lg">وزن محصول (گرم):</label>
+          <div dir="rtl">
+            <label className="font-medium text-lg text-right block">وزن محصول (گرم):</label>
             <input
               type="number"
               value={editedProduct.weight}
@@ -897,8 +897,8 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
               min={0}
             />
           </div>
-          <div>
-            <label className="font-medium text-lg">موجودی محصول:</label>
+          <div dir="rtl">
+            <label className="font-medium text-lg text-right block">موجودی محصول:</label>
             <input
               type="number"
               value={editedProduct.stock}
@@ -2178,7 +2178,8 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
       </div>
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40" onClick={() => setShowModal(false)}>
-          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl mx-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-auto max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="p-6 pb-0 flex-shrink-0">
             <div className="flex items-center justify-between mb-2">
               <h2 className="text-xl font-bold text-blue-700">محصولات آماده انتقال ({missingProducts.length})</h2>
               <div className="flex items-center gap-3">
@@ -2210,7 +2211,10 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
                 </button>
               </div>
             </div>
+            </div>
             
+            {/* Scrollable Content Area */}
+            <div className="flex-1 overflow-y-auto px-6">
             {/* Scheduling Section */}
             <div className="mb-4 p-3 bg-gray-50 rounded-lg">
               <div className="flex items-center gap-4">
@@ -2335,8 +2339,13 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
                 </ul>
               </div>
             )}
-            <div className="flex justify-end">
-              <button className="text-gray-500 hover:text-gray-700 text-sm" onClick={() => setShowModal(false)}>بستن</button>
+            </div>
+            
+            {/* Footer */}
+            <div className="p-6 pt-0 flex-shrink-0">
+              <div className="flex justify-end">
+                <button className="text-gray-500 hover:text-gray-700 text-sm" onClick={() => setShowModal(false)}>بستن</button>
+              </div>
             </div>
           </div>
         </div>
@@ -2690,9 +2699,9 @@ function HomePage() {
   const AutomationBanner = () => {
 
     return (
-      <div className="bg-gradient-to-r from-[#5b9fdb]/20 to-[#ff6040]/20 backdrop-blur-md rounded-lg p-6 mb-6 shadow-lg border border-[#5b9fdb]/30">
+      <div className="bg-gradient-to-r from-[#5b9fdb]/20 to-[#ff6040]/20 backdrop-blur-md rounded-lg p-6 mb-6 shadow-lg border border-[#5b9fdb]/30" dir="rtl">
         <div className="flex items-center justify-between">
-          <div className="flex-1">
+          <div className="flex-1 text-right">
             <h3 className="text-xl font-bold text-gray-800 mb-2">
               میخوای هر تغییری که توی میکسین میدی همونجا روی محصولاتت توی باسلامم اعمال شه؟
             </h3>
@@ -2701,7 +2710,7 @@ function HomePage() {
             </p>
           </div>
           
-          <div className="ml-6">
+          <div className="mr-6">
             <button
               onClick={() => navigate('/settings')}
               className="bg-gradient-to-r from-[#5b9fdb] to-[#ff6040] text-white px-6 py-3 rounded-lg font-semibold hover:from-[#4a8bc7] hover:to-[#e5553a] transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
