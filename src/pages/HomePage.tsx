@@ -628,6 +628,14 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
         setIsEditing(false)
         return
       }
+
+      // Validation for stock field
+      if (editedProduct.stock < 0) {
+        setEditMessage({
+          text: 'تعداد محصول نمی تواند  کمتر از صفر باشد',
+          isSuccess: false
+        })
+      }
       
       const changecard = localStorage.getItem('changecard') || ''
       const productId = product?.id
