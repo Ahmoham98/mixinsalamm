@@ -694,8 +694,8 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
           name: editedProduct.name,
           price: tomanToRial(editedProduct.price),
           description: editedProduct.description,
-          inventory: Number(editedProduct.stock), // stock
-          net_weight: Number(editedProduct.weight), // weight
+          stock: Number(editedProduct.stock), // stock
+          weight: Number(editedProduct.weight), // weight
         }
         try {
           console.log('Sending Basalam update request with data:', {

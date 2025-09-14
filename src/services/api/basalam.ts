@@ -113,13 +113,13 @@ export const basalamApi = {
     }
   },
 
-  updateProduct: async (credentials: BasalamCredentials, productId: number, productData: { name: string; price: number; description?: string; inventory: number; net_weight: number }) => {
+  updateProduct: async (credentials: BasalamCredentials, productId: number, productData: { name: string; price: number; description?: string; stock: number; weight: number }) => {
     try {
       const formData = new FormData()
       formData.append('name', productData.name)
       formData.append('price', productData.price.toString())
-      formData.append('inventory', productData.inventory.toString()) // stock
-      formData.append('net_weight', productData.net_weight.toString()) // weight
+      formData.append('stock', productData.stock.toString()) // stock
+      formData.append('weight', productData.weight.toString()) // weight
       if (productData.description !== undefined) {
         formData.append('description', productData.description)
       }
