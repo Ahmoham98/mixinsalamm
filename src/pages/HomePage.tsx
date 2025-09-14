@@ -1679,6 +1679,10 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
   const [failedItems, setFailedItems] = useState<any[]>(() => {
     try { return JSON.parse(localStorage.getItem('bulk_migration_failed_items') || '[]'); } catch { return []; }
   });
+  
+  // Rate limiting state for bulk product creation
+  const [processedCount, setProcessedCount] = useState(0);
+  const [isRateLimitPaused, setIsRateLimitPaused] = useState(false);
 
   // Product analysis: find Mixin products not in Basalam (by name, case-insensitive)
   const basalamNames = new Set((allBasalamProducts || []).map((p: any) => (p.title || p.name)?.trim().toLowerCase()));
@@ -1958,6 +1962,10 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
     setIsPaused(false);
     isPausedRef.current = false;
     
+    // Reset rate limiting counters
+    setProcessedCount(0);
+    setIsRateLimitPaused(false);
+    
     const itemsToProcess = resumeFromFailures ? failedItems : items;
     const sessionId = Date.now().toString(36);
     
@@ -2056,6 +2064,20 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
               }]);
             }
             done += 1;
+            
+            // Rate limiting: pause after every 10 products
+            if (done % 10 === 0 && done < itemsToProcess.length) {
+              console.log(`Rate limit: Pausing for 5 seconds after processing ${done} products`);
+              setIsRateLimitPaused(true);
+              setProcessedCount(done);
+              
+              // Pause for 5 seconds
+              await new Promise(resolve => setTimeout(resolve, 5000));
+              
+              setIsRateLimitPaused(false);
+              console.log(`Rate limit: Resuming after 5-second pause`);
+            }
+            
             setProgress({ done, total: itemsToProcess.length, errors: [...errors], successes });
           })().finally(() => {
             active -= 1;
@@ -2230,6 +2252,18 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
                   <div className="bg-blue-500 h-3 rounded-full transition-all duration-300" style={{ width: `${progress.total ? (progress.done / progress.total) * 100 : 0}%` }} />
                 </div>
                 <p className="text-sm text-blue-700">{progress.done} از {progress.total} محصول منتقل شد • موفق: {progress.successes} • خطا: {progress.errors.length}</p>
+                
+                {/* Rate Limit Indicator */}
+                {isRateLimitPaused && (
+                  <div className="mt-2 p-2 bg-yellow-100 border border-yellow-300 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-yellow-600 border-t-transparent rounded-full animate-spin"></div>
+                      <span className="text-sm text-yellow-800 font-medium">محدودیت نرخ: توقف 5 ثانیه‌ای</span>
+                    </div>
+                    <p className="text-xs text-yellow-700 mt-1">پس از پردازش {processedCount} محصول</p>
+                  </div>
+                )}
+                
                 {progress.errors.length > 0 && (
                   <details className="mt-2">
                     <summary className="text-red-600 text-sm cursor-pointer">مشاهده خطاها ({progress.errors.length})</summary>
