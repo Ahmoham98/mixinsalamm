@@ -2258,7 +2258,7 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
                   <div className="mt-2 p-2 bg-yellow-100 border border-yellow-300 rounded-lg">
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 border-2 border-yellow-600 border-t-transparent rounded-full animate-spin"></div>
-                      <span className="text-sm text-yellow-800 font-medium">محدودیت نرخ: توقف 5 ثانیه‌ای</span>
+                      <span className="text-sm text-yellow-800 font-medium">محدودیت نرخ: توقف 5 ثانیه‌ا ی ادامه پس از 5 ثانیه</span>
                     </div>
                     <p className="text-xs text-yellow-700 mt-1">پس از پردازش {processedCount} محصول</p>
                   </div>
@@ -2362,11 +2362,6 @@ function HomePage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const [mixinTotalCount, setMixinTotalCount] = useState(0);
-  const [basalamTotalCount, setBasalamTotalCount] = useState(0);
-  const [, setIsLoadingCounts] = useState(false);
   // Global full lists for cross-page comparison
   const [globalMixinProducts, setGlobalMixinProducts] = useState<MixinProduct[]>([]);
   const [globalBasalamProducts, setGlobalBasalamProducts] = useState<BasalamProduct[]>([]);
@@ -2514,53 +2509,30 @@ function HomePage() {
   })
 
   // Load total counts for pagination
-  const loadTotalCounts = async () => {
-    if (!mixinCredentials || !basalamCredentials || !userData?.vendor?.id) return;
-    
-    setIsLoadingCounts(true);
-    try {
-      const [mixinCount, basalamCount] = await Promise.all([
-        mixinApi.getProductsCount(mixinCredentials),
-        basalamApi.getProductsCount(basalamCredentials, userData.vendor.id)
-      ]);
-      setMixinTotalCount(mixinCount);
-      setBasalamTotalCount(basalamCount);
-    } catch (error) {
-      console.error('Error loading total counts:', error);
-    } finally {
-      setIsLoadingCounts(false);
-    }
-  };
 
-  // Load counts when credentials are available
+  // Load global lists in background for cross-page comparison
   useEffect(() => {
     if (mixinCredentials && basalamCredentials && userData?.vendor?.id) {
-      loadTotalCounts();
-      // Also load global lists in background for cross-page comparison
       loadAllProductsForComparison();
     }
   }, [mixinCredentials, basalamCredentials, userData?.vendor?.id]);
 
-  // Reset page when credentials change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [mixinCredentials, basalamCredentials]);
 
   const { data: mixinProducts, isLoading: isMixinLoading, error: mixinError } = useQuery({
-    queryKey: ['mixinProducts', currentPage],
-    queryFn: () => mixinApi.getProducts(mixinCredentials!, currentPage),
+    queryKey: ['mixinProducts'],
+    queryFn: () => mixinApi.getProducts(mixinCredentials!),
     enabled: !!mixinCredentials?.url && !!mixinCredentials?.access_token,
     retry: 1,
     staleTime: 30000,
   })
 
   const { data: basalamProducts, isLoading: isBasalamLoading, error: basalamError } = useQuery({
-    queryKey: ['basalamProducts', userData?.vendor?.id, currentPage],
+    queryKey: ['basalamProducts', userData?.vendor?.id],
     queryFn: async () => {
       if (!userData?.vendor?.id) {
         throw new Error('Vendor ID is required to fetch Basalam products');
       }
-      return basalamApi.getProducts(basalamCredentials!, userData.vendor.id, currentPage);
+      return basalamApi.getProducts(basalamCredentials!, userData.vendor.id);
     },
     enabled: !!userData?.vendor?.id && !!basalamCredentials?.access_token,
     retry: 1,
@@ -2714,101 +2686,27 @@ function HomePage() {
 
   const isLoading = isUserLoading || isMixinLoading || isBasalamLoading || isLoadingGlobalLists
 
-  // Calculate pagination info
-  const itemsPerPage = 100;
-  const totalPages = Math.max(
-    Math.ceil(mixinTotalCount / itemsPerPage),
-    Math.ceil(basalamTotalCount / itemsPerPage)
-  );
-
-  // Pagination component
-  const PaginationComponent = () => {
-    if (totalPages <= 1) return null;
-
-    const getVisiblePages = () => {
-      const delta = 2;
-      const range = [];
-      const rangeWithDots = [];
-
-      for (let i = Math.max(2, currentPage - delta); i <= Math.min(totalPages - 1, currentPage + delta); i++) {
-        range.push(i);
-      }
-
-      if (currentPage - delta > 2) {
-        rangeWithDots.push(1, '...');
-      } else {
-        rangeWithDots.push(1);
-      }
-
-      rangeWithDots.push(...range);
-
-      if (currentPage + delta < totalPages - 1) {
-        rangeWithDots.push('...', totalPages);
-      } else {
-        rangeWithDots.push(totalPages);
-      }
-
-      return rangeWithDots;
-    };
+  // Automation Banner component
+  const AutomationBanner = () => {
 
     return (
-      <div className="bg-white/80 backdrop-blur-md rounded-lg p-4 mb-6 shadow-lg">
+      <div className="bg-gradient-to-r from-[#5b9fdb]/20 to-[#ff6040]/20 backdrop-blur-md rounded-lg p-6 mb-6 shadow-lg border border-[#5b9fdb]/30">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <h3 className="text-lg font-semibold text-gray-700">صفحه‌بندی محصولات</h3>
-            <div className="text-sm text-gray-600">
-              صفحه {currentPage} از {totalPages} • میکسین: {mixinTotalCount} محصول • باسلام: {basalamTotalCount} محصول
-            </div>
+          <div className="flex-1">
+            <h3 className="text-xl font-bold text-gray-800 mb-2">
+              میخوای هر تغییری که توی میکسین میدی همونجا روی محصولاتت توی باسلامم اعمال شه؟
+            </h3>
+            <p className="text-gray-600 text-sm">
+              دکمه رو بزن که بریم فعالش کنیم
+            </p>
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="ml-6">
             <button
-              onClick={() => setCurrentPage(1)}
-              disabled={currentPage === 1}
-              className="px-3 py-1 text-sm border rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={() => navigate('/settings')}
+              className="bg-gradient-to-r from-[#5b9fdb] to-[#ff6040] text-white px-6 py-3 rounded-lg font-semibold hover:from-[#4a8bc7] hover:to-[#e5553a] transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
             >
-              اولین
-            </button>
-            
-            <button
-              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-              disabled={currentPage === 1}
-              className="px-3 py-1 text-sm border rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              قبلی
-            </button>
-
-            {getVisiblePages().map((page, index) => (
-              <button
-                key={index}
-                onClick={() => typeof page === 'number' && setCurrentPage(page)}
-                disabled={typeof page !== 'number'}
-                className={`px-3 py-1 text-sm border rounded ${
-                  page === currentPage
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : typeof page === 'number'
-                    ? 'hover:bg-gray-50'
-                    : 'cursor-default'
-                }`}
-              >
-                {page}
-              </button>
-            ))}
-
-            <button
-              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-              disabled={currentPage === totalPages}
-              className="px-3 py-1 text-sm border rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              بعدی
-            </button>
-            
-            <button
-              onClick={() => setCurrentPage(totalPages)}
-              disabled={currentPage === totalPages}
-              className="px-3 py-1 text-sm border rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              آخرین
+              اتوماتیک کن!
             </button>
           </div>
         </div>
@@ -2896,8 +2794,8 @@ function HomePage() {
         </header>
 
         <main className="max-w-7xl mx-auto px-8 py-8">
-          {/* Pagination Component */}
-          <PaginationComponent />
+          {/* Automation Banner */}
+          <AutomationBanner />
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div className="bg-white/80 backdrop-blur-md rounded-xl p-6 shadow-lg border border-gray-100 transform transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
@@ -2908,7 +2806,7 @@ function HomePage() {
                 <div>
                   <p className="text-sm text-gray-600 mb-1">تعداد کل محصولات</p>
                   <h3 className="text-3xl font-bold bg-gradient-to-r from-[#5b9fdb] to-[#5b9fdb]/80 bg-clip-text text-transparent">
-                    {mixinTotalCount || 0}
+                    {mixinProducts?.length || 0}
                   </h3>
                 </div>
               </div>
