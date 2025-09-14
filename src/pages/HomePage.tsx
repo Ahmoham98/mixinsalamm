@@ -2815,7 +2815,7 @@ function HomePage() {
                 <div>
                   <p className="text-sm text-gray-600 mb-1">تعداد کل محصولات</p>
                   <h3 className="text-3xl font-bold bg-gradient-to-r from-[#5b9fdb] to-[#5b9fdb]/80 bg-clip-text text-transparent">
-                    {mixinProducts?.length || 0}
+                    {(globalMixinProducts?.length || 0) + (globalBasalamProducts?.length || 0)}
                   </h3>
                 </div>
               </div>
@@ -2843,7 +2843,7 @@ function HomePage() {
                 <div>
                   <p className="text-sm text-gray-600 mb-1">محصولات غیرمشترک</p>
                   <h3 className="text-3xl font-bold bg-gradient-to-r from-[#5b9fdb] to-[#ff6040] bg-clip-text text-transparent">
-                    {uniqueMixinProducts?.length || 0}
+                    {(uniqueMixinProducts?.length || 0) + (uniqueBasalamProducts?.length || 0)}
                   </h3>
                 </div>
               </div>
