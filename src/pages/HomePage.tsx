@@ -270,10 +270,14 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
     name: string;
     price: number;
     description: string;
+    weight: number;
+    stock: number;
   }>({
     name: '',
     price: 0,
-    description: ''
+    description: '',
+    weight: 0,
+    stock: 1,
   })
   const { mixinCredentials, basalamCredentials, settings } = useAuthStore()
   const queryClient = useQueryClient()
@@ -331,7 +335,7 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
   }, [isOpen, product, type, mixinCredentials])
 
   useEffect(() => {
-    if (product) {
+    if (isOpen && product) {
       console.log('=== ProductModal Debug ===');
       console.log('Product type:', type);
       console.log('Product data:', JSON.stringify(product, null, 2));
@@ -346,7 +350,9 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
             setEditedProduct({
               name: cleanHtmlText(fullProduct.name),
               price: fullProduct.price,
-              description: cleanHtmlText(fullProduct.description || '')
+              description: cleanHtmlText(fullProduct.description || ''),
+              weight: fullProduct.weight || 0,
+              stock: (fullProduct.stock !== undefined ? fullProduct.stock : 1),
             })
             console.log('Set edited product with description:', fullProduct.description);
           }
@@ -359,7 +365,9 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
             setEditedProduct({
               name: cleanHtmlText(product.title),
               price: rialToToman(product.price),
-              description: cleanHtmlText(fullProduct.description || '')
+              description: cleanHtmlText(fullProduct.description || ''),
+              weight: fullProduct.net_weight || 0,
+              stock: (fullProduct.inventory !== undefined ? fullProduct.inventory : 1),
             })
             console.log('Set edited product with description:', fullProduct.description);
           }
@@ -367,7 +375,7 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
       }
       fetchFullProductDetails()
     }
-  }, [product, type, mixinCredentials, basalamCredentials])
+  }, [isOpen, product, type, mixinCredentials, basalamCredentials])
 
   useEffect(() => {
     if (isOpen && product) {
@@ -420,7 +428,7 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
 
   if (!isOpen || !product) return null
 
-  const handleInputChange = (field: 'name' | 'price' | 'description', value: string | number) => {
+  const handleInputChange = (field: 'name' | 'price' | 'description' | 'weight' | 'stock', value: string | number) => {
     setEditedProduct(prev => ({
       ...prev,
       [field]: value
@@ -670,6 +678,8 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
           name: editedProduct.name,
           price: Number(editedProduct.price),
           description: editedProduct.description || '',
+          weight: Number(editedProduct.weight),
+          stock: Number(editedProduct.stock),
           extra_fields: []
         }
 
@@ -683,7 +693,9 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
         const basalamProductData = {
           name: editedProduct.name,
           price: tomanToRial(editedProduct.price),
-          description: editedProduct.description
+          description: editedProduct.description,
+          net_weight: Number(editedProduct.weight),
+          inventory: Number(editedProduct.stock),
         }
         try {
           console.log('Sending Basalam update request with data:', {
@@ -844,6 +856,28 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
               rows={4}
               className="mt-2 w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-right"
               dir="rtl"
+            />
+          </div>
+          <div>
+            <label className="font-medium text-lg">وزن محصول (گرم):</label>
+            <input
+              type="number"
+              value={editedProduct.weight}
+              onChange={e => handleInputChange('weight', Number(e.target.value))}
+              className="mt-2 w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-right"
+              dir="rtl"
+              min={0}
+            />
+          </div>
+          <div>
+            <label className="font-medium text-lg">موجودی محصول:</label>
+            <input
+              type="number"
+              value={editedProduct.stock}
+              onChange={e => handleInputChange('stock', Number(e.target.value))}
+              className="mt-2 w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-right"
+              dir="rtl"
+              min={0}
             />
           </div>
         </div>
