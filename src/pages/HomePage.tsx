@@ -445,7 +445,25 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
     const mixinSource = (globalMixinProducts && globalMixinProducts.length > 0) ? globalMixinProducts : (Array.isArray(mixinProducts) ? mixinProducts : (mixinProducts as any)?.data || []);
     const basalamSource = (globalBasalamProducts && globalBasalamProducts.length > 0) ? globalBasalamProducts : (Array.isArray(basalamProducts) ? basalamProducts : (basalamProducts as any)?.data || []);
 
-    const normalize = (s: string | undefined) => (s || '').trim().toLowerCase();
+    // Enhanced normalization function to handle Unicode characters and special cases
+    const normalize = (s: string | undefined) => {
+      if (!s) return '';
+      
+      return s
+        .trim()
+        .toLowerCase()
+        // Remove zero-width characters
+        .replace(/[\u200B-\u200D\uFEFF]/g, '')
+        // Normalize different types of spaces
+        .replace(/[\s\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000]/g, ' ')
+        // Normalize different types of dots
+        .replace(/[.\u2024\u2025\u2026\u002E]/g, '.')
+        // Normalize different types of dashes
+        .replace(/[-\u2010-\u2015\u2212]/g, '-')
+        // Remove extra spaces
+        .replace(/\s+/g, ' ')
+        .trim();
+    };
     const normalizeDescription = (s: string | undefined) => cleanHtmlText(s || '').trim();
 
     if (type === 'mixin' && isMixinProduct(product)) {
@@ -2582,35 +2600,82 @@ function HomePage() {
     console.log('Processing Mixin Products:', mixinProductsArray);
     console.log('Processing Basalam Products:', basalamProductsArray);
 
-    const normalize = (s: string | undefined) => (s || '').trim().toLowerCase();
+    // Enhanced normalization function to handle Unicode characters and special cases
+    const normalize = (s: string | undefined) => {
+      if (!s) return '';
+      
+      return s
+        .trim()
+        .toLowerCase()
+        // Remove zero-width characters
+        .replace(/[\u200B-\u200D\uFEFF]/g, '')
+        // Normalize different types of spaces
+        .replace(/[\s\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000]/g, ' ')
+        // Normalize different types of dots
+        .replace(/[.\u2024\u2025\u2026\u002E]/g, '.')
+        // Normalize different types of dashes
+        .replace(/[-\u2010-\u2015\u2212]/g, '-')
+        // Remove extra spaces
+        .replace(/\s+/g, ' ')
+        .trim();
+    };
 
-    const commonMixinProducts = mixinProductsArray.filter((mixinProduct: MixinProduct) =>
-      mixinProduct?.name && basalamProductsArray.some((basalamProduct: BasalamProduct) =>
-        basalamProduct?.title &&
-        normalize(basalamProduct.title) === normalize(mixinProduct.name)
-      )
-    )
+    // Debug function to log matching attempts
+    const debugMatch = (mixinName: string, basalamTitle: string, isMatch: boolean) => {
+      if (mixinName && basalamTitle) {
+        console.log(`🔍 Matching: "${mixinName}" vs "${basalamTitle}"`);
+        console.log(`   Normalized Mixin: "${normalize(mixinName)}"`);
+        console.log(`   Normalized Basalam: "${normalize(basalamTitle)}"`);
+        console.log(`   Match: ${isMatch ? '✅' : '❌'}`);
+      }
+    };
 
-    const commonBasalamProducts = basalamProductsArray.filter((basalamProduct: BasalamProduct) =>
-      basalamProduct?.title && mixinProductsArray.some((mixinProduct: MixinProduct) =>
-        mixinProduct?.name &&
-        normalize(mixinProduct.name) === normalize(basalamProduct.title)
-      )
-    )
+    const commonMixinProducts = mixinProductsArray.filter((mixinProduct: MixinProduct) => {
+      if (!mixinProduct?.name) return false;
+      
+      const hasMatch = basalamProductsArray.some((basalamProduct: BasalamProduct) => {
+        if (!basalamProduct?.title) return false;
+        
+        const isMatch = normalize(basalamProduct.title) === normalize(mixinProduct.name);
+        debugMatch(mixinProduct.name, basalamProduct.title, isMatch);
+        return isMatch;
+      });
+      
+      return hasMatch;
+    });
 
-    const uniqueMixinProducts = mixinProductsArray.filter((mixinProduct: MixinProduct) =>
-      mixinProduct?.name && !basalamProductsArray.some((basalamProduct: BasalamProduct) =>
-        basalamProduct?.title &&
-        normalize(basalamProduct.title) === normalize(mixinProduct.name)
-      )
-    )
+    const commonBasalamProducts = basalamProductsArray.filter((basalamProduct: BasalamProduct) => {
+      if (!basalamProduct?.title) return false;
+      
+      const hasMatch = mixinProductsArray.some((mixinProduct: MixinProduct) => {
+        if (!mixinProduct?.name) return false;
+        
+        const isMatch = normalize(mixinProduct.name) === normalize(basalamProduct.title);
+        return isMatch;
+      });
+      
+      return hasMatch;
+    });
 
-    const uniqueBasalamProducts = basalamProductsArray.filter((basalamProduct: BasalamProduct) =>
-      basalamProduct?.title && !mixinProductsArray.some((mixinProduct: MixinProduct) =>
-        mixinProduct?.name &&
-        normalize(mixinProduct.name) === normalize(basalamProduct.title)
-      )
-    )
+    const uniqueMixinProducts = mixinProductsArray.filter((mixinProduct: MixinProduct) => {
+      if (!mixinProduct?.name) return false;
+      
+      return !basalamProductsArray.some((basalamProduct: BasalamProduct) => {
+        if (!basalamProduct?.title) return false;
+        
+        return normalize(basalamProduct.title) === normalize(mixinProduct.name);
+      });
+    });
+
+    const uniqueBasalamProducts = basalamProductsArray.filter((basalamProduct: BasalamProduct) => {
+      if (!basalamProduct?.title) return false;
+      
+      return !mixinProductsArray.some((mixinProduct: MixinProduct) => {
+        if (!mixinProduct?.name) return false;
+        
+        return normalize(mixinProduct.name) === normalize(basalamProduct.title);
+      });
+    });
 
     // Ensure same ordering across columns by normalized name
     commonMixinProducts.sort((a: MixinProduct, b: MixinProduct) => normalize(a.name).localeCompare(normalize(b.name)))
@@ -2622,6 +2687,22 @@ function HomePage() {
     console.log('Common Basalam Products:', commonBasalamProducts);
     console.log('Unique Mixin Products:', uniqueMixinProducts);
     console.log('Unique Basalam Products:', uniqueBasalamProducts);
+    
+    // Additional debugging for product counts
+    console.log(`📊 Product Counts Summary:`);
+    console.log(`   Total Mixin Products: ${mixinProductsArray.length}`);
+    console.log(`   Total Basalam Products: ${basalamProductsArray.length}`);
+    console.log(`   Common Products: ${commonMixinProducts.length}`);
+    console.log(`   Unique Mixin Products: ${uniqueMixinProducts.length}`);
+    console.log(`   Unique Basalam Products: ${uniqueBasalamProducts.length}`);
+    
+    // Verify that common products are properly matched
+    if (commonMixinProducts.length > 0 && commonBasalamProducts.length > 0) {
+      console.log(`✅ Found ${commonMixinProducts.length} common products`);
+      console.log('Sample common products:', commonMixinProducts.slice(0, 3).map(p => p.name));
+    } else {
+      console.log('⚠️ No common products found - this might indicate a matching issue');
+    }
 
     return {
       commonMixinProducts,
@@ -3065,7 +3146,7 @@ function HomePage() {
                         'bg-gray-300'
                       }`}></div>
                       <span className="text-sm font-medium text-gray-700">میکسین</span>
-                    </div>
+              </div>
                     <div className="text-xs text-gray-500">
                       {loadingProgress.mixin.status === 'loading' && loadingProgress.mixin.total > 0 ? 
                         `${loadingProgress.mixin.current} از ${loadingProgress.mixin.total}` :
