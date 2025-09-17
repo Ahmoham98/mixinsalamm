@@ -445,7 +445,7 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
     const mixinSource = (globalMixinProducts && globalMixinProducts.length > 0) ? globalMixinProducts : (Array.isArray(mixinProducts) ? mixinProducts : (mixinProducts as any)?.data || []);
     const basalamSource = (globalBasalamProducts && globalBasalamProducts.length > 0) ? globalBasalamProducts : (Array.isArray(basalamProducts) ? basalamProducts : (basalamProducts as any)?.data || []);
 
-    // Enhanced normalization function to handle Unicode characters and special cases
+    // Enhanced normalization function to handle Unicode characters, special cases, and Persian/English numbers
     const normalize = (s: string | undefined) => {
       if (!s) return '';
       
@@ -454,12 +454,30 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
         .toLowerCase()
         // Remove zero-width characters
         .replace(/[\u200B-\u200D\uFEFF]/g, '')
+        // Convert Persian numbers to English numbers
+        .replace(/[۰-۹]/g, (match) => {
+          const persianToEnglish: { [key: string]: string } = {
+            '۰': '0', '۱': '1', '۲': '2', '۳': '3', '۴': '4',
+            '۵': '5', '۶': '6', '۷': '7', '۸': '8', '۹': '9'
+          };
+          return persianToEnglish[match] || match;
+        })
+        // Convert Arabic-Indic numbers to English numbers (if any)
+        .replace(/[٠-٩]/g, (match) => {
+          const arabicToEnglish: { [key: string]: string } = {
+            '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4',
+            '٥': '5', '٦': '6', '٧': '7', '٨': '8', '٩': '9'
+          };
+          return arabicToEnglish[match] || match;
+        })
         // Normalize different types of spaces
         .replace(/[\s\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000]/g, ' ')
         // Normalize different types of dots
         .replace(/[.\u2024\u2025\u2026\u002E]/g, '.')
         // Normalize different types of dashes
         .replace(/[-\u2010-\u2015\u2212]/g, '-')
+        // Normalize multiplication sign (×) - handle different Unicode variants
+        .replace(/[×\u00D7\u2715\u2716]/g, '×')
         // Remove extra spaces
         .replace(/\s+/g, ' ')
         .trim();
@@ -2600,7 +2618,7 @@ function HomePage() {
     console.log('Processing Mixin Products:', mixinProductsArray);
     console.log('Processing Basalam Products:', basalamProductsArray);
 
-    // Enhanced normalization function to handle Unicode characters and special cases
+    // Enhanced normalization function to handle Unicode characters, special cases, and Persian/English numbers
     const normalize = (s: string | undefined) => {
       if (!s) return '';
       
@@ -2609,12 +2627,30 @@ function HomePage() {
         .toLowerCase()
         // Remove zero-width characters
         .replace(/[\u200B-\u200D\uFEFF]/g, '')
+        // Convert Persian numbers to English numbers
+        .replace(/[۰-۹]/g, (match) => {
+          const persianToEnglish: { [key: string]: string } = {
+            '۰': '0', '۱': '1', '۲': '2', '۳': '3', '۴': '4',
+            '۵': '5', '۶': '6', '۷': '7', '۸': '8', '۹': '9'
+          };
+          return persianToEnglish[match] || match;
+        })
+        // Convert Arabic-Indic numbers to English numbers (if any)
+        .replace(/[٠-٩]/g, (match) => {
+          const arabicToEnglish: { [key: string]: string } = {
+            '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4',
+            '٥': '5', '٦': '6', '٧': '7', '٨': '8', '٩': '9'
+          };
+          return arabicToEnglish[match] || match;
+        })
         // Normalize different types of spaces
         .replace(/[\s\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000]/g, ' ')
         // Normalize different types of dots
         .replace(/[.\u2024\u2025\u2026\u002E]/g, '.')
         // Normalize different types of dashes
         .replace(/[-\u2010-\u2015\u2212]/g, '-')
+        // Normalize multiplication sign (×) - handle different Unicode variants
+        .replace(/[×\u00D7\u2715\u2716]/g, '×')
         // Remove extra spaces
         .replace(/\s+/g, ' ')
         .trim();
@@ -2627,6 +2663,16 @@ function HomePage() {
         console.log(`   Normalized Mixin: "${normalize(mixinName)}"`);
         console.log(`   Normalized Basalam: "${normalize(basalamTitle)}"`);
         console.log(`   Match: ${isMatch ? '✅' : '❌'}`);
+        
+        // Special test for the specific product mentioned by user
+        if (mixinName.includes('جای شمع و لوازم چوبی چندمنظوره') || basalamTitle.includes('جای شمع و لوازم چوبی چندمنظوره')) {
+          console.log(`🎯 SPECIAL TEST - Persian/English Numbers:`);
+          console.log(`   Original Mixin: "${mixinName}"`);
+          console.log(`   Original Basalam: "${basalamTitle}"`);
+          console.log(`   Normalized Mixin: "${normalize(mixinName)}"`);
+          console.log(`   Normalized Basalam: "${normalize(basalamTitle)}"`);
+          console.log(`   Numbers Match: ${normalize(mixinName) === normalize(basalamTitle) ? '✅' : '❌'}`);
+        }
       }
     };
 
@@ -2699,7 +2745,7 @@ function HomePage() {
     // Verify that common products are properly matched
     if (commonMixinProducts.length > 0 && commonBasalamProducts.length > 0) {
       console.log(`✅ Found ${commonMixinProducts.length} common products`);
-      console.log('Sample common products:', commonMixinProducts.slice(0, 3).map(p => p.name));
+      console.log('Sample common products:', commonMixinProducts.slice(0, 3).map((p: MixinProduct) => p.name));
     } else {
       console.log('⚠️ No common products found - this might indicate a matching issue');
     }
