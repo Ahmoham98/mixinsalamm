@@ -1798,27 +1798,30 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
   // Function to extract error reason from API response
   const getErrorReason = (error: any): string => {
     try {
+      // Handle nested error object (from createBasalamProduct)
+      const actualError = error?.error || error;
+      
       // Check if it's a 422 error with validation messages
-      if (error?.status_code === 422 || error?.response?.http_status === 422) {
-        const messages = error?.response?.messages || error?.messages;
+      if (actualError?.status_code === 422 || actualError?.response?.http_status === 422) {
+        const messages = actualError?.response?.messages || actualError?.messages;
         if (messages && Array.isArray(messages) && messages.length > 0) {
           return messages[0].message || 'خطای اعتبارسنجی محصول';
         }
       }
       
       // Check if it's a 500 error
-      if (error?.status_code === 500 || error?.response?.http_status === 500) {
+      if (actualError?.status_code === 500 || actualError?.response?.http_status === 500) {
         return 'انتقال محصول از سمت سرور باسلام. به پشتیبانی اطلاع دهید...';
       }
       
       // Check for other HTTP status codes
-      if (error?.status_code || error?.response?.http_status) {
-        const statusCode = error?.status_code || error?.response?.http_status;
+      if (actualError?.status_code || actualError?.response?.http_status) {
+        const statusCode = actualError?.status_code || actualError?.response?.http_status;
         return `خطای سرور (${statusCode})`;
       }
       
       // Fallback to generic error message
-      return error?.message || 'خطای نامشخص در انتقال محصول';
+      return actualError?.message || error?.message || 'خطای نامشخص در انتقال محصول';
     } catch (e) {
       return 'خطای نامشخص در انتقال محصول';
     }
@@ -1905,7 +1908,7 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
 
   
 
-  const createBasalamProduct = async (mixinProduct: any): Promise<{ ok: boolean; message: string; product?: any }> => {
+  const createBasalamProduct = async (mixinProduct: any): Promise<{ ok: boolean; message: string; product?: any; error?: any }> => {
     if (!basalamCredentials || !vendorId) return { ok: false, message: 'Missing Basalam credentials or vendorId' };
 
     const categoryId = await fetchCategoryId(mixinProduct.name);
@@ -2054,7 +2057,13 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
       const resp = await basalamApi.createProduct(basalamCredentials, vendorId, payload);
       return { ok: true, message: 'Created', product: resp };
     } catch (e: any) {
-      return { ok: false, message: e?.message || 'Create failed' };
+      console.log(`createBasalamProduct error for ${fullMixinProduct.name}:`, e);
+      // Preserve the full error object for proper error handling
+      return { 
+        ok: false, 
+        message: e?.message || 'Create failed',
+        error: e // Preserve the full error object
+      };
     }
   };
 
@@ -2145,6 +2154,7 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
           (async () => {
             try {
               const res = await withRetries(() => createBasalamProduct(mp), mp.id, mp.name);
+              console.log(`Bulk migration result for ${mp.name}:`, res);
               if (res?.ok) {
                 successes += 1;
                 saveResults([{ 
