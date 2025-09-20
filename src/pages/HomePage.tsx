@@ -1643,11 +1643,12 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient, v
   );
 }
 
-function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, queryClient }: {
+function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, queryClient, uniqueMixinProducts }: {
   mixinCredentials: any;
   basalamCredentials: any;
   vendorId?: number;
   queryClient: any;
+  uniqueMixinProducts: MixinProduct[];
 }) {
   // Eligibility: >=20 Mixin products (check total count, not just current page)
   const [allMixinProducts, setAllMixinProducts] = useState<any[]>([]);
@@ -1774,17 +1775,13 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
   const [auditLogs, setAuditLogs] = useState<any[]>(() => {
     try { return JSON.parse(localStorage.getItem('bulk_migration_audit_logs') || '[]'); } catch { return []; }
   });
-  const [failedItems, setFailedItems] = useState<any[]>(() => {
-    try { return JSON.parse(localStorage.getItem('bulk_migration_failed_items') || '[]'); } catch { return []; }
-  });
   
   // Rate limiting state for bulk product creation
   const [processedCount, setProcessedCount] = useState(0);
   const [isRateLimitPaused, setIsRateLimitPaused] = useState(false);
 
-  // Product analysis: find Mixin products not in Basalam (by name, case-insensitive)
-  const basalamNames = new Set((allBasalamProducts || []).map((p: any) => (p.title || p.name)?.trim().toLowerCase()));
-  const missingProducts = (allMixinProducts || []).filter((mp: any) => !basalamNames.has(mp.name?.trim().toLowerCase()));
+  // Use the uniqueMixinProducts passed from the homepage (which uses the same logic as getCommonProducts)
+  const missingProducts = uniqueMixinProducts || [];
 
   const saveResults = (items: any[]) => {
     const merged = [...items, ...results].slice(0, 200);
@@ -1804,16 +1801,7 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
     localStorage.setItem('bulk_migration_audit_logs', JSON.stringify(updated));
   };
 
-  const saveFailedItems = (items: any[]) => {
-    const merged = [...items, ...failedItems].slice(0, 50);
-    setFailedItems(merged);
-    localStorage.setItem('bulk_migration_failed_items', JSON.stringify(merged));
-  };
 
-  const clearFailedItems = () => {
-    setFailedItems([]);
-    localStorage.removeItem('bulk_migration_failed_items');
-  };
 
   const exportCsv = () => {
     const header = ['time','id','name','status','error','retry_count','duration_ms'];
@@ -2055,7 +2043,7 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
     throw { ...lastErr, retryCount: attempt, duration };
   };
 
-  const runInBatches = async (items: any[], resumeFromFailures = false) => {
+  const runInBatches = async (items: any[]) => {
     setIsProcessing(true);
     setIsPaused(false);
     isPausedRef.current = false;
@@ -2064,7 +2052,7 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
     setProcessedCount(0);
     setIsRateLimitPaused(false);
     
-    const itemsToProcess = resumeFromFailures ? failedItems : items;
+    const itemsToProcess = items;
     const sessionId = Date.now().toString(36);
     
     addAuditLog('BATCH_START', { 
@@ -2072,7 +2060,6 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
       totalItems: itemsToProcess.length, 
       concurrency, 
       maxRetries, 
-      resumeFromFailures 
     });
     
     setProgress({ done: 0, total: itemsToProcess.length, errors: [], successes: 0 });
@@ -2090,12 +2077,6 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
           setIsProcessing(false);
           setProgress({ done, total: itemsToProcess.length, errors, successes });
           
-          // Update failed items list
-          if (newFailedItems.length > 0) {
-            saveFailedItems(newFailedItems);
-          } else if (resumeFromFailures) {
-            clearFailedItems();
-          }
           
           addAuditLog('BATCH_COMPLETE', { 
             sessionId, 
@@ -2165,15 +2146,15 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
             
             // Rate limiting: pause after every product
             if (done < itemsToProcess.length) {
-              console.log(`Rate limit: Pausing for 4 seconds after processing product ${done}`);
+              console.log(`Rate limit: Pausing for 15 seconds after processing product ${done}`);
               setIsRateLimitPaused(true);
               setProcessedCount(done);
               
-              // Pause for 4 seconds
-              await new Promise(resolve => setTimeout(resolve, 4000));
+              // Pause for 15 seconds
+              await new Promise(resolve => setTimeout(resolve, 15000));
               
               setIsRateLimitPaused(false);
-              console.log(`Rate limit: Resuming after 4-second pause`);
+              console.log(`Rate limit: Resuming after 15-second pause`);
             }
             
             setProgress({ done, total: itemsToProcess.length, errors: [...errors], successes });
@@ -2190,7 +2171,7 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
     });
   };
 
-  const handleBatchMigrate = async (resumeFromFailures = false) => {
+  const handleBatchMigrate = async () => {
     if (!mixinCredentials || !basalamCredentials || !vendorId) {
       alert('لطفاً ابتدا به میکسین و باسلام متصل شوید.');
       return;
@@ -2203,7 +2184,7 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
         const delay = scheduledDate.getTime() - now.getTime();
         addAuditLog('SCHEDULE_SET', { scheduledTime, delayMs: delay });
         setTimeout(() => {
-          runInBatches(missingProducts, resumeFromFailures).then(async () => {
+          runInBatches(missingProducts).then(async () => {
             try {
               await queryClient.invalidateQueries({ queryKey: ['basalamProducts'] });
               await queryClient.refetchQueries({ queryKey: ['basalamProducts'] });
@@ -2216,20 +2197,13 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
       }
     }
     
-    await runInBatches(missingProducts, resumeFromFailures);
+    await runInBatches(missingProducts);
     try {
       await queryClient.invalidateQueries({ queryKey: ['basalamProducts'] });
       await queryClient.refetchQueries({ queryKey: ['basalamProducts'] });
     } catch {}
   };
 
-  const handleRetryFailed = async () => {
-    if (failedItems.length === 0) {
-      alert('هیچ محصول ناموفقی برای تلاش مجدد وجود ندارد.');
-      return;
-    }
-    await handleBatchMigrate(true);
-  };
 
   if (!isEligible) return null;
 
@@ -2254,14 +2228,6 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
           >
             شروع انتقال
           </button>
-          {failedItems.length > 0 && (
-            <button
-              className="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700"
-              onClick={handleRetryFailed}
-            >
-              تلاش مجدد ({failedItems.length})
-            </button>
-          )}
           {results.length > 0 && (
             <button className="px-4 py-2 border border-blue-400 text-blue-700 rounded hover:bg-blue-50" onClick={exportCsv}>
               خروجی CSV
@@ -2360,7 +2326,7 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
                   <div className="mt-2 p-2 bg-yellow-100 border border-yellow-300 rounded-lg">
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 border-2 border-yellow-600 border-t-transparent rounded-full animate-spin"></div>
-                      <span className="text-sm text-yellow-800 font-medium">محدودیت نرخ: توقف 4 ثانیه‌ای ادامه پس از 4 ثانیه</span>
+                      <span className="text-sm text-yellow-800 font-medium">محدودیت نرخ: توقف 15 ثانیه‌ای ادامه پس از 15 ثانیه</span>
                     </div>
                     <p className="text-xs text-yellow-700 mt-1">پس از پردازش محصول {processedCount}</p>
                   </div>
@@ -2380,35 +2346,11 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
             ) : (
               <button
                 className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 mb-4"
-                onClick={() => handleBatchMigrate(false)}
+                onClick={() => handleBatchMigrate()}
                 disabled={isProcessing || missingProducts.length === 0}
               >
                 شروع انتقال گروهی واقعی
               </button>
-            )}
-            {/* Failed Items Section */}
-            {failedItems.length > 0 && (
-              <div className="mt-4 border-t pt-3">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-semibold text-orange-700 text-sm">محصولات ناموفق ({failedItems.length})</h4>
-                  <button 
-                    className="px-3 py-1 bg-orange-600 text-white rounded hover:bg-orange-700 text-xs"
-                    onClick={handleRetryFailed}
-                  >
-                    تلاش مجدد همه
-                  </button>
-                </div>
-                <ul className="max-h-32 overflow-y-auto text-xs space-y-1">
-                  {failedItems.slice(0, 10).map((item: any) => (
-                    <li key={item.id} className="text-orange-700">
-                      {item.name} • خطا: {item.error}
-                    </li>
-                  ))}
-                  {failedItems.length > 10 && (
-                    <li className="text-gray-500">... و {failedItems.length - 10} مورد دیگر</li>
-                  )}
-                </ul>
-              </div>
             )}
 
             {/* Results Section */}
@@ -3385,6 +3327,7 @@ function HomePage() {
           basalamCredentials={basalamCredentials}
           vendorId={userData?.vendor?.id}
           queryClient={queryClient}
+          uniqueMixinProducts={uniqueMixinProducts}
         />
       </div>
     </div>
