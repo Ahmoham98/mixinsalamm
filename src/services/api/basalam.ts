@@ -193,6 +193,16 @@ export const basalamApi = {
           'Content-Type': 'application/json'
         }
       })
+      // Check for soft errors in the response body
+      if (
+        response.data &&
+        typeof response.data.status_code !== 'undefined' &&
+        response.data.status_code !== 200 &&
+        response.data.status_code !== 201
+      ) {
+        // This is a soft error (e.g., 422 in a 200 response)
+        throw response.data
+      }
       return response.data
     } catch (error: any) {
       console.error('Error creating Basalam product:', error)
