@@ -1795,6 +1795,35 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
   // Use the uniqueMixinProducts passed from the homepage (which uses the same logic as getCommonProducts)
   const missingProducts = uniqueMixinProducts || [];
 
+  // Function to extract error reason from API response
+  const getErrorReason = (error: any): string => {
+    try {
+      // Check if it's a 422 error with validation messages
+      if (error?.status_code === 422 || error?.response?.http_status === 422) {
+        const messages = error?.response?.messages || error?.messages;
+        if (messages && Array.isArray(messages) && messages.length > 0) {
+          return messages[0].message || 'خطای اعتبارسنجی محصول';
+        }
+      }
+      
+      // Check if it's a 500 error
+      if (error?.status_code === 500 || error?.response?.http_status === 500) {
+        return 'انتقال محصول از سمت سرور باسلام. به پشتیبانی اطلاع دهید...';
+      }
+      
+      // Check for other HTTP status codes
+      if (error?.status_code || error?.response?.http_status) {
+        const statusCode = error?.status_code || error?.response?.http_status;
+        return `خطای سرور (${statusCode})`;
+      }
+      
+      // Fallback to generic error message
+      return error?.message || 'خطای نامشخص در انتقال محصول';
+    } catch (e) {
+      return 'خطای نامشخص در انتقال محصول';
+    }
+  };
+
   const saveResults = (items: any[]) => {
     const merged = [...items, ...results].slice(0, 200);
     setResults(merged);
@@ -2127,28 +2156,30 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
                   duration: res.duration || 0
                 }]);
               } else {
-                const errorItem = { id: mp.id, name: mp.name, error: res?.message || 'Unknown error' };
+                const errorReason = getErrorReason(res);
+                const errorItem = { id: mp.id, name: mp.name, error: errorReason };
                 errors.push(errorItem);
                 newFailedItems.push(mp);
                 saveResults([{ 
                   id: mp.id, 
                   name: mp.name, 
                   status: 'error', 
-                  error: res?.message || 'Unknown', 
+                  error: errorReason, 
                   time: Date.now(),
                   retryCount: res?.retryCount || maxRetries,
                   duration: res?.duration || 0
                 }]);
               }
             } catch (error: any) {
-              const errorItem = { id: mp.id, name: mp.name, error: error?.message || 'Unknown error' };
+              const errorReason = getErrorReason(error);
+              const errorItem = { id: mp.id, name: mp.name, error: errorReason };
               errors.push(errorItem);
               newFailedItems.push(mp);
               saveResults([{ 
                 id: mp.id, 
                 name: mp.name, 
                 status: 'error', 
-                error: error?.message || 'Unknown', 
+                error: errorReason, 
                 time: Date.now(),
                 retryCount: error?.retryCount || maxRetries,
                 duration: error?.duration || 0
