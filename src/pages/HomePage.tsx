@@ -2163,17 +2163,17 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
             }
             done += 1;
             
-            // Rate limiting: pause after every 10 products
-            if (done % 10 === 0 && done < itemsToProcess.length) {
-              console.log(`Rate limit: Pausing for 5 seconds after processing ${done} products`);
+            // Rate limiting: pause after every product
+            if (done < itemsToProcess.length) {
+              console.log(`Rate limit: Pausing for 4 seconds after processing product ${done}`);
               setIsRateLimitPaused(true);
               setProcessedCount(done);
               
-              // Pause for 5 seconds
-              await new Promise(resolve => setTimeout(resolve, 5000));
+              // Pause for 4 seconds
+              await new Promise(resolve => setTimeout(resolve, 4000));
               
               setIsRateLimitPaused(false);
-              console.log(`Rate limit: Resuming after 5-second pause`);
+              console.log(`Rate limit: Resuming after 4-second pause`);
             }
             
             setProgress({ done, total: itemsToProcess.length, errors: [...errors], successes });
@@ -2360,9 +2360,9 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
                   <div className="mt-2 p-2 bg-yellow-100 border border-yellow-300 rounded-lg">
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 border-2 border-yellow-600 border-t-transparent rounded-full animate-spin"></div>
-                      <span className="text-sm text-yellow-800 font-medium">محدودیت نرخ: توقف 5 ثانیه‌ا ی ادامه پس از 5 ثانیه</span>
+                      <span className="text-sm text-yellow-800 font-medium">محدودیت نرخ: توقف 4 ثانیه‌ای ادامه پس از 4 ثانیه</span>
                     </div>
-                    <p className="text-xs text-yellow-700 mt-1">پس از پردازش {processedCount} محصول</p>
+                    <p className="text-xs text-yellow-700 mt-1">پس از پردازش محصول {processedCount}</p>
                   </div>
                 )}
                 
