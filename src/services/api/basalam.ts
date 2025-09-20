@@ -194,9 +194,13 @@ export const basalamApi = {
         }
       })
       return response.data
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating Basalam product:', error)
-      throw new Error('Failed to create Basalam product')
+      // If it's an AxiosError and has a response, throw the response data
+      if (error.response && error.response.data) {
+        throw error.response.data
+      }
+      throw error
     }
   },
 
