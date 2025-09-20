@@ -389,7 +389,7 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
   useEffect(() => {
     // Only trigger auto-sync when:
     // 1. Auto-sync is enabled in settings
-    // 2. Sync button is showing (meaning there's a price mismatch)
+    // 2. Sync button is showing (meaning there's a price, description, stock, or weight mismatch)
     // 3. We have a product and both credentials
     if (settings.autoSyncEnabled && showSyncButton && product && mixinCredentials && basalamCredentials) {
       console.log('Auto-sync enabled and sync needed, starting countdown...')
@@ -440,6 +440,8 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
     let changecard = ''
     let priceMismatch = false
     let descriptionMismatch = false
+    let stockMismatch = false
+    let weightMismatch = false
 
     // Use the same logic as getCommonProducts to get the correct product arrays
     const mixinSource = (globalMixinProducts && globalMixinProducts.length > 0) ? globalMixinProducts : (Array.isArray(mixinProducts) ? mixinProducts : (mixinProducts as any)?.data || []);
@@ -537,10 +539,40 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
           descriptionMismatch = true
         }
 
-        if (priceMismatch || descriptionMismatch) {
+        // Check stock mismatch using full product details
+        const mixinStock = fullMixinProduct.stock || 0
+        const basalamStock = fullBasalamProduct.inventory || 0
+        
+        if (mixinStock !== basalamStock) {
+          stockMismatch = true
+        }
+
+        // Check weight mismatch using full product details
+        const mixinWeight = fullMixinProduct.weight || 0
+        const basalamWeight = fullBasalamProduct.net_weight || 0
+        
+        if (mixinWeight !== basalamWeight) {
+          weightMismatch = true
+        }
+
+        // Debug logging for stock and weight comparison
+        console.log('Stock and Weight comparison debug:', {
+          mixinProductName: product.name,
+          mixinStock,
+          basalamStock,
+          stockMatch: mixinStock === basalamStock,
+          mixinWeight,
+          basalamWeight,
+          weightMatch: mixinWeight === basalamWeight,
+          dataSource: 'fullProductDetails'
+        });
+
+        if (priceMismatch || descriptionMismatch || stockMismatch || weightMismatch) {
           const mismatchTypes = []
           if (priceMismatch) mismatchTypes.push('قیمت')
           if (descriptionMismatch) mismatchTypes.push('توضیحات')
+          if (stockMismatch) mismatchTypes.push('موجودی')
+          if (weightMismatch) mismatchTypes.push('وزن')
           
           setCheckMessage({
             text: `${mismatchTypes.join(' و ')} محصول شما تغییر کرده، ${mismatchTypes.join(' و ')} محصول دیگر را همگام سازی کنید`,
@@ -616,10 +648,40 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
           descriptionMismatch = true
         }
 
-        if (priceMismatch || descriptionMismatch) {
+        // Check stock mismatch using full product details
+        const mixinStock = fullMixinProduct.stock || 0
+        const basalamStock = fullBasalamProduct.inventory || 0
+        
+        if (mixinStock !== basalamStock) {
+          stockMismatch = true
+        }
+
+        // Check weight mismatch using full product details
+        const mixinWeight = fullMixinProduct.weight || 0
+        const basalamWeight = fullBasalamProduct.net_weight || 0
+        
+        if (mixinWeight !== basalamWeight) {
+          weightMismatch = true
+        }
+
+        // Debug logging for stock and weight comparison
+        console.log('Stock and Weight comparison debug (Basalam):', {
+          basalamProductName: product.title,
+          mixinStock,
+          basalamStock,
+          stockMatch: mixinStock === basalamStock,
+          mixinWeight,
+          basalamWeight,
+          weightMatch: mixinWeight === basalamWeight,
+          dataSource: 'fullProductDetails'
+        });
+
+        if (priceMismatch || descriptionMismatch || stockMismatch || weightMismatch) {
           const mismatchTypes = []
           if (priceMismatch) mismatchTypes.push('قیمت')
           if (descriptionMismatch) mismatchTypes.push('توضیحات')
+          if (stockMismatch) mismatchTypes.push('موجودی')
+          if (weightMismatch) mismatchTypes.push('وزن')
           
           setCheckMessage({
             text: `${mismatchTypes.join(' و ')} محصول شما تغییر کرده، ${mismatchTypes.join(' و ')} محصول دیگر را همگام سازی کنید`,
@@ -644,10 +706,10 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
       setShowBasalamButton(false)
     }
 
-    setShowSyncButton(priceMismatch || descriptionMismatch)
+    setShowSyncButton(priceMismatch || descriptionMismatch || stockMismatch || weightMismatch)
     localStorage.setItem('changecard', changecard)
     console.log('Updated changecard:', changecard, 'for product:', currentProductName)
-    console.log('Mismatches detected:', { priceMismatch, descriptionMismatch })
+    console.log('Mismatches detected:', { priceMismatch, descriptionMismatch, stockMismatch, weightMismatch })
     console.log('Using product arrays:', { mixinSource: mixinSource.length, basalamSource: basalamSource.length })
   }
 
