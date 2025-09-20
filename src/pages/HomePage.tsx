@@ -1780,6 +1780,18 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
   const [processedCount, setProcessedCount] = useState(0);
   const [isRateLimitPaused, setIsRateLimitPaused] = useState(false);
 
+  // Dynamic pause configuration based on concurrency
+  const getPauseConfig = (concurrency: number) => {
+    const configs = {
+      1: { interval: 1, pauseSeconds: 5 },   // 5 seconds after every 1 product
+      2: { interval: 2, pauseSeconds: 10 },  // 10 seconds after every 2 products
+      3: { interval: 3, pauseSeconds: 15 }, // 15 seconds after every 3 products
+      4: { interval: 4, pauseSeconds: 20 },  // 20 seconds after every 4 products
+      5: { interval: 5, pauseSeconds: 25 }, // 25 seconds after every 5 products
+    };
+    return configs[concurrency as keyof typeof configs] || configs[3]; // Default to concurrency 3
+  };
+
   // Use the uniqueMixinProducts passed from the homepage (which uses the same logic as getCommonProducts)
   const missingProducts = uniqueMixinProducts || [];
 
@@ -2144,17 +2156,18 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
             }
             done += 1;
             
-            // Rate limiting: pause after every product
-            if (done < itemsToProcess.length) {
-              console.log(`Rate limit: Pausing for 15 seconds after processing product ${done}`);
+            // Dynamic rate limiting: pause based on concurrency settings
+            const pauseConfig = getPauseConfig(concurrency);
+            if (done < itemsToProcess.length && done % pauseConfig.interval === 0) {
+              console.log(`Rate limit: Pausing for ${pauseConfig.pauseSeconds} seconds after processing ${pauseConfig.interval} products (${done} total processed)`);
               setIsRateLimitPaused(true);
               setProcessedCount(done);
               
-              // Pause for 15 seconds
-              await new Promise(resolve => setTimeout(resolve, 15000));
+              // Dynamic pause based on concurrency
+              await new Promise(resolve => setTimeout(resolve, pauseConfig.pauseSeconds * 1000));
               
               setIsRateLimitPaused(false);
-              console.log(`Rate limit: Resuming after 15-second pause`);
+              console.log(`Rate limit: Resuming after ${pauseConfig.pauseSeconds}-second pause`);
             }
             
             setProgress({ done, total: itemsToProcess.length, errors: [...errors], successes });
@@ -2326,9 +2339,11 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
                   <div className="mt-2 p-2 bg-yellow-100 border border-yellow-300 rounded-lg">
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 border-2 border-yellow-600 border-t-transparent rounded-full animate-spin"></div>
-                      <span className="text-sm text-yellow-800 font-medium">محدودیت نرخ: توقف 15 ثانیه‌ای ادامه پس از 15 ثانیه</span>
+                      <span className="text-sm text-yellow-800 font-medium">
+                        محدودیت نرخ: توقف {getPauseConfig(concurrency).pauseSeconds} ثانیه‌ای ادامه پس از {getPauseConfig(concurrency).pauseSeconds} ثانیه
+                      </span>
                     </div>
-                    <p className="text-xs text-yellow-700 mt-1">پس از پردازش محصول {processedCount}</p>
+                    <p className="text-xs text-yellow-700 mt-1">پس از پردازش {getPauseConfig(concurrency).interval} محصول ({processedCount} کل)</p>
                   </div>
                 )}
                 
