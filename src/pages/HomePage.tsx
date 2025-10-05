@@ -667,15 +667,6 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
 
       setIsEditing(true)
       
-      // Validation for weight field
-      if (editedProduct.weight <= 0) {
-        setEditMessage({
-          text: 'وزن محصول نمی‌تواند صفر یا کمتر از صفر باشد',
-          isSuccess: false
-        })
-        setIsEditing(false)
-        return
-      }
 
       // Validation for stock field
       if (editedProduct.stock < 0) {
@@ -752,7 +743,7 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
           name: editedProduct.name,
           price: Number(editedProduct.price),
           description: editedProduct.description || '',
-          weight: Number(editedProduct.weight),
+          weight: Number(editedProduct.weight) > 0 ? Number(editedProduct.weight) : 500,
           stock: Number(editedProduct.stock),
           extra_fields: []
         }
@@ -768,7 +759,7 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
           price: tomanToRial(editedProduct.price),
           description: editedProduct.description,
           stock: Number(editedProduct.stock), // stock
-          weight: Number(editedProduct.weight), // weight
+          weight: Number(editedProduct.weight) > 0 ? Number(editedProduct.weight) : 500, // weight
         }
         try {
           console.log('Sending Basalam update request with data:', {
@@ -1299,8 +1290,14 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient, v
         status: status === "active" ? "2976" : "2975", // Basalam status codes: "2976" = active, "2975" = inactive
         primary_price: tomanToRial(parseFloat(price)), // Step 7: Fixed field name
         preparation_days: parseInt(preparationDays, 10), // Step 5: Fixed field name
-        weight: parseInt(weight, 10),
-        package_weight: parseInt(packageWeight, 10), // Step 6: Fixed field name
+        weight: (() => {
+          const w = parseInt(weight, 10);
+          return Number.isFinite(w) && w > 0 ? w : 500;
+        })(),
+        package_weight: (() => {
+          const pw = parseInt(packageWeight, 10);
+          return Number.isFinite(pw) && pw > 0 ? pw : 500;
+        })(), // Step 6: Fixed field name
         photo: uploadedImageIds[0], // اولین تصویر به عنوان عکس اصلی
         photos: uploadedImageIds.length > 1 ? uploadedImageIds.slice(1) : [], // سایر تصاویر
         stock: parseInt(stock, 10), // Step 8: Stock field
