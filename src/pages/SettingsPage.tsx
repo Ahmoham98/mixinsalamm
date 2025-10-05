@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { 
@@ -14,8 +14,11 @@ import {
   BarChart2,
   LogOut,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Zap,
+  ChevronDown
 } from 'lucide-react'
+import { Crown } from 'lucide-react'
 
 function SettingsPage() {
   const navigate = useNavigate()
@@ -46,6 +49,20 @@ function SettingsPage() {
     setLocalSettings(prev => ({
       ...prev,
       autoSyncEnabled: enabled
+    }))
+  }
+
+  const handleAutoMigrationToggle = (enabled: boolean) => {
+    setLocalSettings(prev => ({
+      ...prev,
+      autoMigrationEnabled: enabled
+    }))
+  }
+
+  const handleThresholdChange = (threshold: number) => {
+    setLocalSettings(prev => ({
+      ...prev,
+      autoMigrationThreshold: threshold
     }))
   }
 
@@ -120,10 +137,21 @@ function SettingsPage() {
               {!isSidebarCollapsed && <span>داشبورد</span>}
             </button>
 
-            <a href="#" className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-[#5b9fdb]/10 rounded-lg transition-colors">
+            <button
+              onClick={() => navigate('/migration')}
+              className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-[#5b9fdb]/10 rounded-lg transition-colors"
+            >
               <Package size={20} />
-              {!isSidebarCollapsed && <span>محصولات</span>}
-            </a>
+              {!isSidebarCollapsed && <span>انتقال گروهی محصولات</span>}
+            </button>
+
+            <button
+              onClick={() => navigate('/pricing')}
+              className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-[#5b9fdb]/10 rounded-lg transition-colors"
+            >
+              <Crown size={20} />
+              {!isSidebarCollapsed && <span>وضعیت پلن</span>}
+            </button>
 
             <a href="#" className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-[#5b9fdb]/10 rounded-lg transition-colors">
               <BarChart2 size={20} />
@@ -220,6 +248,88 @@ function SettingsPage() {
                       <div dir="rtl">
                         <strong>نکته مهم:</strong> این ویژگی فقط برای محصولاتی کار می‌کند که هم در میکسین و هم در باسلام موجود باشند. 
                         همگام‌سازی بعد از یک ثانیه از تشخیص تغییر انجام می‌شود.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Auto-migration section */}
+            <div className="p-6 border-b border-gray-100">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-3 bg-gradient-to-br from-[#ff6040]/10 to-[#ff6040]/20 rounded-lg">
+                  <Zap className="w-6 h-6 text-[#ff6040]" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-800">انتقال خودکار محصولات</h2>
+                  <p className="text-sm text-gray-600">تنظیمات مربوط به انتقال خودکار محصولات از میکسین به باسلام</p>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-r from-orange-50 to-red-50 rounded-lg p-4 border border-orange-100">
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0">
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={localSettings.autoMigrationEnabled}
+                        onChange={(e) => handleAutoMigrationToggle(e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
+                    </label>
+                  </div>
+                  
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="font-semibold text-gray-800">فعال‌سازی انتقال خودکار</h3>
+                      {localSettings.autoMigrationEnabled && (
+                        <CheckCircle2 size={16} className="text-green-600" />
+                      )}
+                    </div>
+                    
+                    <p className="text-sm text-gray-700 mb-3" dir="rtl">
+                      با فعال کردن این گزینه، سیستم به طور خودکار محصولات جدید میکسین را به باسلام منتقل خواهد کرد. 
+                      این ویژگی برای کاربران میکسین طراحی شده است که می‌خواهند محصولاتشان به صورت خودکار در باسلام ایجاد شوند.
+                    </p>
+                    
+                    {/* Threshold selection */}
+                    {localSettings.autoMigrationEnabled && (
+                      <div className="mt-4 p-3 bg-white/60 rounded-lg border border-orange-200">
+                        <div className="flex items-center gap-2 mb-3">
+                          <ChevronDown size={16} className="text-orange-600" />
+                          <span className="text-sm font-medium text-gray-700">انتخاب آستانه انتقال</span>
+                        </div>
+                        <p className="text-xs text-gray-600 mb-3" dir="rtl">
+                          انتخاب کنید که پس از رسیدن به چند محصول منحصر به فرد میکسین، انتقال خودکار شروع شود:
+                        </p>
+                        <div className="grid grid-cols-5 gap-2">
+                          {[1, 3, 5, 7, 9].map((threshold) => (
+                            <button
+                              key={threshold}
+                              onClick={() => handleThresholdChange(threshold)}
+                              className={`px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                                localSettings.autoMigrationThreshold === threshold
+                                  ? 'bg-orange-600 text-white shadow-md'
+                                  : 'bg-white text-gray-700 border border-gray-300 hover:bg-orange-50 hover:border-orange-300'
+                              }`}
+                            >
+                              {threshold}
+                            </button>
+                          ))}
+                        </div>
+                        <div className="mt-2 text-xs text-gray-500" dir="rtl">
+                          انتخاب شده: {localSettings.autoMigrationThreshold} محصول
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className="flex items-start gap-2 text-xs text-orange-700 bg-orange-50 p-2 rounded border border-orange-200">
+                      <Info size={14} className="flex-shrink-0 mt-0.5" />
+                      <div dir="rtl">
+                        <strong>نکته مهم:</strong> این ویژگی فقط محصولات منحصر به فرد میکسین را منتقل می‌کند (محصولاتی که در باسلام موجود نیستند). 
+                        انتقال خودکار هر 30 ثانیه بررسی می‌شود و فقط زمانی اجرا می‌شود که تعداد محصولات منحصر به فرد به آستانه انتخابی برسد.
                       </div>
                     </div>
                   </div>

@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { mixinApi } from '../services/api/mixin'
 import { X } from 'lucide-react'
-import type { MixinValidationResponse } from '../types'
+import { ensureUser, createDefaultSubscription, createInitialUsageRecord, formatNow } from '../services/api/pricing'
+import { api } from '../services/api/config'
 
 interface ModalProps {
   isOpen: boolean
@@ -195,23 +196,50 @@ function CredentialsPage() {
     }
   }, [])
 
+  // Helper: bootstrap once both tokens exist
+  const callBootstrapIfReady = async () => {
+    try {
+      const bootstrapKey = 'bootstrap_done'
+      if (sessionStorage.getItem(bootstrapKey)) return
+      const mixinToken = useAuthStore.getState().mixinCredentials?.access_token
+      const basalamToken = useAuthStore.getState().basalamCredentials?.access_token
+      if (mixinToken && basalamToken) {
+        const now = formatNow()
+        await ensureUser({
+          mixin_access_token: mixinToken,
+          basalam_access_token: basalamToken,
+          email: `user_${Date.now()}@example.com`,
+          created_at: now,
+          updated_at: now,
+          is_active: true,
+          role: 'user',
+          is_verified: false
+        })
+        // Create initial usage record right after user creation
+        await createDefaultSubscription()
+        await createInitialUsageRecord()
+        sessionStorage.setItem(bootstrapKey, 'true')
+      }
+    } catch (e) {
+      console.error('Bootstrap failed:', e)
+    }
+  }
+
   const handleMixinConnect = async (url: string, token: string) => {
     try {
-      console.log('Attempting to connect with:', { url, token })
       const data = await mixinApi.validateCredentials(url, token)
-      console.log('Received data from API:', data)
       
       if (data && data.message === "you are connected successfully!" && data["mixin-ceredentials"]) {
-        console.log('Setting credentials:', data["mixin-ceredentials"])
         setMixinCredentials({ 
           url: data["mixin-ceredentials"].mixin_url, 
           access_token: data["mixin-ceredentials"].access_token 
         })
+        // Attempt bootstrap if basalam already connected
+        await callBootstrapIfReady()
         setIsMixinModalOpen(false)
         alert(data.message || 'Successfully connected to Mixin!')
-        window.location.reload()
+        navigate('/home')
       } else {
-        console.error('Invalid response format:', data)
         throw new Error('Invalid response format from server')
       }
     } catch (error: any) {
@@ -224,65 +252,52 @@ function CredentialsPage() {
     sessionStorage.setItem('shouldReloadAfterBasalam', 'true')
     
     // Add message listener for the new tab
-    const messageHandler = (event: MessageEvent) => {
-      console.log('Message received from:', event.origin);
-      console.log('Message data:', event.data);
-      
-      // During testing, accept messages from any origin
-      console.log('Processing message...');
+    const messageHandler = async (event: MessageEvent) => {
       
       // Check if the response has the expected tokens
       const { access_token, refresh_token } = event.data;
-      console.log('Extracted tokens:', { access_token, refresh_token });
       
       if (access_token) {
-        console.log('Setting Basalam credentials...');
         setBasalamCredentials({
           access_token,
           refresh_token
         });
         
-        // Verify credentials were set
-        const currentCredentials = useAuthStore.getState().basalamCredentials;
-        console.log('Current Basalam credentials after setting:', currentCredentials);
-        
-        // Remove the listener after successful connection
-        window.removeEventListener('message', messageHandler);
-        // Show success message
-        alert('Successfully connected to Basalam!');
-        // Force a re-render
-        window.location.reload();
+        // Attempt bootstrap if mixin already connected
+        callBootstrapIfReady().finally(() => {
+          // Remove the listener after successful connection
+          window.removeEventListener('message', messageHandler);
+          // Show success message
+          alert('Successfully connected to Basalam!');
+          // Force a re-render
+          navigate('/home');
+        });
       } else {
         console.error('No access token in response');
       }
     };
 
     // Remove any existing listeners to prevent duplicates
-    window.removeEventListener('message', messageHandler);
+    window.removeEventListener('message', messageHandler as any);
     
     // Add the event listener
-    window.addEventListener('message', messageHandler);
-    console.log('Message listener added');
+    window.addEventListener('message', messageHandler as any);
 
     // Open Basalam SSO in new tab
     const basalamUrl = 'https://basalam.com/accounts/sso?client_id=1083&scope=vendor.profile.read%20vendor.product.write%20customer.profile.read%20vendor.product.read&redirect_uri=https://mixinsalam-backend.liara.run/basalam/client/get-user-access-token/&state=management-test';
-    console.log('Opening Basalam URL:', basalamUrl);
     const newWindow = window.open(basalamUrl, '_blank');
     
     // Add a fallback check
     if (newWindow) {
       const checkWindow = setInterval(() => {
         if (newWindow.closed) {
-          console.log('Basalam window was closed');
           clearInterval(checkWindow);
           // Check if we have credentials
           const currentCredentials = useAuthStore.getState().basalamCredentials;
           if (!currentCredentials) {
-            console.log('No credentials found after window closed');
           } else {
-            console.log('Credentials found after window closed:', currentCredentials);
             // Force a re-render if we have credentials
-            window.location.reload();
+            navigate('/home');
           }
         }
       }, 1000);
@@ -295,29 +310,57 @@ function CredentialsPage() {
 
   React.useEffect(() => {
     if (isAuthenticated()) {
-      navigate('/home')
+      const done = sessionStorage.getItem('bootstrap_done')
+      if (done) {
+        navigate('/home')
+      }
     }
   }, [isAuthenticated, navigate])
 
   React.useEffect(() => {
     if (basalamCredentials && sessionStorage.getItem('shouldReloadAfterBasalam')) {
       sessionStorage.removeItem('shouldReloadAfterBasalam')
-      window.location.reload()
+      navigate('/home')
     }
   }, [basalamCredentials])
 
   // Add a debug effect to monitor credentials
   React.useEffect(() => {
-    console.log('Basalam credentials changed:', basalamCredentials);
     if (basalamCredentials) {
-      console.log('UI should update to show connected state');
     }
   }, [basalamCredentials]);
 
   // Add a debug effect to monitor the button state
   React.useEffect(() => {
-    console.log('Button state - basalamCredentials:', !!basalamCredentials);
   }, [basalamCredentials]);
+
+  // Mixin quick connect inputs
+  const [mixinDomain, setMixinDomain] = useState('')
+  const [mixinAccessTokenInput, setMixinAccessTokenInput] = useState('')
+  const [mixinConnectMessage, setMixinConnectMessage] = useState<string | null>(null)
+  const [isSubmittingMixinConnect, setIsSubmittingMixinConnect] = useState(false)
+
+  // Submit handler
+  const handleMixinQuickConnect = async () => {
+    setMixinConnectMessage(null)
+    setIsSubmittingMixinConnect(true)
+    try {
+      const res = await api.post(`/mixin/client/`, null, {
+        params: { mixin_url: mixinDomain, token: mixinAccessTokenInput }
+      })
+      setMixinConnectMessage(
+        res?.data?.message || 'اتصال میکسین با موفقیت انجام شد'
+      )
+      // Do the same as normal connect: persist credentials and reload
+      setMixinCredentials({ url: mixinDomain, access_token: mixinAccessTokenInput })
+      await callBootstrapIfReady()
+      navigate('/home')
+    } catch (e: any) {
+      setMixinConnectMessage(e?.response?.data?.message || e?.message || 'خطا در اتصال میکسین')
+    } finally {
+      setIsSubmittingMixinConnect(false)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4">
@@ -361,6 +404,7 @@ function CredentialsPage() {
             )}
           </button>
 
+          <p className='text-sm text-center'>هنگام اتصال، از خاموش بودن پروکسی و فیلترشکن خود اطمینان حاصل کنید</p>
           {(mixinCredentials || basalamCredentials) && (
             <button
               onClick={handleContinue}

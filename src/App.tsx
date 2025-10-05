@@ -7,6 +7,14 @@ import HomePage from './pages/HomePage'
 import BasalamCallback from './pages/BasalamCallback'
 import LandingPage from './pages/LandingPage'; // <-- **این خط را اضافه کنید**
 import SettingsPage from './pages/SettingsPage'
+import PricingPage from './pages/PricingPage';
+import UsagePage from './pages/UsagePage';
+import SubscriptionPage from './pages/SubscriptionPage';
+import PaymentsPage from './pages/PaymentsPage';
+import MigrationPage from './pages/MigrationPage';
+import AdminPage from './pages/AdminPage'
+import TokenExpiredModal from './components/TokenExpiredModal';
+import { useGlobalUiStore } from './store/globalUiStore';
 
 const queryClient = new QueryClient()
 
@@ -18,15 +26,70 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
+  const showTokenExpiredModal = useGlobalUiStore((state) => state.showTokenExpiredModal);
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
+        <TokenExpiredModal open={showTokenExpiredModal} />
         <Routes>
           {/* 1. LandingPage will now be the default route */}
           <Route path="/" element={<LandingPage />} />
 
           {/* 2. CredentialsPage moved to a new path, e.g., /login */}
           <Route path="/login" element={<CredentialsPage />} />
+
+          {/* Pricing Page route */}
+          <Route path="/pricing" element={<PricingPage />} />
+
+          {/* Usage Dashboard route */}
+          <Route
+            path="/usage"
+            element={
+              <PrivateRoute>
+                <UsagePage />
+              </PrivateRoute>
+            }
+          />
+
+          {/* Subscription Management route */}
+          <Route
+            path="/subscription"
+            element={
+              <PrivateRoute>
+                <SubscriptionPage />
+              </PrivateRoute>
+            }
+          />
+
+          {/* Payments History route */}
+          <Route
+            path="/payments"
+            element={
+              <PrivateRoute>
+                <PaymentsPage />
+              </PrivateRoute>
+            }
+          />
+
+          {/* Migration route */}
+          <Route
+            path="/migration"
+            element={
+              <PrivateRoute>
+                <MigrationPage />
+              </PrivateRoute>
+            }
+          />
+
+          {/* Admin route */}
+          <Route
+            path="/admin"
+            element={
+              <PrivateRoute>
+                <AdminPage />
+              </PrivateRoute>
+            }
+          />
 
           {/* Other existing routes */}
           <Route path="/basalam/callback" element={<BasalamCallback />} />

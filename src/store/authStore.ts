@@ -4,6 +4,8 @@ import type { MixinCredentials, BasalamCredentials } from '../types'
 
 interface UserSettings {
   autoSyncEnabled: boolean
+  autoMigrationEnabled: boolean
+  autoMigrationThreshold: number
 }
 
 interface AuthState {
@@ -23,7 +25,9 @@ export const useAuthStore = create<AuthState>()(
       mixinCredentials: null,
       basalamCredentials: null,
       settings: {
-        autoSyncEnabled: false
+        autoSyncEnabled: false,
+        autoMigrationEnabled: false,
+        autoMigrationThreshold: 1
       },
       setMixinCredentials: (credentials) => set({ mixinCredentials: credentials }),
       setBasalamCredentials: (credentials) => set({ basalamCredentials: credentials }),
@@ -33,7 +37,7 @@ export const useAuthStore = create<AuthState>()(
       clearCredentials: () => set({ 
         mixinCredentials: null, 
         basalamCredentials: null,
-        settings: { autoSyncEnabled: false }
+        settings: { autoSyncEnabled: false, autoMigrationEnabled: false, autoMigrationThreshold: 1 }
       }),
       isAuthenticated: () => {
         const state = get()

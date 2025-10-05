@@ -4,9 +4,11 @@ import { useAuthStore } from '../store/authStore'
 import { mixinApi } from '../services/api/mixin'
 import { basalamApi } from '../services/api/basalam'
 import { BASE_URL } from '../services/api/config'
-import { X, ChevronDown, ChevronUp, LogOut, Loader2, Package, Layers, Link2, Unlink, Menu, Home, Settings, BarChart2, ChevronRight, ChevronLeft } from 'lucide-react'
+import { X, ChevronDown, ChevronUp, LogOut, Loader2, Package, Layers, Link2, Unlink, Menu, Home, Settings, BarChart2, ChevronRight, ChevronLeft, Crown , FolderSync } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { MixinProduct, BasalamProduct } from '../types'
+import { incrementUsage } from '../services/api/pricing'
+import { QuotaExceededModal } from '../components/QuotaExceededModal'
 
 // Utility function to convert Toman to Rial
 const tomanToRial = (toman: number): number => {
@@ -234,6 +236,7 @@ interface ProductModalProps {
   globalMixinProducts: MixinProduct[]
   globalBasalamProducts: BasalamProduct[]
   onOpenCreateBasalamModal: (product: MixinProduct) => void
+  setQuotaErrorModal: (modal: { isOpen: boolean; type: 'migration' | 'realtime' }) => void
 }
 
 function isMixinProduct(product: any): product is MixinProduct {
@@ -257,7 +260,7 @@ const formatPrice = (price: number | null | undefined): string => {
   return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
 }
 
-function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamProducts, globalMixinProducts, globalBasalamProducts, onOpenCreateBasalamModal }: ProductModalProps) {
+function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamProducts, globalMixinProducts, globalBasalamProducts, onOpenCreateBasalamModal, setQuotaErrorModal }: ProductModalProps) {
   const [checkMessage, setCheckMessage] = useState<{ text: string; isSuccess: boolean } | null>(null)
   const [editMessage, setEditMessage] = useState<{ text: string; isSuccess: boolean } | null>(null)
   const [showSyncButton, setShowSyncButton] = useState(false)
@@ -321,12 +324,9 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
     const fetchProductImage = async () => {
       if (isOpen && product) {
         if (type === 'mixin' && isMixinProduct(product) && mixinCredentials) {
-          console.log('Fetching image for Mixin product:', product.id)
           const imageUrl = await mixinApi.getProductImage(mixinCredentials, product.id)
-          console.log('Received Mixin image URL:', imageUrl)
           setProductImage(imageUrl)
         } else if (type === 'basalam' && isBasalamProduct(product)) {
-          console.log('Setting Basalam product image:', product.photo)
           setProductImage(product.photo.md)
         }
       }
@@ -336,15 +336,10 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
 
   useEffect(() => {
     if (isOpen && product) {
-      console.log('=== ProductModal Debug ===');
-      console.log('Product type:', type);
-      console.log('Product data:', JSON.stringify(product, null, 2));
 
       const fetchFullProductDetails = async () => {
         if (type === 'mixin' && isMixinProduct(product) && mixinCredentials) {
-          console.log('Fetching full Mixin product details...');
           const fullProduct = await mixinApi.getProductById(mixinCredentials, product.id)
-          console.log('Full Mixin product data:', JSON.stringify(fullProduct, null, 2));
 
           if (fullProduct) {
             setEditedProduct({
@@ -354,12 +349,9 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
               weight: fullProduct.weight || 0,
               stock: (fullProduct.stock !== undefined ? fullProduct.stock : 1),
             })
-            console.log('Set edited product with description:', fullProduct.description);
           }
         } else if (type === 'basalam' && isBasalamProduct(product) && basalamCredentials) {
-          console.log('Fetching full Basalam product details...');
           const fullProduct = await basalamApi.getProductById(basalamCredentials, product.id)
-          console.log('Full Basalam product data:', JSON.stringify(fullProduct, null, 2));
 
           if (fullProduct) {
             setEditedProduct({
@@ -369,7 +361,6 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
               weight: fullProduct.net_weight || 0,
               stock: (fullProduct.inventory !== undefined ? fullProduct.inventory : 1),
             })
-            console.log('Set edited product with description:', fullProduct.description);
           }
         }
       }
@@ -379,7 +370,6 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
 
   useEffect(() => {
     if (isOpen && product) {
-      console.log('Running check for product:', product)
       handleCheck().catch(console.error)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -392,11 +382,9 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
     // 2. Sync button is showing (meaning there's a price, description, stock, or weight mismatch)
     // 3. We have a product and both credentials
     if (settings.autoSyncEnabled && showSyncButton && product && mixinCredentials && basalamCredentials) {
-      console.log('Auto-sync enabled and sync needed, starting countdown...')
       
       // Set a timeout for 1 second
       const timeout = setTimeout(() => {
-        console.log('Auto-sync triggered for product:', product)
         handleEdit() // This is the same function that manual sync button calls
       }, 1000)
 
@@ -524,16 +512,6 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
         const mixinDescription = normalizeDescription(fullMixinProduct.description)
         const basalamDescription = normalizeDescription(fullBasalamProduct.description)
         
-        // Debug logging for description comparison
-        console.log('Description comparison debug (with full details):', {
-          mixinProductName: product.name,
-          mixinDescription: mixinDescription.substring(0, 100) + '...',
-          basalamDescription: basalamDescription.substring(0, 100) + '...',
-          mixinLength: mixinDescription.length,
-          basalamLength: basalamDescription.length,
-          areEqual: mixinDescription === basalamDescription,
-          dataSource: 'fullProductDetails'
-        });
         
         if (mixinDescription !== basalamDescription) {
           descriptionMismatch = true
@@ -554,18 +532,6 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
         if (mixinWeight !== basalamWeight) {
           weightMismatch = true
         }
-
-        // Debug logging for stock and weight comparison
-        console.log('Stock and Weight comparison debug:', {
-          mixinProductName: product.name,
-          mixinStock,
-          basalamStock,
-          stockMatch: mixinStock === basalamStock,
-          mixinWeight,
-          basalamWeight,
-          weightMatch: mixinWeight === basalamWeight,
-          dataSource: 'fullProductDetails'
-        });
 
         if (priceMismatch || descriptionMismatch || stockMismatch || weightMismatch) {
           const mismatchTypes = []
@@ -633,17 +599,6 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
         const mixinDescription = normalizeDescription(fullMixinProduct.description)
         const basalamDescription = normalizeDescription(fullBasalamProduct.description)
         
-        // Debug logging for description comparison
-        console.log('Description comparison debug (Basalam with full details):', {
-          basalamProductName: product.title,
-          mixinDescription: mixinDescription.substring(0, 100) + '...',
-          basalamDescription: basalamDescription.substring(0, 100) + '...',
-          mixinLength: mixinDescription.length,
-          basalamLength: basalamDescription.length,
-          areEqual: mixinDescription === basalamDescription,
-          dataSource: 'fullProductDetails'
-        });
-        
         if (mixinDescription !== basalamDescription) {
           descriptionMismatch = true
         }
@@ -664,17 +619,6 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
           weightMismatch = true
         }
 
-        // Debug logging for stock and weight comparison
-        console.log('Stock and Weight comparison debug (Basalam):', {
-          basalamProductName: product.title,
-          mixinStock,
-          basalamStock,
-          stockMatch: mixinStock === basalamStock,
-          mixinWeight,
-          basalamWeight,
-          weightMatch: mixinWeight === basalamWeight,
-          dataSource: 'fullProductDetails'
-        });
 
         if (priceMismatch || descriptionMismatch || stockMismatch || weightMismatch) {
           const mismatchTypes = []
@@ -708,13 +652,19 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
 
     setShowSyncButton(priceMismatch || descriptionMismatch || stockMismatch || weightMismatch)
     localStorage.setItem('changecard', changecard)
-    console.log('Updated changecard:', changecard, 'for product:', currentProductName)
-    console.log('Mismatches detected:', { priceMismatch, descriptionMismatch, stockMismatch, weightMismatch })
-    console.log('Using product arrays:', { mixinSource: mixinSource.length, basalamSource: basalamSource.length })
   }
 
   const handleEdit = async () => {
     try {
+      // Ensure credentials are available before proceeding
+      if (!mixinCredentials || !basalamCredentials) {
+        setEditMessage({
+          text: 'لطفاً ابتدا به میکسین و باسلام متصل شوید',
+          isSuccess: false
+        })
+        return
+      }
+
       setIsEditing(true)
       
       // Validation for weight field
@@ -742,12 +692,24 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
         throw new Error('Product ID not found')
       }
 
-      console.log('Starting edit process with:', {
-        changecard,
-        productId,
-        editedProduct,
-        type
-      })
+      // Check realtime quota before making any updates
+      try {
+        await incrementUsage('realtime')
+      } catch (error: any) {
+        console.error('incrementUsage error:', error)
+        const status = error?.response?.status || error?.status
+        // Workaround: Axios 'Network Error' may happen on 429 with CORS issues
+        if (
+          status === 429 ||
+          (error?.message === 'Network Error' && error?.config?.url && error.config.url.includes('/api/usage/increment'))
+        ) {
+          console.log('Quota exceeded: showing modal (realtime, network error workaround)')
+          setQuotaErrorModal({ isOpen: true, type: 'realtime' })
+          setIsEditing(false)
+          return
+        }
+        throw error
+      }
 
       let mixinProductId = productId
       let basalamProductId = productId
@@ -767,7 +729,6 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
           const match = basalamSource.find(p => p?.title && normalize(p.title) === normalize(originalMixinProduct.name))
           if (match) {
             basalamProductId = match.id
-            console.log('Found Basalam product ID:', basalamProductId, 'for Mixin product:', originalMixinProduct.name)
           }
         }
       } else if (type === 'basalam') {
@@ -776,15 +737,11 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
           const match = mixinSource.find(p => p?.name && normalize(p.name) === normalize(originalBasalamProduct.title))
           if (match) {
             mixinProductId = match.id
-            console.log('Found Mixin product ID:', mixinProductId, 'for Basalam product:', originalBasalamProduct.title)
           }
         }
       }
 
-      console.log('Using product IDs:', { mixinProductId, basalamProductId })
-
       if (changecard.includes('mixin') && mixinCredentials) {
-        console.log('Updating Mixin product...')
         const originalProduct = await mixinApi.getProductById(mixinCredentials, mixinProductId)
         if (!originalProduct) {
           throw new Error('Could not fetch original Mixin product data')
@@ -800,7 +757,6 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
           extra_fields: []
         }
 
-        console.log('Sending Mixin update request with data:', mixinProductData)
         const mixinResponse = await mixinApi.updateProduct(mixinCredentials, mixinProductId, mixinProductData)
         console.log('Mixin update response:', mixinResponse)
       }
@@ -1643,118 +1599,21 @@ function CreateBasalamProductModal({ open, onClose, mixinProduct, queryClient, v
   );
 }
 
-function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, queryClient, uniqueMixinProducts }: {
+function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, queryClient, uniqueMixinProducts, setQuotaErrorModal, autoMigrationTriggerCount }: {
   mixinCredentials: any;
   basalamCredentials: any;
   vendorId?: number;
   queryClient: any;
   uniqueMixinProducts: MixinProduct[];
+  setQuotaErrorModal: (modal: { isOpen: boolean; type: 'migration' | 'realtime' }) => void;
+  autoMigrationTriggerCount: number;
 }) {
-  // Eligibility: >=20 Mixin products (check total count, not just current page)
-  const [allMixinProducts, setAllMixinProducts] = useState<any[]>([]);
-  const [allBasalamProducts, setAllBasalamProducts] = useState<any[]>([]);
-  const [isLoadingAllProducts, setIsLoadingAllProducts] = useState(false);
-  
-  // Load all products for bulk migration
-  const loadAllProducts = async () => {
-    if (!mixinCredentials || !basalamCredentials || !vendorId) {
-      console.log('BulkMigration: Missing credentials or vendorId', {
-        mixinCredentials: !!mixinCredentials,
-        basalamCredentials: !!basalamCredentials,
-        vendorId
-      });
-      return;
-    }
-    
-    console.log('BulkMigration: Starting to load all products...');
-    setIsLoadingAllProducts(true);
-    try {
-      // Load all Mixin products
-      let mixinPage = 1;
-      let hasMoreMixin = true;
-      const allMixin = [];
-      
-      while (hasMoreMixin) {
-        console.log(`BulkMigration: Loading Mixin page ${mixinPage}...`);
-        try {
-          const products = await mixinApi.getProducts(mixinCredentials, mixinPage);
-          console.log(`BulkMigration: Mixin page ${mixinPage} returned ${products.length} products`);
-          
-          if (products.length === 0) {
-            hasMoreMixin = false;
-          } else {
-            allMixin.push(...products);
-            mixinPage++;
-            // Safety check to prevent infinite loops
-            if (mixinPage > 250) break;
-          }
-        } catch (error: any) {
-          console.log(`BulkMigration: Mixin page ${mixinPage} failed (likely no more pages):`, error.message);
-          hasMoreMixin = false; // Stop on error (likely 404 for non-existent page)
-        }
-      }
-      
-      // Load all Basalam products
-      let basalamPage = 1;
-      let hasMoreBasalam = true;
-      const allBasalam = [];
-      
-      while (hasMoreBasalam) {
-        console.log(`BulkMigration: Loading Basalam page ${basalamPage}...`);
-        try {
-          const products = await basalamApi.getProducts(basalamCredentials, vendorId, basalamPage);
-          console.log(`BulkMigration: Basalam page ${basalamPage} returned ${products.length} products`);
-          
-          if (products.length === 0) {
-            hasMoreBasalam = false;
-          } else {
-            allBasalam.push(...products);
-            basalamPage++;
-            // Safety check to prevent infinite loops
-            if (basalamPage > 5200) break;
-          }
-        } catch (error: any) {
-          console.log(`BulkMigration: Basalam page ${basalamPage} failed (likely no more pages):`, error.message);
-          hasMoreBasalam = false; // Stop on error (likely 404 for non-existent page)
-        }
-      }
-      
-      console.log('Loaded products for bulk migration:', {
-        mixinProducts: allMixin.length,
-        basalamProducts: allBasalam.length,
-        mixinPages: mixinPage - 1,
-        basalamPages: basalamPage - 1
-      });
-      
-      setAllMixinProducts(allMixin);
-      setAllBasalamProducts(allBasalam);
-    } catch (error: any) {
-      console.error('BulkMigration: Error loading all products:', error);
-      console.error('BulkMigration: Error details:', {
-        message: error?.message,
-        stack: error?.stack,
-        mixinCredentials: !!mixinCredentials,
-        basalamCredentials: !!basalamCredentials,
-        vendorId
-      });
-    } finally {
-      setIsLoadingAllProducts(false);
-    }
-  };
-
-  // Load all products when component mounts
-  useEffect(() => {
-    loadAllProducts();
-  }, [mixinCredentials, basalamCredentials, vendorId]);
-
-  const isEligible = (allMixinProducts?.length || 0) >= 20;
+  // Eligibility now relies on credentials and vendor presence; aggregate lists are loaded by HomePage
+  const isEligible = !!(mixinCredentials && basalamCredentials && vendorId);
   
   // Debug logging
   console.log('BulkMigrationPanel Debug:', {
-    mixinProductsCount: allMixinProducts?.length || 0,
-    basalamProductsCount: allBasalamProducts?.length || 0,
     isEligible,
-    isLoadingAllProducts,
     mixinCredentials: !!mixinCredentials,
     basalamCredentials: !!basalamCredentials,
     vendorId
@@ -1764,6 +1623,20 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
   const [isPaused, setIsPaused] = useState(false);
   const isPausedRef = useRef(false);
   useEffect(() => { isPausedRef.current = isPaused; }, [isPaused]);
+  // Start migration automatically when trigger count increments
+  const lastTriggerRef = useRef(0)
+  useEffect(() => {
+    if (autoMigrationTriggerCount > lastTriggerRef.current) {
+      lastTriggerRef.current = autoMigrationTriggerCount
+      if (!isProcessing && (uniqueMixinProducts?.length || 0) > 0) {
+        runInBatches(uniqueMixinProducts)
+      }
+    }
+  }, [autoMigrationTriggerCount, isProcessing, uniqueMixinProducts])
+  // Halt execution on fatal conditions (e.g., quota exceeded)
+  const [isHalted, setIsHalted] = useState(false);
+  const isHaltedRef = useRef(false);
+  useEffect(() => { isHaltedRef.current = isHalted; }, [isHalted]);
   const [progress, setProgress] = useState<{ done: number; total: number; errors: any[]; successes: number }>({ done: 0, total: 0, errors: [], successes: 0 });
   const [results, setResults] = useState<any[]>(() => {
     try { return JSON.parse(localStorage.getItem('bulk_migration_results') || '[]'); } catch { return []; }
@@ -1794,6 +1667,8 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
 
   // Use the uniqueMixinProducts passed from the homepage (which uses the same logic as getCommonProducts)
   const missingProducts = uniqueMixinProducts || [];
+  console.log('===== this is what product migration panel uses =====')
+  console.log('missingProducts', missingProducts);
 
   // Function to extract error reason from API response
   const getErrorReason = (error: any): string => {
@@ -1809,8 +1684,8 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
       // Check if it's a 500 error
       if (error?.status_code === 500 || error?.response?.http_status === 500) {
         return 'انتقال محصول از سمت سرور باسلام. به پشتیبانی اطلاع دهید...';
-      }
-      
+      } 
+           
       // Check for other HTTP status codes
       if (error?.status_code || error?.response?.http_status) {
         const statusCode = error?.status_code || error?.response?.http_status;
@@ -2087,6 +1962,15 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
   };
 
   const runInBatches = async (items: any[]) => {
+    // Ensure credentials are available before proceeding
+    if (!mixinCredentials || !basalamCredentials) {
+      console.error('Bulk migration failed: Missing credentials')
+      return
+    }
+
+    // Capture quota error modal setter for use in nested functions
+    const setQuotaError = setQuotaErrorModal
+
     setIsProcessing(true);
     setIsPaused(false);
     isPausedRef.current = false;
@@ -2116,6 +2000,14 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
 
     return new Promise<void>((resolve) => {
       const next = () => {
+        // If halted, finalize and resolve without proceeding
+        if (isHaltedRef.current) {
+          setIsProcessing(false);
+          setProgress({ done, total: itemsToProcess.length, errors, successes });
+          addAuditLog('BATCH_HALTED', { reason: 'quota_exceeded', totalProcessed: done, successes, failures: errors.length });
+          resolve();
+          return;
+        }
         if (idx >= itemsToProcess.length && active === 0) {
           setIsProcessing(false);
           setProgress({ done, total: itemsToProcess.length, errors, successes });
@@ -2142,10 +2034,40 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
           return;
         }
         while (active < concurrency && idx < itemsToProcess.length && !isPausedRef.current) {
+          if (isHaltedRef.current) {
+            // Do not start new tasks when halted
+            break;
+          }
           const mp = itemsToProcess[idx++];
           active += 1;
           (async () => {
             try {
+              // Check migration quota before creating product
+              try {
+                console.log('Bulk migration - Checking credentials before incrementUsage:', {
+                  hasMixinCredentials: !!mixinCredentials,
+                  hasBasalamCredentials: !!basalamCredentials,
+                  basalamToken: basalamCredentials?.access_token ? `${basalamCredentials.access_token.substring(0, 20)}...` : 'No token'
+                })
+                await incrementUsage('migration')
+              } catch (error: any) {
+                console.error('Bulk migration incrementUsage error:', error)
+                const status = error?.response?.status || error?.status
+                // Workaround: Axios 'Network Error' may happen on 429 with CORS issues
+                if (
+                  status === 429 ||
+                  (error?.message === 'Network Error' && error?.config?.url && error.config.url.includes('/api/usage/increment'))
+                ) {
+                  console.log('Quota exceeded: showing modal (migration, network error workaround)')
+                  setQuotaError({ isOpen: true, type: 'migration' })
+                  setIsProcessing(false)
+                  // Halt all further processing
+                  setIsHalted(true)
+                  return
+                }
+                throw error
+              }
+
               const res = await withRetries(() => createBasalamProduct(mp), mp.id, mp.name);
               console.log(`Bulk migration SUCCESS for ${mp.name}:`, res);
               // If we reach here, the product was created successfully
@@ -2173,33 +2095,28 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
                 retryCount: error?.retryCount || maxRetries,
                 duration: error?.duration || 0
               }]);
+            } finally {
+              // Always decrement active and update counters
+              active -= 1;
+              done += 1;
+              // Update progress so counters reflect item-level completion in real time
+              setProgress({ done, total: itemsToProcess.length, errors, successes });
+              // If halted, trigger scheduler to finalize
+              if (isHaltedRef.current) {
+                next();
+                return;
+              }
+              // Schedule next
+              next();
             }
-            done += 1;
-            
-            // Dynamic rate limiting: pause based on concurrency settings
-            const pauseConfig = getPauseConfig(concurrency);
-            if (done < itemsToProcess.length && done % pauseConfig.interval === 0) {
-              console.log(`Rate limit: Pausing for ${pauseConfig.pauseSeconds} seconds after processing ${pauseConfig.interval} products (${done} total processed)`);
-              setIsRateLimitPaused(true);
-              setProcessedCount(done);
-              
-              // Dynamic pause based on concurrency
-              await new Promise(resolve => setTimeout(resolve, pauseConfig.pauseSeconds * 1000));
-              
-              setIsRateLimitPaused(false);
-              console.log(`Rate limit: Resuming after ${pauseConfig.pauseSeconds}-second pause`);
-            }
-            
-            setProgress({ done, total: itemsToProcess.length, errors: [...errors], successes });
-          })().finally(() => {
-            active -= 1;
-            next();
-          });
+          })();
         }
         if (active === 0 && idx < itemsToProcess.length) {
           setTimeout(next, 200);
         }
       };
+
+      // Kick off initial scheduling
       next();
     });
   };
@@ -2241,33 +2158,34 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
   if (!isEligible) return null;
 
   return (
-    <div className="bg-blue-100 border border-blue-300 rounded-lg p-4 mb-6">
+    <div className="bg-gradient-to-r from-[#30cfb7]/20 to-[#ffa454]/20 backdrop-blur-md rounded-lg p-6 mb-6 shadow-lg border border-[#30cfb7]/30" dir="rtl">
       <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-bold text-blue-700 mb-1">انتقال سریع محصولات میکسین به باسلام</h3>
-          {isLoadingAllProducts ? (
-            <p className="text-blue-800 text-sm">در حال بارگذاری تمام محصولات...</p>
-          ) : (
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-gradient-to-br from-[#30cfb7]/200 to-[#ffa454]/200 rounded-lg">
+            <Layers className="w-8 h-8 text-[#30cfb7]" />
+          </div>
+          <div className="text-right">
+            <h3 className="text-xl font-bold text-gray-800 mb-2">انتقال سریع محصولات میکسین به باسلام</h3>
             <>
-              <p className="text-blue-800 text-sm">شما واجد شرایط انتقال خودکار محصولات هستید. ({allMixinProducts.length} محصول در میکسین)</p>
-              <p className="text-blue-800 text-xs">{missingProducts.length} محصول آماده انتقال!</p>
+              <p className="text-[#5e5d5b] text-sm">شما واجد شرایط انتقال خودکار محصولات هستید.</p>
+              <p className="text-[#5e5d5b] text-xs">{missingProducts.length} محصول آماده انتقال!</p>
             </>
-          )}
+          </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 mr-6">
           <button
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            className="bg-gradient-to-r from-[#30cfb7] to-[#ffa454] text-white px-6 py-3 rounded-lg font-semibold hover:from-[#2bbfa7] hover:to-[#ffb454] transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
             onClick={() => setShowModal(true)}
           >
             شروع انتقال
           </button>
           {results.length > 0 && (
-            <button className="px-4 py-2 border border-blue-400 text-blue-700 rounded hover:bg-blue-50" onClick={exportCsv}>
+            <button className="px-4 py-2 border border-[#30cfb7] text-[#30cfb7] rounded hover:bg-[#30cfb7]/10 transition-all duration-200" onClick={exportCsv}>
               خروجی CSV
             </button>
           )}
           {auditLogs.length > 0 && (
-            <button className="px-4 py-2 border border-green-400 text-green-700 rounded hover:bg-green-50" onClick={exportAuditLogs}>
+            <button className="px-4 py-2 border border-[#ffa454] text-[#ffa454] rounded hover:bg-[#ffa454]/10 transition-all duration-200" onClick={exportAuditLogs}>
               گزارشات
             </button>
           )}
@@ -2430,7 +2348,7 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
 }
 
 function HomePage() {
-  const { mixinCredentials, basalamCredentials, clearCredentials } = useAuthStore()
+  const { mixinCredentials, basalamCredentials, clearCredentials, settings } = useAuthStore()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [selectedProduct, setSelectedProduct] = useState<MixinProduct | BasalamProduct | null>(null)
@@ -2445,6 +2363,18 @@ function HomePage() {
   const [productToCreateInBasalam, setProductToCreateInBasalam] = useState<MixinProduct | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+  const [isMigrationModalOpen, setIsMigrationModalOpen] = useState(false)
+  // Auto-migration trigger counter; increment to trigger migration in panel
+  const [autoMigrationTriggerCount, setAutoMigrationTriggerCount] = useState(0)
+  
+  // Quota error modal state
+  const [quotaErrorModal, setQuotaErrorModal] = useState<{
+    isOpen: boolean;
+    type: 'migration' | 'realtime';
+  }>({
+    isOpen: false,
+    type: 'migration'
+  })
   
   // Global full lists for cross-page comparison
   const [globalMixinProducts, setGlobalMixinProducts] = useState<MixinProduct[]>([]);
@@ -2457,105 +2387,62 @@ function HomePage() {
     basalam: { current: 0, total: 0, status: 'idle' }
   });
 
-  // Load all products across all pages for comparison
+  // Load all products using backend aggregation endpoints (server-side pagination)
   const loadAllProductsForComparison = async () => {
-    if (!mixinCredentials || !basalamCredentials || !userData?.vendor?.id) return;
+    if (!mixinCredentials?.url || !basalamCredentials?.access_token || !userData?.vendor?.id) return;
     setIsLoadingGlobalLists(true);
-    
-    // Reset progress
+
+    // Initialize progress for two aggregate requests
     setLoadingProgress({
-      mixin: { current: 0, total: 0, status: 'loading' },
-      basalam: { current: 0, total: 0, status: 'loading' }
+      mixin: { current: 0, total: 1, status: 'loading' },
+      basalam: { current: 0, total: 1, status: 'loading' }
     });
-    
+
     try {
-      // Fetch all Mixin pages
-      const mixinAll: MixinProduct[] = [];
-      
-      // First, get total pages for Mixin
-      try {
-        const firstPage = await mixinApi.getProducts(mixinCredentials, 1);
-        if (firstPage.length > 0) {
-          mixinAll.push(...firstPage);
-          setLoadingProgress(prev => ({
-            ...prev,
-            mixin: { current: 1, total: 1, status: 'loading' }
-          }));
-        }
-      } catch (e) {
-        setLoadingProgress(prev => ({
-          ...prev,
-          mixin: { current: 0, total: 0, status: 'error' }
-        }));
-      }
-      
-      // Continue fetching remaining Mixin pages
-      for (let p = 2; p <= 100; p += 1) {
-        try {
-          const items = await mixinApi.getProducts(mixinCredentials, p);
-          if (!items || items.length === 0) break;
-          mixinAll.push(...items);
-          setLoadingProgress(prev => ({
-            ...prev,
-            mixin: { current: p, total: Math.max(prev.mixin.total, p), status: 'loading' }
-          }));
-          if (items.length < 100) break;
-        } catch (e: any) {
-          if (e?.response?.status === 404) break;
-          throw e;
-        }
-      }
-      
-      setLoadingProgress(prev => ({
-        ...prev,
-        mixin: { ...prev.mixin, status: 'completed' }
-      }));
+      const mixinUrlValue = (mixinCredentials as any)?.mixin_url || (mixinCredentials as any)?.url || '';
+      const mixinUrlParam = encodeURIComponent(mixinUrlValue);
+      const vendorId = userData.vendor.id;
 
-      // Fetch all Basalam pages
-      const basalamAll: BasalamProduct[] = [];
-      
-      // First, get total pages for Basalam
-      try {
-        const firstPage = await basalamApi.getProducts(basalamCredentials, userData.vendor.id, 1);
-        if (firstPage.length > 0) {
-          basalamAll.push(...firstPage);
-          setLoadingProgress(prev => ({
-            ...prev,
-            basalam: { current: 1, total: 1, status: 'loading' }
-          }));
-        }
-      } catch (e) {
-        setLoadingProgress(prev => ({
-          ...prev,
-          basalam: { current: 0, total: 0, status: 'error' }
-        }));
-      }
-      
-      // Continue fetching remaining Basalam pages
-      for (let p = 2; p <= 100; p += 1) {
-        try {
-          const items = await basalamApi.getProducts(basalamCredentials, userData.vendor.id, p);
-          if (!items || items.length === 0) break;
-          basalamAll.push(...items);
-          setLoadingProgress(prev => ({
-            ...prev,
-            basalam: { current: p, total: Math.max(prev.basalam.total, p), status: 'loading' }
-          }));
-        } catch (e: any) {
-          if (e?.response?.status === 404) break;
-          throw e;
-        }
-      }
-      
-      setLoadingProgress(prev => ({
-        ...prev,
-        basalam: { ...prev.basalam, status: 'completed' }
-      }));
+      const mixinAllPromise = fetch(`${BASE_URL}/products/my-mixin-products/all?mixin_url=${mixinUrlParam}`, {
+        headers: { 'Authorization': `Bearer ${mixinCredentials.access_token}` }
+      }).then(async (res) => {
+        if (!res.ok) throw new Error(`Mixin all fetch failed: ${res.status}`);
+        const data = await res.json();
+        console.log('=== Mixin ALL aggregate response ===', { count: data?.count, productsLen: Array.isArray(data?.products) ? data.products.length : 0, mixinUrlValue });
+        // Expected shape: { count: number, products: MixinProduct[] }
+        const products = Array.isArray(data?.products) ? data.products : [];
+        setGlobalMixinProducts(products as unknown as MixinProduct[]);
+        console.log(' setGlobalMixinProducts length:', products.length);
+        setLoadingProgress(prev => ({ ...prev, mixin: { current: 1, total: 1, status: 'completed' } }));
+        return { products };
+      }).catch(err => {
+        console.error('Mixin aggregate fetch error:', err);
+        setLoadingProgress(prev => ({ ...prev, mixin: { current: 0, total: 1, status: 'error' } }));
+        return { products: [] };
+      });
 
-      setGlobalMixinProducts(mixinAll);
-      setGlobalBasalamProducts(basalamAll);
+      const basalamAllPromise = fetch(`${BASE_URL}/products/my-basalam-products/${vendorId}/all`, {
+        headers: { 'Authorization': `Bearer ${basalamCredentials.access_token}` }
+      }).then(async (res) => {
+        if (!res.ok) throw new Error(`Basalam all fetch failed: ${res.status}`);
+        const data = await res.json();
+        console.log('=== Basalam ALL aggregate response ===', { count: data?.count, productsLen: Array.isArray(data?.products) ? data.products.length : 0, vendorId });
+        // Expected shape: { count: number, products: BasalamProduct[] }
+        const products = Array.isArray(data?.products) ? data.products : [];
+        setGlobalBasalamProducts(products as unknown as BasalamProduct[]);
+        console.log(' setGlobalBasalamProducts length:', products.length);
+        setLoadingProgress(prev => ({ ...prev, basalam: { current: 1, total: 1, status: 'completed' } }));
+        return { products };
+      }).catch(err => {
+        console.error('Basalam aggregate fetch error:', err);
+        setLoadingProgress(prev => ({ ...prev, basalam: { current: 0, total: 1, status: 'error' } }));
+        return { products: [] };
+      });
+
+      const [{ products: mixinAgg }, { products: basalamAgg }] = await Promise.all([mixinAllPromise, basalamAllPromise]);
+      console.log('=== Global lists loaded (from aggregates) ===', { globalMixinLen: mixinAgg.length, globalBasalamLen: basalamAgg.length });
     } catch (error) {
-      console.warn('Failed to load all products for comparison:', error);
+      console.warn('Failed to load aggregate products for comparison:', error);
       setLoadingProgress(prev => ({
         mixin: { ...prev.mixin, status: 'error' },
         basalam: { ...prev.basalam, status: 'error' }
@@ -2601,6 +2488,16 @@ function HomePage() {
     }
   }, [mixinCredentials, basalamCredentials, userData?.vendor?.id]);
 
+  // Background auto-refresh every 20 seconds
+  useEffect(() => {
+    if (!(mixinCredentials && basalamCredentials && userData?.vendor?.id)) return;
+    const interval = setInterval(() => {
+      loadAllProductsForComparison();
+      setIsLoadingGlobalLists(false);
+    }, 50000); // 50 seconds
+    return () => clearInterval(interval);
+  }, [mixinCredentials, basalamCredentials, userData?.vendor?.id]);
+
 
   const { data: mixinProducts, isLoading: isMixinLoading, error: mixinError } = useQuery({
     queryKey: ['mixinProducts'],
@@ -2618,7 +2515,7 @@ function HomePage() {
       }
       return basalamApi.getProducts(basalamCredentials!, userData.vendor.id);
     },
-    enabled: !!userData?.vendor?.id && !!basalamCredentials?.access_token,
+    enabled: false, // Disabled: we use aggregate endpoint instead
     retry: 1,
     staleTime: 30000,
   })
@@ -2638,9 +2535,9 @@ function HomePage() {
   }, [mixinProducts, basalamProducts, userData, mixinCredentials, basalamCredentials, mixinError, basalamError, isMixinLoading, isBasalamLoading, isUserLoading]);
 
   const getCommonProducts = () => {
-    // Prefer full global lists when available; fall back to current page
-    const mixinSource = (globalMixinProducts && globalMixinProducts.length > 0) ? globalMixinProducts : (Array.isArray(mixinProducts) ? mixinProducts : (mixinProducts as any)?.data || []);
-    const basalamSource = (globalBasalamProducts && globalBasalamProducts.length > 0) ? globalBasalamProducts : (Array.isArray(basalamProducts) ? basalamProducts : (basalamProducts as any)?.data || []);
+    // Use only full global lists populated by aggregate endpoints
+    const mixinSource = globalMixinProducts;
+    const basalamSource = globalBasalamProducts;
 
     if (!mixinSource || !basalamSource) {
       return {
@@ -2695,25 +2592,7 @@ function HomePage() {
         .trim();
     };
 
-    // Debug function to log matching attempts
-    const debugMatch = (mixinName: string, basalamTitle: string, isMatch: boolean) => {
-      if (mixinName && basalamTitle) {
-        console.log(`🔍 Matching: "${mixinName}" vs "${basalamTitle}"`);
-        console.log(`   Normalized Mixin: "${normalize(mixinName)}"`);
-        console.log(`   Normalized Basalam: "${normalize(basalamTitle)}"`);
-        console.log(`   Match: ${isMatch ? '✅' : '❌'}`);
-        
-        // Special test for the specific product mentioned by user
-        if (mixinName.includes('جای شمع و لوازم چوبی چندمنظوره') || basalamTitle.includes('جای شمع و لوازم چوبی چندمنظوره')) {
-          console.log(`🎯 SPECIAL TEST - Persian/English Numbers:`);
-          console.log(`   Original Mixin: "${mixinName}"`);
-          console.log(`   Original Basalam: "${basalamTitle}"`);
-          console.log(`   Normalized Mixin: "${normalize(mixinName)}"`);
-          console.log(`   Normalized Basalam: "${normalize(basalamTitle)}"`);
-          console.log(`   Numbers Match: ${normalize(mixinName) === normalize(basalamTitle) ? '✅' : '❌'}`);
-        }
-      }
-    };
+    
 
     const commonMixinProducts = mixinProductsArray.filter((mixinProduct: MixinProduct) => {
       if (!mixinProduct?.name) return false;
@@ -2722,7 +2601,6 @@ function HomePage() {
         if (!basalamProduct?.title) return false;
         
         const isMatch = normalize(basalamProduct.title) === normalize(mixinProduct.name);
-        debugMatch(mixinProduct.name, basalamProduct.title, isMatch);
         return isMatch;
       });
       
@@ -2814,6 +2692,32 @@ function HomePage() {
     console.log('Unique Basalam Products:', uniqueBasalamProducts);
   }, [mixinProducts, basalamProducts, commonMixinProducts, commonBasalamProducts, uniqueMixinProducts, uniqueBasalamProducts]);
 
+  // Automatic migration check - runs when unique products change
+  useEffect(() => {
+    if (!settings.autoMigrationEnabled || !uniqueMixinProducts.length) return;
+    
+    const checkAndTriggerMigration = () => {
+      const currentUniqueCount = uniqueMixinProducts.length;
+      const threshold = settings.autoMigrationThreshold;
+      
+      console.log(`Auto-migration check: ${currentUniqueCount} unique products, threshold: ${threshold}`);
+      
+      if (currentUniqueCount >= threshold) {
+        console.log(`Auto-migration triggered: ${currentUniqueCount} >= ${threshold}`);
+        // Trigger automatic migration process in BulkMigrationPanel
+        setAutoMigrationTriggerCount((prev) => prev + 1)
+      }
+    };
+
+    // Check immediately if conditions are met
+    checkAndTriggerMigration();
+    
+    // Set up interval to check every 30 min
+    const migrationInterval = setInterval(checkAndTriggerMigration, 1800000);
+    
+    return () => clearInterval(migrationInterval);
+  }, [settings.autoMigrationEnabled, settings.autoMigrationThreshold, uniqueMixinProducts]);
+
   const handleProductClick = async (productId: number, type: 'mixin' | 'basalam') => {
     try {
       console.log('=== Product Click Debug ===');
@@ -2850,7 +2754,7 @@ function HomePage() {
       }
     } catch (error) {
       console.error('Error fetching product details:', error)
-      alert('Failed to fetch product details')
+      alert('خطا در دریافت محصول، لطفاً از اتصال اینترنت خود اطمینان حاصل کنید و یا پروکسی خود را در صورتی که متصل است، خاموش کنید!')
     }
   }
 
@@ -2863,10 +2767,15 @@ function HomePage() {
 
   // Automation Banner component
   const AutomationBanner = () => {
-
     return (
       <div className="bg-gradient-to-r from-[#5b9fdb]/20 to-[#ff6040]/20 backdrop-blur-md rounded-lg p-6 mb-6 shadow-lg border border-[#5b9fdb]/30" dir="rtl">
         <div className="flex items-center justify-between">
+          {/* Icon for realtime update banner */}
+          <div className="flex-shrink-0 ml-6">
+            <div className="bg-gradient-to-tr from-[#5b9fdb]/20 to-[#ff6040]/30 rounded-lg p-3 shadow-lg flex items-center justify-center">
+              <FolderSync size={32} className="w-8 h-8 text-[#ff6040]" />
+            </div>
+          </div>
           <div className="flex-1 text-right">
             <h3 className="text-xl font-bold text-gray-800 mb-2">
               میخوای هر تغییری که توی میکسین میدی همونجا روی محصولاتت توی باسلامم اعمال شه؟
@@ -2875,7 +2784,6 @@ function HomePage() {
               دکمه رو بزن که بریم فعالش کنیم
             </p>
           </div>
-          
           <div className="mr-6">
             <button
               onClick={() => navigate('/settings')}
@@ -2923,10 +2831,21 @@ function HomePage() {
               {!isSidebarCollapsed && <span>داشبورد</span>}
             </a>
 
-            <a href="#" className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-[#5b9fdb]/10 rounded-lg transition-colors">
+            <button
+              onClick={() => navigate('/migration')}
+              className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-[#5b9fdb]/10 rounded-lg transition-colors"
+            >
               <Package size={20} />
-              {!isSidebarCollapsed && <span>محصولات</span>}
-            </a>
+              {!isSidebarCollapsed && <span>انتقال گروهی محصولات</span>}
+            </button>
+
+            <button
+              onClick={() => navigate('/pricing')}
+              className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-[#5b9fdb]/10 rounded-lg transition-colors"
+            >
+              <Crown size={20} />
+              {!isSidebarCollapsed && <span>وضعیت پلن</span>}
+            </button>
 
             <a href="#" className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-[#5b9fdb]/10 rounded-lg transition-colors">
               <BarChart2 size={20} />
@@ -2969,9 +2888,12 @@ function HomePage() {
         </header>
 
         <main className="max-w-7xl mx-auto px-8 py-8">
+          
+
           {/* Automation Banner */}
           <AutomationBanner />
           
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div className="bg-white/80 backdrop-blur-md rounded-xl p-6 shadow-lg border border-gray-100 transform transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
               <div className="flex items-center gap-4">
@@ -3102,8 +3024,21 @@ function HomePage() {
               </div>
             </div>
           </div>
+          
+          
 
           <div className="mt-12">
+            {/* Product migration panel banner, button and panel*/}
+            <BulkMigrationPanel
+              mixinCredentials={mixinCredentials}
+              basalamCredentials={basalamCredentials}
+              vendorId={userData?.vendor?.id}
+              queryClient={queryClient}
+              uniqueMixinProducts={uniqueMixinProducts}
+              setQuotaErrorModal={setQuotaErrorModal}
+              autoMigrationTriggerCount={autoMigrationTriggerCount}
+            />
+
             <h2 className="text-2xl font-bold text-gray-800 mb-8 text-center bg-gradient-to-r from-[#ff9233] to-[#ffa454] bg-clip-text text-transparent">
               محصولات غیرمشترک در باسلام و میکسین
             </h2>
@@ -3124,7 +3059,7 @@ function HomePage() {
                   <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                     {!mixinCredentials ? (
                       <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">لطفا ابتدا به میکسین متصل شوید</div>
-                    ) : isMixinLoading ? (
+                    ) : isLoadingGlobalLists ? (
                       <div className="text-center py-4">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
                         <p className="mt-2 text-gray-600">در حال بارگذاری محصولات میکسین...</p>
@@ -3205,6 +3140,7 @@ function HomePage() {
           globalMixinProducts={globalMixinProducts}
           globalBasalamProducts={globalBasalamProducts}
           onOpenCreateBasalamModal={handleOpenCreateBasalamModal}
+          setQuotaErrorModal={setQuotaErrorModal}
         />
 
         {(isLoading || isLoadingGlobalLists) && (
@@ -3357,14 +3293,16 @@ function HomePage() {
             vendorId={userData.vendor.id}
           />
         )}
-        <BulkMigrationPanel
-          mixinCredentials={mixinCredentials}
-          basalamCredentials={basalamCredentials}
-          vendorId={userData?.vendor?.id}
-          queryClient={queryClient}
-          uniqueMixinProducts={uniqueMixinProducts}
-        />
+
+        
       </div>
+
+      {/* Quota Exceeded Modal */}
+      <QuotaExceededModal
+        isOpen={quotaErrorModal.isOpen}
+        onClose={() => setQuotaErrorModal({ isOpen: false, type: 'migration' })}
+        type={quotaErrorModal.type}
+      />
     </div>
   )
 }
