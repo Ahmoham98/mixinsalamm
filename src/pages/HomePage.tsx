@@ -2491,7 +2491,7 @@ function HomePage() {
     const interval = setInterval(() => {
       loadAllProductsForComparison();
       setIsLoadingGlobalLists(false);
-    }, 50000); // 50 seconds
+    }, 30000); // 30 seconds
     return () => clearInterval(interval);
   }, [mixinCredentials, basalamCredentials, userData?.vendor?.id]);
 
