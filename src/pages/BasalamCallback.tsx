@@ -1,3 +1,4 @@
+import BackHomeButton from '../components/BackHomeButton'
 import React, { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
@@ -64,10 +65,15 @@ function BasalamCallback() {
   }, [navigate, setBasalamCredentials])
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <div className="bg-white p-8 rounded-lg shadow-lg w-96 text-center">
+    <div className="min-h-screen bg-gray-100">
+      <div className="max-w-5xl mx-auto px-4 py-6">
+        <BackHomeButton />
+      </div>
+      <div className="flex items-center justify-center px-4">
+        <div className="bg-white p-8 rounded-lg shadow-lg w-96 text-center">
         <h2 className="text-xl font-semibold mb-4">Connecting to Basalam</h2>
         <p className="text-gray-600">Please wait while we complete the connection...</p>
+        </div>
       </div>
     </div>
   )

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { Menu, Home, Package, Crown, BarChart2, Settings, ChevronLeft, ChevronRight, LogOut, Link2 } from 'lucide-react'
+import BackHomeButton from '../components/BackHomeButton'
 
 export default function SupportPage() {
   const navigate = useNavigate()
@@ -101,6 +102,7 @@ export default function SupportPage() {
         </header>
 
         <main className="max-w-7xl mx-auto px-8 py-8" dir="rtl">
+          <BackHomeButton />
           <div className="max-w-5xl mx-auto">
             <p className="text-gray-700 leading-7 mb-6">
               تا زمان آماده‌شدن سامانه تیکتینگ، می‌توانید از راه‌های زیر با پشتیبانی در تماس باشید. ما در سریع‌ترین زمان ممکن پاسخگو خواهیم بود.

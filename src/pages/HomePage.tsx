@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom'
 import type { MixinProduct, BasalamProduct } from '../types'
 import { incrementUsage } from '../services/api/pricing'
 import { QuotaExceededModal } from '../components/QuotaExceededModal'
+import { useProductsStore } from '../store/productsStore'
 
 // Utility function to convert Toman to Rial
 const tomanToRial = (toman: number): number => {
@@ -2823,6 +2824,13 @@ function HomePage() {
     uniqueMixinProducts,
     uniqueBasalamProducts
   } = getCommonProducts()
+
+  // Sync uniques into global products store for cross-page usage
+  const setUniqueLists = useProductsStore((s) => s.setUniqueLists)
+  useEffect(() => {
+    try { setUniqueLists(uniqueMixinProducts, uniqueBasalamProducts) } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uniqueMixinProducts, uniqueBasalamProducts])
 
   useEffect(() => {
     console.log('=== Product Data Debug ===');

@@ -1,18 +1,36 @@
+import BackHomeButton from '../components/BackHomeButton'
 import { useEffect, useState } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '../store/authStore'
+import { useProductsStore } from '../store/productsStore'
 import type { MixinProduct, BasalamProduct } from '../types'
 import { Layers, BarChart2 } from 'lucide-react'
 
 export default function MigrationPage() {
   const { mixinCredentials, basalamCredentials } = useAuthStore()
-  const queryClient = useQueryClient()
   const [globalMixinProducts, setGlobalMixinProducts] = useState<MixinProduct[]>([])
   const [globalBasalamProducts, setGlobalBasalamProducts] = useState<BasalamProduct[]>([])
+  const uniqueMixinProducts = useProductsStore((s) => s.uniqueMixinProducts)
+  const uniqueBasalamProducts = useProductsStore((s) => s.uniqueBasalamProducts)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const vendorId = useAuthStore.getState()?.basalamCredentials?.vendor?.id || undefined
+  const vendorId = (useAuthStore.getState()?.basalamCredentials as any)?.vendor?.id || undefined
+
+  // Utilities for normalization similar to HomePage
+  const cleanHtmlText = (html: string): string => {
+    if (!html) return ''
+    const tmp = document.createElement('div')
+    tmp.innerHTML = html
+    return (tmp.textContent || tmp.innerText || '').replace(/\s+/g, ' ').trim()
+  }
+  const normalize = (s: string): string => {
+    return cleanHtmlText(String(s || ''))
+      .toLowerCase()
+      .replace(/[\u200c\u200f\u202a-\u202e]/g, '')
+      .replace(/[^\p{L}\p{N}]+/gu, '')
+  }
+
+  // Uniques are now sourced from global products store; local compute removed
 
   useEffect(() => {
     const loadAll = async () => {
@@ -44,6 +62,8 @@ export default function MigrationPage() {
       }
     }
     loadAll()
+    const interval = setInterval(loadAll, 30000)
+    return () => clearInterval(interval)
   }, [mixinCredentials, basalamCredentials, vendorId])
 
   return (
@@ -59,6 +79,7 @@ export default function MigrationPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-8 py-8">
+        <BackHomeButton />
         <section className="bg-gradient-to-r from-[#30cfb7]/15 to-[#ffa454]/15 border border-[#30cfb7]/20 rounded-2xl p-6 shadow-md mb-8" dir="rtl">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-gradient-to-br from-[#30cfb7]/20 to-[#ffa454]/20 rounded-lg">
@@ -84,31 +105,43 @@ export default function MigrationPage() {
           </div>
         )}
 
+
+
+        {/* Unique products sections */}
         {!isLoading && !error && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
             <div className="bg-white/80 backdrop-blur-md border border-gray-100 rounded-xl p-6 shadow-md">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4 text-right">محصولات میکسین ({globalMixinProducts.length})</h3>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4 text-right">محصولات منحصر به میکسین ({uniqueMixinProducts.length})</h3>
               <div className="max-h-[400px] overflow-y-auto pr-2">
-                {globalMixinProducts.slice(0, 100).map((p) => (
-                  <div key={(p as any).id} className="py-2 border-b text-right">
-                    <div className="text-gray-800 text-sm">{(p as any).name}</div>
-                  </div>
-                ))}
-                {globalMixinProducts.length > 100 && (
-                  <div className="text-xs text-gray-500 mt-2 text-right">... و {globalMixinProducts.length - 100} محصول دیگر</div>
+                {uniqueMixinProducts.length === 0 ? (
+                  <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">محصول منحصر به میکسین یافت نشد</div>
+                ) : (
+                  uniqueMixinProducts.slice(0, 100).map((p) => (
+                    <div key={(p as any).id} className="py-2 border-b text-right">
+                      <div className="text-gray-800 text-sm">{(p as any).name}</div>
+                    </div>
+                  ))
+                )}
+                {uniqueMixinProducts.length > 100 && (
+                  <div className="text-xs text-gray-500 mt-2 text-right">... و {uniqueMixinProducts.length - 100} محصول دیگر</div>
                 )}
               </div>
             </div>
+
             <div className="bg-white/80 backdrop-blur-md border border-gray-100 rounded-xl p-6 shadow-md">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4 text-right">محصولات باسلام ({globalBasalamProducts.length})</h3>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4 text-right">محصولات منحصر به باسلام ({uniqueBasalamProducts.length})</h3>
               <div className="max-h-[400px] overflow-y-auto pr-2">
-                {globalBasalamProducts.slice(0, 100).map((p) => (
-                  <div key={(p as any).id} className="py-2 border-b text-right">
-                    <div className="text-gray-800 text-sm">{(p as any).title}</div>
-                  </div>
-                ))}
-                {globalBasalamProducts.length > 100 && (
-                  <div className="text-xs text-gray-500 mt-2 text-right">... و {globalBasalamProducts.length - 100} محصول دیگر</div>
+                {uniqueBasalamProducts.length === 0 ? (
+                  <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">محصول منحصر به باسلام یافت نشد</div>
+                ) : (
+                  uniqueBasalamProducts.slice(0, 100).map((p) => (
+                    <div key={(p as any).id} className="py-2 border-b text-right">
+                      <div className="text-gray-800 text-sm">{(p as any).title}</div>
+                    </div>
+                  ))
+                )}
+                {uniqueBasalamProducts.length > 100 && (
+                  <div className="text-xs text-gray-500 mt-2 text-right">... و {uniqueBasalamProducts.length - 100} محصول دیگر</div>
                 )}
               </div>
             </div>

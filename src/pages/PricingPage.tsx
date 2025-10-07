@@ -7,6 +7,7 @@ import { useAuthStore } from "../store/authStore";
 import { api } from "../services/api/config";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import BackHomeButton from "../components/BackHomeButton";
 
 const PricingPage: React.FC = () => {
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -198,16 +199,8 @@ const PricingPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#f6ffe8] to-blue-50 py-12 px-4" dir="rtl">
       <div className="max-w-6xl mx-auto">
-        {/* Back to home header - force LTR to keep button on left */}
-        <div dir="ltr" className="flex items-center justify-start mb-6">
-          <button
-            onClick={() => navigate('/home')}
-            className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-200"
-          >
-            <ArrowLeft size={20} />
-            <span>بازگشت به صفحه اصلی</span>
-          </button>
-        </div>
+        {/* Back to home header */}
+        <BackHomeButton />
       <div className="text-center mb-10">
           <h1 className="text-4xl font-extrabold bg-gradient-to-r from-[#95ed2f] to-[#30cfb7] bg-clip-text text-transparent">مصرف فعلی شما</h1>
           <p className="text-gray-600 mt-2">شما می توانید وضعیت مصرف خود را در این بخش بررسی کنید.</p>
