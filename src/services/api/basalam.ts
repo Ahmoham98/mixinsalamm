@@ -113,6 +113,35 @@ export const basalamApi = {
     }
   },
 
+  // Batch fetch basalam products by IDs via backend parallel endpoint
+  getProductsByIds: async (
+    credentials: BasalamCredentials,
+    ids: number[]
+  ): Promise<Record<number, BasalamProduct>> => {
+    try {
+      if (!ids || ids.length === 0) return {}
+      const response = await api.post(
+        `/products/basalam/productids`,
+        { ids },
+        { headers: { Authorization: `Bearer ${credentials.access_token}` } }
+      )
+      const data = response.data
+      const resultArray = Array.isArray(data?.products) ? data.products : []
+      const map: Record<number, BasalamProduct> = {}
+      for (const item of resultArray) {
+        const id = Number(item?.id ?? item?.data?.id)
+        const prod = (item?.data || item) as BasalamProduct
+        if (Number.isFinite(id) && prod) {
+          map[id] = prod
+        }
+      }
+      return map
+    } catch (error) {
+      console.error('Error fetching batch Basalam products by ids:', error)
+      return {}
+    }
+  },
+
   updateProduct: async (credentials: BasalamCredentials, productId: number, productData: { name: string; price: number; description?: string; stock: number; weight: number }) => {
     try {
       const formData = new FormData()

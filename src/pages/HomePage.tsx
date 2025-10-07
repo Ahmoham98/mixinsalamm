@@ -676,7 +676,15 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
         })
       }
       
-      const changecard = localStorage.getItem('changecard') || ''
+      // Determine direction according to user preference in settings
+      let changecard = localStorage.getItem('changecard') || ''
+      try {
+        if (settings?.preferBasalamFromMixin) {
+          changecard = 'basalam'
+        } else if (settings?.preferMixinFromBasalam) {
+          changecard = 'mixin'
+        }
+      } catch {}
       const productId = product?.id
 
       if (!productId) {
@@ -2384,6 +2392,11 @@ function HomePage() {
     basalam: { current: 0, total: 0, status: 'idle' }
   });
 
+  // Background Auto-Sync state
+  const backgroundSyncRunningRef = useRef(false)
+  const normalizeName = (s: string | undefined) => (s || '').trim().toLowerCase()
+  const toToman = (rial: number) => Math.floor((rial || 0) / 10)
+
   // Load all products using backend aggregation endpoints (server-side pagination)
   const loadAllProductsForComparison = async () => {
     if (!mixinCredentials?.url || !basalamCredentials?.access_token || !userData?.vendor?.id) return;
@@ -2485,6 +2498,138 @@ function HomePage() {
     }
   }, [mixinCredentials, basalamCredentials, userData?.vendor?.id]);
 
+  // Background Auto-Sync loop every ~3 minutes using full-detail comparison and needToUpdate list
+  useEffect(() => {
+    if (!settings?.autoSyncEnabled) return
+    const preferBasalam = !!settings?.preferBasalamFromMixin
+    const preferMixin = !!settings?.preferMixinFromBasalam
+    if (!preferBasalam && !preferMixin) return
+    if (!mixinCredentials || !basalamCredentials) return
+
+    const buildPairs = () => {
+      if (!globalMixinProducts?.length || !globalBasalamProducts?.length) return [] as Array<{ mixin: any, basalam: any }>
+      const mixinByName = new Map<string, any>()
+      for (const mp of globalMixinProducts) { if (mp?.name) mixinByName.set(normalizeName(mp.name), mp) }
+      const basalamByName = new Map<string, any>()
+      for (const bp of globalBasalamProducts) { if ((bp as any)?.title) basalamByName.set(normalizeName((bp as any).title), bp) }
+      const pairs: Array<{ mixin: any, basalam: any }> = []
+      for (const [name, mp] of mixinByName.entries()) {
+        const bp = basalamByName.get(name)
+        if (bp) pairs.push({ mixin: mp, basalam: bp })
+      }
+      return pairs
+    }
+
+    const compareWithFullDetails = async (mp: any, bp: any, fullMCache?: Record<number, any>, fullBCache?: Record<number, any>) => {
+      try {
+        const [fullM, fullB] = await Promise.all([
+          fullMCache?.[mp.id] || mixinApi.getProductById(mixinCredentials!, mp.id),
+          fullBCache?.[bp.id] || basalamApi.getProductById(basalamCredentials!, bp.id)
+        ])
+        
+        // Use full product details (same as sync button)
+        const fullMixinProduct = fullM || mp
+        const fullBasalamProduct = fullB || bp
+        
+        // Price comparison - use rialToToman like sync button
+        const priceMismatch = rialToToman(fullBasalamProduct.price) !== fullMixinProduct.price
+        
+        // Stock comparison - use full product details like sync button
+        const mixinStock = fullMixinProduct.stock || 0
+        const basalamStock = fullBasalamProduct.inventory || 0
+        const stockMismatch = mixinStock !== basalamStock
+        
+        // Weight comparison - use full product details like sync button
+        const mixinWeight = fullMixinProduct.weight || 0
+        const basalamWeight = fullBasalamProduct.net_weight || 0
+        const weightMismatch = mixinWeight !== basalamWeight
+        
+        // Description comparison - use normalizeDescription like sync button
+        const normalizeDescription = (s: string | undefined) => cleanHtmlText(s || '').trim()
+        const mixinDescription = normalizeDescription(fullMixinProduct.description)
+        const basalamDescription = normalizeDescription(fullBasalamProduct.description)
+        const descriptionMismatch = mixinDescription !== basalamDescription
+
+        return { mismatch: priceMismatch || stockMismatch || weightMismatch || descriptionMismatch, fullM, fullB }
+      } catch {
+        return { mismatch: false, fullM: null, fullB: null }
+      }
+    }
+
+    const run = async () => {
+      if (backgroundSyncRunningRef.current) return
+      backgroundSyncRunningRef.current = true
+      try {
+        console.log('[AutoSync] Cycle start')
+        const pairs = buildPairs()
+        console.log('[AutoSync] Candidate pairs:', pairs.length)
+        // Pre-fetch all mixin full products in one batch
+        const mixinIds = pairs.map(p => Number(p.mixin?.id)).filter(Boolean)
+        const mixinFullMap = await mixinApi.getProductsByIds(mixinCredentials!, mixinIds)
+        // Pre-fetch all basalam full products in one batch
+        const basalamIds = pairs.map(p => Number(p.basalam?.id)).filter(Boolean)
+        const basalamFullMap = await basalamApi.getProductsByIds(basalamCredentials!, basalamIds)
+
+        const needToUpdate: Array<{ mp: any, bp: any, fullM: any, fullB: any }> = []
+        for (const { mixin: mp, basalam: bp } of pairs) {
+          const { mismatch, fullM, fullB } = await compareWithFullDetails(mp, bp, mixinFullMap, basalamFullMap)
+          if (mismatch) needToUpdate.push({ mp, bp, fullM, fullB })
+        }
+        console.log('[AutoSync] needToUpdate size:', needToUpdate.length)
+        // Process updates sequentially to avoid rate issues
+        for (const item of needToUpdate) {
+          try {
+            await incrementUsage('realtime')
+          } catch (error: any) {
+            const status = error?.response?.status || error?.status
+            if (status === 429 || status === 401) {
+              console.warn('[AutoSync] Halt due to quota/auth status:', status)
+              break
+            }
+            continue
+          }
+
+          try {
+            if (preferBasalam) {
+              const src = item.fullM || item.mp
+              const payload = {
+                name: src?.name || item.bp?.title,
+                price: tomanToRial(Number(src?.price || 0)),
+                description: (src?.description || '').toString(),
+                stock: Number(src?.stock || 0),
+                weight: Number(src?.weight || 0) > 0 ? Number(src?.weight) : 500,
+              }
+              await basalamApi.updateProduct(basalamCredentials!, item.bp.id, payload as any)
+            } else if (preferMixin) {
+              const src = item.fullB || item.bp
+              const original = await mixinApi.getProductById(mixinCredentials!, item.mp.id)
+              if (original) {
+                const payload = {
+                  ...original,
+                  name: (src as any)?.title || original.name,
+                  price: Number(toToman(Number(src?.price || 0))),
+                  description: (src?.description || '').toString(),
+                  stock: Number(src?.inventory || 0),
+                  weight: Number(src?.net_weight || 0) > 0 ? Number(src?.net_weight) : 500,
+                  extra_fields: [] as any[],
+                }
+                await mixinApi.updateProduct(mixinCredentials!, item.mp.id, payload as any)
+              }
+            }
+          } catch {
+            // continue with next
+          }
+        }
+      } finally {
+        backgroundSyncRunningRef.current = false
+      }
+    }
+    // Run once immediately (if lists exist), then every ~3 minutes
+    const immediate = setTimeout(() => { run().catch(() => (backgroundSyncRunningRef.current = false)) }, 1000)
+    const interval = setInterval(() => { run().catch(() => (backgroundSyncRunningRef.current = false)) }, 180000)
+    return () => clearInterval(interval)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings?.autoSyncEnabled, settings?.preferBasalamFromMixin, settings?.preferMixinFromBasalam, mixinCredentials, basalamCredentials, globalMixinProducts, globalBasalamProducts])
   // Background auto-refresh every 20 seconds
   useEffect(() => {
     if (!(mixinCredentials && basalamCredentials && userData?.vendor?.id)) return;

@@ -95,6 +95,36 @@ export const mixinApi = {
     }
   },
 
+  // Batch fetch mixin products by IDs via backend parallel endpoint
+  getProductsByIds: async (
+    credentials: MixinCredentials,
+    ids: number[]
+  ): Promise<Record<number, MixinProduct>> => {
+    try {
+      if (!ids || ids.length === 0) return {}
+      const response = await api.post(
+        `/products/mixin/productids?mixin_url=${encodeURIComponent(credentials.url)}`,
+        { ids },
+        { headers: { Authorization: `Bearer ${credentials.access_token}` } }
+      )
+
+      const data = response.data
+      const resultArray = Array.isArray(data?.products) ? data.products : []
+      const map: Record<number, MixinProduct> = {}
+      for (const item of resultArray) {
+        const id = Number(item?.id ?? item?.data?.id)
+        const prod = (item?.data || item) as MixinProduct
+        if (Number.isFinite(id) && prod) {
+          map[id] = prod
+        }
+      }
+      return map
+    } catch (error) {
+      console.error('Error fetching batch Mixin products by ids:', error)
+      return {}
+    }
+  },
+
   updateProduct: async (credentials: MixinCredentials, productId: number, productData: { name: string; price: number; description: string; stock: number; weight: number }) => {
     if (!credentials.url) {
       throw new Error('Mixin URL not found in credentials')

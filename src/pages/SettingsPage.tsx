@@ -52,6 +52,24 @@ function SettingsPage() {
     }))
   }
 
+  const handlePreferBasalamFromMixin = (enabled: boolean) => {
+    setLocalSettings(prev => ({
+      ...prev,
+      preferBasalamFromMixin: enabled,
+      // Ensure mutual exclusivity
+      preferMixinFromBasalam: enabled ? false : prev.preferMixinFromBasalam
+    }))
+  }
+
+  const handlePreferMixinFromBasalam = (enabled: boolean) => {
+    setLocalSettings(prev => ({
+      ...prev,
+      preferMixinFromBasalam: enabled,
+      // Ensure mutual exclusivity
+      preferBasalamFromMixin: enabled ? false : prev.preferBasalamFromMixin
+    }))
+  }
+
   const handleAutoMigrationToggle = (enabled: boolean) => {
     setLocalSettings(prev => ({
       ...prev,
@@ -248,6 +266,29 @@ function SettingsPage() {
                       <div dir="rtl">
                         <strong>نکته مهم:</strong> این ویژگی فقط برای محصولاتی کار می‌کند که هم در میکسین و هم در باسلام موجود باشند. 
                         همگام‌سازی بعد از یک ثانیه از تشخیص تغییر انجام می‌شود.
+                      </div>
+                    </div>
+
+                    {/* Direction preference checkboxes */}
+                    <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3" dir="rtl">
+                      <label className="flex items-center gap-3 p-3 bg-white/70 border border-blue-200 rounded-lg hover:bg-white transition-colors cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={!!localSettings.preferBasalamFromMixin}
+                          onChange={(e) => handlePreferBasalamFromMixin(e.target.checked)}
+                        />
+                        <span className="text-sm text-gray-800">به‌روزرسانی باسلام مطابق تغییرات میکسین</span>
+                      </label>
+                      <label className="flex items-center gap-3 p-3 bg-white/70 border border-blue-200 rounded-lg hover:bg-white transition-colors cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={!!localSettings.preferMixinFromBasalam}
+                          onChange={(e) => handlePreferMixinFromBasalam(e.target.checked)}
+                        />
+                        <span className="text-sm text-gray-800">به‌روزرسانی میکسین مطابق تغییرات باسلام</span>
+                      </label>
+                      <div className="col-span-1 md:col-span-2 text-xs text-gray-600">
+                        اگر هیچ‌کدام انتخاب نشود، رفتار پیش‌فرض فعلی (بر اساس صفحهٔ باز) اعمال می‌شود. انتخاب یکی از گزینه‌ها باعث می‌شود همیشه همان سمت به‌روزرسانی شود.
                       </div>
                     </div>
                   </div>

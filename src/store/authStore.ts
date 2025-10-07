@@ -6,6 +6,8 @@ interface UserSettings {
   autoSyncEnabled: boolean
   autoMigrationEnabled: boolean
   autoMigrationThreshold: number
+  preferBasalamFromMixin?: boolean
+  preferMixinFromBasalam?: boolean
 }
 
 interface AuthState {
@@ -27,7 +29,9 @@ export const useAuthStore = create<AuthState>()(
       settings: {
         autoSyncEnabled: false,
         autoMigrationEnabled: false,
-        autoMigrationThreshold: 1
+        autoMigrationThreshold: 1,
+        preferBasalamFromMixin: false,
+        preferMixinFromBasalam: false
       },
       setMixinCredentials: (credentials) => set({ mixinCredentials: credentials }),
       setBasalamCredentials: (credentials) => set({ basalamCredentials: credentials }),
@@ -37,7 +41,7 @@ export const useAuthStore = create<AuthState>()(
       clearCredentials: () => set({ 
         mixinCredentials: null, 
         basalamCredentials: null,
-        settings: { autoSyncEnabled: false, autoMigrationEnabled: false, autoMigrationThreshold: 1 }
+        settings: { autoSyncEnabled: false, autoMigrationEnabled: false, autoMigrationThreshold: 1, preferBasalamFromMixin: false, preferMixinFromBasalam: false }
       }),
       isAuthenticated: () => {
         const state = get()
