@@ -1,5 +1,5 @@
 import React from 'react'
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useAuthStore } from './store/authStore'
 import CredentialsPage from './pages/CredentialsPage'
@@ -13,8 +13,10 @@ import SubscriptionPage from './pages/SubscriptionPage';
 import PaymentsPage from './pages/PaymentsPage';
 import MigrationPage from './pages/MigrationPage';
 import AdminPage from './pages/AdminPage'
+import SupportPage from './pages/SupportPage'
 import TokenExpiredModal from './components/TokenExpiredModal';
 import { useGlobalUiStore } from './store/globalUiStore';
+import QuotaBanner from './components/QuotaBanner';
 
 const queryClient = new QueryClient()
 
@@ -25,95 +27,125 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
   return isAuthenticated() ? <>{children}</> : <Navigate to="/login" replace={true} />
 }
 
-function App() {
+function WithGlobalOverlays({ children }: { children: React.ReactNode }) {
   const showTokenExpiredModal = useGlobalUiStore((state) => state.showTokenExpiredModal);
+  const showQuotaBanner = useGlobalUiStore((state) => state.showQuotaBanner);
+  const quotaBannerType = useGlobalUiStore((state) => state.quotaBannerType);
+  const setQuotaBanner = useGlobalUiStore((state) => state.setQuotaBanner);
+  const location = useLocation();
+
+  const shouldShowQuotaBanner = showQuotaBanner && (location.pathname === '/home' || location.pathname === '/migration');
+
+  return (
+    <>
+      <TokenExpiredModal open={showTokenExpiredModal} />
+      {shouldShowQuotaBanner && (
+        <QuotaBanner open={showQuotaBanner} type={quotaBannerType} onClose={() => setQuotaBanner(false, null)} />
+      )}
+      {children}
+    </>
+  );
+}
+
+function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
-        <TokenExpiredModal open={showTokenExpiredModal} />
-        <Routes>
-          {/* 1. LandingPage will now be the default route */}
-          <Route path="/" element={<LandingPage />} />
+        <WithGlobalOverlays>
+          <Routes>
+            {/* 1. LandingPage will now be the default route */}
+            <Route path="/" element={<LandingPage />} />
 
-          {/* 2. CredentialsPage moved to a new path, e.g., /login */}
-          <Route path="/login" element={<CredentialsPage />} />
+            {/* 2. CredentialsPage moved to a new path, e.g., /login */}
+            <Route path="/login" element={<CredentialsPage />} />
 
-          {/* Pricing Page route */}
-          <Route path="/pricing" element={<PricingPage />} />
+            {/* Pricing Page route */}
+            <Route path="/pricing" element={<PricingPage />} />
 
-          {/* Usage Dashboard route */}
-          <Route
-            path="/usage"
-            element={
-              <PrivateRoute>
-                <UsagePage />
-              </PrivateRoute>
-            }
-          />
+            {/* Usage Dashboard route */}
+            <Route
+              path="/usage"
+              element={
+                <PrivateRoute>
+                  <UsagePage />
+                </PrivateRoute>
+              }
+            />
 
-          {/* Subscription Management route */}
-          <Route
-            path="/subscription"
-            element={
-              <PrivateRoute>
-                <SubscriptionPage />
-              </PrivateRoute>
-            }
-          />
+            {/* Subscription Management route */}
+            <Route
+              path="/subscription"
+              element={
+                <PrivateRoute>
+                  <SubscriptionPage />
+                </PrivateRoute>
+              }
+            />
 
-          {/* Payments History route */}
-          <Route
-            path="/payments"
-            element={
-              <PrivateRoute>
-                <PaymentsPage />
-              </PrivateRoute>
-            }
-          />
+            {/* Payments History route */}
+            <Route
+              path="/payments"
+              element={
+                <PrivateRoute>
+                  <PaymentsPage />
+                </PrivateRoute>
+              }
+            />
 
-          {/* Migration route */}
-          <Route
-            path="/migration"
-            element={
-              <PrivateRoute>
-                <MigrationPage />
-              </PrivateRoute>
-            }
-          />
+            {/* Migration route */}
+            <Route
+              path="/migration"
+              element={
+                <PrivateRoute>
+                  <MigrationPage />
+                </PrivateRoute>
+              }
+            />
 
-          {/* Admin route */}
-          <Route
-            path="/admin"
-            element={
-              <PrivateRoute>
-                <AdminPage />
-              </PrivateRoute>
-            }
-          />
+            {/* Admin route */}
+            <Route
+              path="/admin"
+              element={
+                <PrivateRoute>
+                  <AdminPage />
+                </PrivateRoute>
+              }
+            />
 
-          {/* Other existing routes */}
-          <Route path="/basalam/callback" element={<BasalamCallback />} />
+            {/* Other existing routes */}
+            <Route path="/basalam/callback" element={<BasalamCallback />} />
 
-          {/* Protected HomePage route */}
-          <Route
-            path="/home"
-            element={
-              <PrivateRoute>
-                <HomePage />
-              </PrivateRoute>
-            }
-          />
+            {/* Protected HomePage route */}
+            <Route
+              path="/home"
+              element={
+                <PrivateRoute>
+                  <HomePage />
+                </PrivateRoute>
+              }
+            />
 
-          {/* Protected Settings route */}
-          <Route
-            path="/settings"
-            element={
-              <PrivateRoute>
-                <SettingsPage />
-              </PrivateRoute>
-            }
-          />
-        </Routes>
+            {/* Protected Support route */}
+            <Route
+              path="/support"
+              element={
+                <PrivateRoute>
+                  <SupportPage />
+                </PrivateRoute>
+              }
+            />
+
+            {/* Protected Settings route */}
+            <Route
+              path="/settings"
+              element={
+                <PrivateRoute>
+                  <SettingsPage />
+                </PrivateRoute>
+              }
+            />
+          </Routes>
+        </WithGlobalOverlays>
       </Router>
     </QueryClientProvider>
   )

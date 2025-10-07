@@ -6,6 +6,7 @@ import { getCurrentSubscription, createPayment, getPlans, getUsage, getPlanById 
 import { useAuthStore } from "../store/authStore";
 import { api } from "../services/api/config";
 import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 
 const PricingPage: React.FC = () => {
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -14,6 +15,7 @@ const PricingPage: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [paymentId, setPaymentId] = useState("");
+  const [paymentError, setPaymentError] = useState<string>("");
   const [currentSubId, setCurrentSubId] = useState<number | null>(null);
   const [plansById, setPlansById] = useState<Record<number, any>>({});
   const [usage, setUsage] = useState<any>(null);
@@ -130,8 +132,22 @@ const PricingPage: React.FC = () => {
     }
   };
 
+  const validatePaymentId = (value: string) => {
+    const v = (value || "").trim()
+    if (!v) return "کد پیگیری پرداخت الزامی است"
+    if (!/^\d+$/.test(v)) return "کد پیگیری باید فقط عدد باشد"
+    if (v.length < 3) return "حداقل طول کد پیگیری 3 رقم است"
+    if (v.length > 25) return "حداکثر طول کد پیگیری 25 رقم است"
+    return ""
+  }
+
   const handleSubmitPayment = async () => {
     if (!selectedPlan || !currentSubId) return
+    const err = validatePaymentId(paymentId)
+    if (err) {
+      setPaymentError(err)
+      return
+    }
     const now = new Date()
     const pad = (n: number) => String(n).padStart(2, '0')
     const fmt = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}/${pad(now.getHours())}:${pad(now.getMinutes())}`
@@ -149,6 +165,7 @@ const PricingPage: React.FC = () => {
     })
     setShowModal(false)
     setPaymentId('')
+    setPaymentError("")
   }
 
   const handleCancelSubscription = () => {
@@ -181,6 +198,16 @@ const PricingPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#f6ffe8] to-blue-50 py-12 px-4" dir="rtl">
       <div className="max-w-6xl mx-auto">
+        {/* Back to home header - force LTR to keep button on left */}
+        <div dir="ltr" className="flex items-center justify-start mb-6">
+          <button
+            onClick={() => navigate('/home')}
+            className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-200"
+          >
+            <ArrowLeft size={20} />
+            <span>بازگشت به صفحه اصلی</span>
+          </button>
+        </div>
       <div className="text-center mb-10">
           <h1 className="text-4xl font-extrabold bg-gradient-to-r from-[#95ed2f] to-[#30cfb7] bg-clip-text text-transparent">مصرف فعلی شما</h1>
           <p className="text-gray-600 mt-2">شما می توانید وضعیت مصرف خود را در این بخش بررسی کنید.</p>
@@ -258,9 +285,32 @@ const PricingPage: React.FC = () => {
                 <li>تبریک! دسترسی کامل برای انتقال یا بروزرسانی لحظه‌ای محصولات فعال می‌شود.</li>
               </ol>
             </div>
-            <div className="flex items-center gap-2 mb-3">
-              <input value={paymentId} onChange={(e)=>setPaymentId(e.target.value)} className="flex-1 border rounded px-3 py-2" placeholder="کد پیگیری پرداخت" />
-              <button onClick={handleSubmitPayment} className="px-4 py-2 bg-gradient-to-r from-[#95ed2f] to-[#30cfb7] text-white rounded hover:from-[#84d628] hover:to-[#26b9a3]">ارسال</button>
+            <div className="flex items-start gap-2 mb-3">
+              <div className="flex-1">
+                <input
+                  value={paymentId}
+                  onChange={(e)=>{
+                    const v = e.target.value
+                    setPaymentId(v)
+                    setPaymentError(validatePaymentId(v))
+                  }}
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={25}
+                  className={`w-full border rounded px-3 py-2 ${paymentError ? 'border-red-400' : ''}`}
+                  placeholder="کد پیگیری پرداخت (فقط عدد)"
+                />
+                {paymentError && (
+                  <div className="mt-1 text-xs text-red-600" dir="rtl">{paymentError}</div>
+                )}
+              </div>
+              <button
+                onClick={handleSubmitPayment}
+                disabled={!!paymentError || !paymentId}
+                className={`px-4 py-2 rounded text-white ${!!paymentError || !paymentId ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-[#95ed2f] to-[#30cfb7] hover:from-[#84d628] hover:to-[#26b9a3]'}`}
+              >
+                ارسال
+              </button>
             </div>
             <div className="flex justify-between">
               <a 

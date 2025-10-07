@@ -2995,6 +2995,14 @@ function HomePage() {
             </a>
 
             <button
+              onClick={() => navigate('/support')}
+              className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-[#5b9fdb]/10 rounded-lg transition-colors"
+            >
+              <Link2 size={20} />
+              {!isSidebarCollapsed && <span>ارتباط با پشتیبانی</span>}
+            </button>
+
+            <button
               onClick={() => navigate('/settings')}
               className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-[#5b9fdb]/10 rounded-lg transition-colors"
             >
