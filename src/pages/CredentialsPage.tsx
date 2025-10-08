@@ -1,30 +1,35 @@
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useAuthStore } from '../store/authStore'
-import { mixinApi } from '../services/api/mixin'
-import { X } from 'lucide-react'
-import { ensureUser, createDefaultSubscription, createInitialUsageRecord, formatNow } from '../services/api/pricing'
-import { api } from '../services/api/config'
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "../store/authStore";
+import { mixinApi } from "../services/api/mixin";
+import { X } from "lucide-react";
+import {
+  ensureUser,
+  createDefaultSubscription,
+  createInitialUsageRecord,
+  formatNow,
+} from "../services/api/pricing";
+import { api } from "../services/api/config";
 
 interface ModalProps {
-  isOpen: boolean
-  onClose: () => void
-  onSubmit: (url: string, token: string) => void
-  type: 'mixin' | 'basalam'
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (url: string, token: string) => void;
+  type: "mixin" | "basalam";
 }
 
 function Modal({ isOpen, onClose, onSubmit, type }: ModalProps) {
-  const [url, setUrl] = useState('')
-  const [token, setToken] = useState('')
-  const [showDomainGuide, setShowDomainGuide] = useState(false)
-  const [showTokenGuide, setShowTokenGuide] = useState(false)
+  const [url, setUrl] = useState("");
+  const [token, setToken] = useState("");
+  const [showDomainGuide, setShowDomainGuide] = useState(false);
+  const [showTokenGuide, setShowTokenGuide] = useState(false);
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   // Use public path for video (move the video to public/ if not already there)
   const tokenVideoSrc = process.env.PUBLIC_URL
-    ? process.env.PUBLIC_URL + '/how to get mixin access token .mp4'
-    : '/how to get mixin access token .mp4';
+    ? process.env.PUBLIC_URL + "/how to get mixin access token .mp4"
+    : "/how to get mixin access token .mp4";
 
   return (
     <>
@@ -36,14 +41,20 @@ function Modal({ isOpen, onClose, onSubmit, type }: ModalProps) {
           >
             <X size={24} />
           </button>
-          <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent text-right" style={{direction:'rtl'}}>
-            {type === 'mixin' ? 'اتصال به میکسین' : 'Connect to Basalam'}
+          <h2
+            className="text-2xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent text-right"
+            style={{ direction: "rtl" }}
+          >
+            {type === "mixin" ? "اتصال به میکسین" : "Connect to Basalam"}
           </h2>
-          {type === 'mixin' && (
+          {type === "mixin" && (
             <>
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-medium text-gray-700 text-right w-full" style={{direction:'rtl'}}>
+                  <label
+                    className="block text-sm font-medium text-gray-700 text-right w-full"
+                    style={{ direction: "rtl" }}
+                  >
                     آدرس فروشگاه میکسین
                   </label>
                   <button
@@ -65,7 +76,10 @@ function Modal({ isOpen, onClose, onSubmit, type }: ModalProps) {
               </div>
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-medium text-gray-700 text-right w-full" style={{direction:'rtl'}}>
+                  <label
+                    className="block text-sm font-medium text-gray-700 text-right w-full"
+                    style={{ direction: "rtl" }}
+                  >
                     توکن دسترسی میکسین
                   </label>
                   <button
@@ -91,7 +105,7 @@ function Modal({ isOpen, onClose, onSubmit, type }: ModalProps) {
             onClick={() => onSubmit(url, token)}
             className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transform hover:scale-[1.02] transition-all duration-200 font-medium"
           >
-            {type === 'mixin' ? 'اتصال' : 'Connect'}
+            {type === "mixin" ? "اتصال" : "Connect"}
           </button>
         </div>
       </div>
@@ -105,11 +119,36 @@ function Modal({ isOpen, onClose, onSubmit, type }: ModalProps) {
             >
               <X size={24} />
             </button>
-            <h3 className="text-lg font-bold mb-4 text-blue-700 text-right" style={{direction:'rtl'}}>راهنمای وارد کردن آدرس فروشگاه میکسین</h3>
-            <ul className="text-gray-700 text-sm space-y-2 list-disc pr-4 text-right" style={{direction:'rtl'}}>
-              <li>آدرس فروشگاه باید فقط نام دامنه فروشگاه شما در میکسین باشد (بدون http یا www).</li>
-              <li>مثال صحیح: <span className="font-mono bg-gray-100 px-2 py-1 rounded">myshop.ir</span></li>
-              <li>مثال اشتباه: <span className="font-mono bg-gray-100 px-2 py-1 rounded">https://myshop.ir</span> یا <span className="font-mono bg-gray-100 px-2 py-1 rounded">www.myshop.ir</span></li>
+            <h3
+              className="text-lg font-bold mb-4 text-blue-700 text-right"
+              style={{ direction: "rtl" }}
+            >
+              راهنمای وارد کردن آدرس فروشگاه میکسین
+            </h3>
+            <ul
+              className="text-gray-700 text-sm space-y-2 list-disc pr-4 text-right"
+              style={{ direction: "rtl" }}
+            >
+              <li>
+                آدرس فروشگاه باید فقط نام دامنه فروشگاه شما در میکسین باشد (بدون
+                http یا www).
+              </li>
+              <li>
+                مثال صحیح:{" "}
+                <span className="font-mono bg-gray-100 px-2 py-1 rounded">
+                  myshop.ir
+                </span>
+              </li>
+              <li>
+                مثال اشتباه:{" "}
+                <span className="font-mono bg-gray-100 px-2 py-1 rounded">
+                  https://myshop.ir
+                </span>{" "}
+                یا{" "}
+                <span className="font-mono bg-gray-100 px-2 py-1 rounded">
+                  www.myshop.ir
+                </span>
+              </li>
               <li>در صورت داشتن سوال، با پشتیبانی تماس بگیرید.</li>
             </ul>
             <button
@@ -131,18 +170,30 @@ function Modal({ isOpen, onClose, onSubmit, type }: ModalProps) {
             >
               <X size={24} />
             </button>
-            <h3 className="text-lg font-bold mb-4 text-blue-700 text-right" style={{direction:'rtl'}}>راهنمای دریافت توکن دسترسی میکسین</h3>
+            <h3
+              className="text-lg font-bold mb-4 text-blue-700 text-right"
+              style={{ direction: "rtl" }}
+            >
+              راهنمای دریافت توکن دسترسی میکسین
+            </h3>
             <video
               src={tokenVideoSrc}
               controls
               className="w-full rounded-lg border border-gray-200 mb-4"
-              style={{background:'#000'}}
-              onError={e => {e.currentTarget.poster=''; e.currentTarget.controls=false;}}
+              style={{ background: "#000" }}
+              onError={(e) => {
+                e.currentTarget.poster = "";
+                e.currentTarget.controls = false;
+              }}
             >
               مرورگر شما از پخش ویدیو پشتیبانی نمی‌کند.
             </video>
-            <p className="text-gray-700 text-sm mb-4 text-right" style={{direction:'rtl'}}>
-              در این ویدیو نحوه دریافت توکن دسترسی از پنل میکسین به صورت کامل آموزش داده شده است. لطفاً مراحل را به دقت دنبال کنید.
+            <p
+              className="text-gray-700 text-sm mb-4 text-right"
+              style={{ direction: "rtl" }}
+            >
+              در این ویدیو نحوه دریافت توکن دسترسی از پنل میکسین به صورت کامل
+              آموزش داده شده است. لطفاً مراحل را به دقت دنبال کنید.
             </p>
             <button
               onClick={() => setShowTokenGuide(false)}
@@ -154,57 +205,66 @@ function Modal({ isOpen, onClose, onSubmit, type }: ModalProps) {
         </div>
       )}
     </>
-  )
+  );
 }
 
 function CredentialsPage() {
-  const [isMixinModalOpen, setIsMixinModalOpen] = useState(false)
-  const navigate = useNavigate()
-  const { setMixinCredentials, setBasalamCredentials, isAuthenticated, mixinCredentials, basalamCredentials } = useAuthStore()
+  const [isMixinModalOpen, setIsMixinModalOpen] = useState(false);
+  const navigate = useNavigate();
+  const {
+    setMixinCredentials,
+    setBasalamCredentials,
+    isAuthenticated,
+    mixinCredentials,
+    basalamCredentials,
+  } = useAuthStore();
 
   // Add effect to handle URL parameters
   React.useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search)
-    const basalamConnected = urlParams.get('basalam_connected')
-    const error = urlParams.get('error')
+    const urlParams = new URLSearchParams(window.location.search);
+    const basalamConnected = urlParams.get("basalam_connected");
+    const error = urlParams.get("error");
 
-    if (basalamConnected === 'true') {
-      alert('Successfully connected to Basalam!')
+    if (basalamConnected === "true") {
+      alert("Successfully connected to Basalam!");
       // Clear the URL parameters
-      window.history.replaceState({}, document.title, window.location.pathname)
+      window.history.replaceState({}, document.title, window.location.pathname);
     } else if (error) {
-      let errorMessage = 'Failed to connect to Basalam'
+      let errorMessage = "Failed to connect to Basalam";
       switch (error) {
-        case 'basalam_unauthorized':
-          errorMessage = 'Authentication failed. Please check your Basalam credentials and try again.'
-          break
-        case 'basalam_server_error':
-          errorMessage = 'Basalam server is currently unavailable. Please try again later.'
-          break
-        case 'basalam_forbidden':
-          errorMessage = 'Access denied. Please check your permissions.'
-          break
-        case 'basalam_token_failed':
-          errorMessage = 'Failed to get access token. Please try again.'
-          break
+        case "basalam_unauthorized":
+          errorMessage =
+            "Authentication failed. Please check your Basalam credentials and try again.";
+          break;
+        case "basalam_server_error":
+          errorMessage =
+            "Basalam server is currently unavailable. Please try again later.";
+          break;
+        case "basalam_forbidden":
+          errorMessage = "Access denied. Please check your permissions.";
+          break;
+        case "basalam_token_failed":
+          errorMessage = "Failed to get access token. Please try again.";
+          break;
         default:
-          errorMessage = `Failed to connect to Basalam: ${error}`
+          errorMessage = `Failed to connect to Basalam: ${error}`;
       }
-      alert(errorMessage)
+      alert(errorMessage);
       // Clear the URL parameters
-      window.history.replaceState({}, document.title, window.location.pathname)
+      window.history.replaceState({}, document.title, window.location.pathname);
     }
-  }, [])
+  }, []);
 
   // Helper: bootstrap once both tokens exist
   const callBootstrapIfReady = async () => {
     try {
-      const bootstrapKey = 'bootstrap_done'
-      if (sessionStorage.getItem(bootstrapKey)) return
-      const mixinToken = useAuthStore.getState().mixinCredentials?.access_token
-      const basalamToken = useAuthStore.getState().basalamCredentials?.access_token
+      const bootstrapKey = "bootstrap_done";
+      if (sessionStorage.getItem(bootstrapKey)) return;
+      const mixinToken = useAuthStore.getState().mixinCredentials?.access_token;
+      const basalamToken =
+        useAuthStore.getState().basalamCredentials?.access_token;
       if (mixinToken && basalamToken) {
-        const now = formatNow()
+        const now = formatNow();
         await ensureUser({
           mixin_access_token: mixinToken,
           basalam_access_token: basalamToken,
@@ -212,81 +272,88 @@ function CredentialsPage() {
           created_at: now,
           updated_at: now,
           is_active: true,
-          role: 'user',
-          is_verified: false
-        })
+          role: "user",
+          is_verified: false,
+        });
         // Create initial usage record right after user creation
-        await createDefaultSubscription()
-        await createInitialUsageRecord()
-        sessionStorage.setItem(bootstrapKey, 'true')
+        await createDefaultSubscription();
+        await createInitialUsageRecord();
+        sessionStorage.setItem(bootstrapKey, "true");
       }
     } catch (e) {
-      console.error('Bootstrap failed:', e)
+      console.error("Bootstrap failed:", e);
     }
-  }
+  };
 
   const handleMixinConnect = async (url: string, token: string) => {
     try {
-      const data = await mixinApi.validateCredentials(url, token)
-      
-      if (data && data.message === "you are connected successfully!" && data["mixin-ceredentials"]) {
-        setMixinCredentials({ 
-          url: data["mixin-ceredentials"].mixin_url, 
-          access_token: data["mixin-ceredentials"].access_token 
-        })
+      const data = await mixinApi.validateCredentials(url, token);
+
+      if (
+        data &&
+        data.message === "you are connected successfully!" &&
+        data["mixin-ceredentials"]
+      ) {
+        setMixinCredentials({
+          url: data["mixin-ceredentials"].mixin_url,
+          access_token: data["mixin-ceredentials"].access_token,
+        });
         // Attempt bootstrap if basalam already connected
-        await callBootstrapIfReady()
-        setIsMixinModalOpen(false)
-        alert(data.message || 'Successfully connected to Mixin!')
-        navigate('/home')
+        await callBootstrapIfReady();
+        setIsMixinModalOpen(false);
+        alert(data.message || "Successfully connected to Mixin!");
+        navigate("/home");
       } else {
-        throw new Error('Invalid response format from server')
+        throw new Error("Invalid response format from server");
       }
     } catch (error: any) {
-      console.error('Connection error:', error)
-      alert(error.message || 'Failed to connect to Mixin. Please check your credentials.')
+      console.error("Connection error:", error);
+      alert(
+        error.message ||
+          "Failed to connect to Mixin. Please check your credentials.",
+      );
     }
-  }
+  };
 
   const handleBasalamConnect = () => {
-    sessionStorage.setItem('shouldReloadAfterBasalam', 'true')
-    
+    sessionStorage.setItem("shouldReloadAfterBasalam", "true");
+
     // Add message listener for the new tab
     const messageHandler = async (event: MessageEvent) => {
-      
       // Check if the response has the expected tokens
       const { access_token, refresh_token } = event.data;
-      
+
       if (access_token) {
         setBasalamCredentials({
           access_token,
-          refresh_token
+          refresh_token,
         });
-        
+
         // Attempt bootstrap if mixin already connected
         callBootstrapIfReady().finally(() => {
           // Remove the listener after successful connection
-          window.removeEventListener('message', messageHandler);
+          window.removeEventListener("message", messageHandler);
           // Show success message
-          alert('Successfully connected to Basalam!');
+          alert("Successfully connected to Basalam!");
           // Force a re-render
-          navigate('/home');
+          navigate("/home");
         });
       } else {
-        console.error('No access token in response');
+        console.error("No access token in response");
       }
     };
 
     // Remove any existing listeners to prevent duplicates
-    window.removeEventListener('message', messageHandler as any);
-    
+    window.removeEventListener("message", messageHandler as any);
+
     // Add the event listener
-    window.addEventListener('message', messageHandler as any);
+    window.addEventListener("message", messageHandler as any);
 
     // Open Basalam SSO in new tab
-    const basalamUrl = 'https://basalam.com/accounts/sso?client_id=1083&scope=vendor.profile.read%20vendor.product.write%20customer.profile.read%20vendor.product.read&redirect_uri=https://mixinsalam-backend.liara.run/basalam/client/get-user-access-token/&state=management-test';
-    const newWindow = window.open(basalamUrl, '_blank');
-    
+    const basalamUrl =
+      "https://basalam.com/accounts/sso?client_id=1083&scope=vendor.profile.read%20vendor.product.write%20customer.profile.read%20vendor.product.read&redirect_uri=https://mixinsalam-backend.liara.run/basalam/client/get-user-access-token/&state=management-test";
+    const newWindow = window.open(basalamUrl, "_blank");
+
     // Add a fallback check
     if (newWindow) {
       const checkWindow = setInterval(() => {
@@ -297,32 +364,35 @@ function CredentialsPage() {
           if (!currentCredentials) {
           } else {
             // Force a re-render if we have credentials
-            navigate('/home');
+            navigate("/home");
           }
         }
       }, 1000);
     }
-  }
+  };
 
   const handleContinue = () => {
-    navigate('/home')
-  }
+    navigate("/home");
+  };
 
   React.useEffect(() => {
     if (isAuthenticated()) {
-      const done = sessionStorage.getItem('bootstrap_done')
+      const done = sessionStorage.getItem("bootstrap_done");
       if (done) {
-        navigate('/home')
+        navigate("/home");
       }
     }
-  }, [isAuthenticated, navigate])
+  }, [isAuthenticated, navigate]);
 
   React.useEffect(() => {
-    if (basalamCredentials && sessionStorage.getItem('shouldReloadAfterBasalam')) {
-      sessionStorage.removeItem('shouldReloadAfterBasalam')
-      navigate('/home')
+    if (
+      basalamCredentials &&
+      sessionStorage.getItem("shouldReloadAfterBasalam")
+    ) {
+      sessionStorage.removeItem("shouldReloadAfterBasalam");
+      navigate("/home");
     }
-  }, [basalamCredentials])
+  }, [basalamCredentials]);
 
   // Add a debug effect to monitor credentials
   React.useEffect(() => {
@@ -331,36 +401,43 @@ function CredentialsPage() {
   }, [basalamCredentials]);
 
   // Add a debug effect to monitor the button state
-  React.useEffect(() => {
-  }, [basalamCredentials]);
+  React.useEffect(() => {}, [basalamCredentials]);
 
   // Mixin quick connect inputs
-  const [mixinDomain, setMixinDomain] = useState('')
-  const [mixinAccessTokenInput, setMixinAccessTokenInput] = useState('')
-  const [mixinConnectMessage, setMixinConnectMessage] = useState<string | null>(null)
-  const [isSubmittingMixinConnect, setIsSubmittingMixinConnect] = useState(false)
+  const [mixinDomain, setMixinDomain] = useState("");
+  const [mixinAccessTokenInput, setMixinAccessTokenInput] = useState("");
+  const [mixinConnectMessage, setMixinConnectMessage] = useState<string | null>(
+    null,
+  );
+  const [isSubmittingMixinConnect, setIsSubmittingMixinConnect] =
+    useState(false);
 
   // Submit handler
   const handleMixinQuickConnect = async () => {
-    setMixinConnectMessage(null)
-    setIsSubmittingMixinConnect(true)
+    setMixinConnectMessage(null);
+    setIsSubmittingMixinConnect(true);
     try {
       const res = await api.post(`/mixin/client/`, null, {
-        params: { mixin_url: mixinDomain, token: mixinAccessTokenInput }
-      })
+        params: { mixin_url: mixinDomain, token: mixinAccessTokenInput },
+      });
       setMixinConnectMessage(
-        res?.data?.message || 'اتصال میکسین با موفقیت انجام شد'
-      )
+        res?.data?.message || "اتصال میکسین با موفقیت انجام شد",
+      );
       // Do the same as normal connect: persist credentials and reload
-      setMixinCredentials({ url: mixinDomain, access_token: mixinAccessTokenInput })
-      await callBootstrapIfReady()
-      navigate('/home')
+      setMixinCredentials({
+        url: mixinDomain,
+        access_token: mixinAccessTokenInput,
+      });
+      await callBootstrapIfReady();
+      navigate("/home");
     } catch (e: any) {
-      setMixinConnectMessage(e?.response?.data?.message || e?.message || 'خطا در اتصال میکسین')
+      setMixinConnectMessage(
+        e?.response?.data?.message || e?.message || "خطا در اتصال میکسین",
+      );
     } finally {
-      setIsSubmittingMixinConnect(false)
+      setIsSubmittingMixinConnect(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4">
@@ -372,9 +449,9 @@ function CredentialsPage() {
           <button
             onClick={() => setIsMixinModalOpen(true)}
             className={`w-full py-4 rounded-xl transition-all duration-300 flex items-center justify-center transform hover:scale-[1.02] ${
-              mixinCredentials 
-                ? 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white' 
-                : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white'
+              mixinCredentials
+                ? "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white"
+                : "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
             }`}
           >
             {mixinCredentials ? (
@@ -389,9 +466,9 @@ function CredentialsPage() {
           <button
             onClick={handleBasalamConnect}
             className={`w-full py-4 rounded-xl transition-all duration-300 flex items-center justify-center transform hover:scale-[1.02] ${
-              basalamCredentials 
-                ? 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white' 
-                : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white'
+              basalamCredentials
+                ? "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white"
+                : "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
             }`}
           >
             {basalamCredentials ? (
@@ -404,7 +481,9 @@ function CredentialsPage() {
             )}
           </button>
 
-          <p className='text-sm text-center'>هنگام اتصال، از خاموش بودن پروکسی و فیلترشکن خود اطمینان حاصل کنید</p>
+          <p className="text-sm text-center">
+            هنگام اتصال�� از خاموش بودن پروکسی و فیلترشکن خود اطمینان حاصل کنید
+          </p>
           {(mixinCredentials || basalamCredentials) && (
             <button
               onClick={handleContinue}
@@ -415,7 +494,7 @@ function CredentialsPage() {
           )}
         </div>
       </div>
-      
+
       <Modal
         isOpen={isMixinModalOpen}
         onClose={() => setIsMixinModalOpen(false)}
@@ -423,7 +502,7 @@ function CredentialsPage() {
         type="mixin"
       />
     </div>
-  )
+  );
 }
 
-export default CredentialsPage
+export default CredentialsPage;

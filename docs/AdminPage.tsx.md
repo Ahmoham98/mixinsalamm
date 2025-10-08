@@ -37,7 +37,7 @@ This page is intended to be a protected route, accessible only to users with an 
 // Example of a role-based private route
 function AdminRoute({ children }) {
   const { isAuthenticated, user } = useAuthStore();
-  if (isAuthenticated() && user.role === 'admin') {
+  if (isAuthenticated() && user.role === "admin") {
     return children;
   }
   return <Navigate to="/home" />;
@@ -51,7 +51,7 @@ function AdminRoute({ children }) {
       <AdminPage />
     </AdminRoute>
   }
-/>
+/>;
 ```
 
 ## How It Works

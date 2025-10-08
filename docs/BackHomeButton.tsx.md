@@ -15,7 +15,7 @@ The `BackHomeButton` component is a simple, reusable UI element that provides a 
 This component can be imported and used in any page where you want to provide a quick and easy way for the user to return to the main home page. For example, it could be used on settings pages, profile pages, or any other sub-page of the application.
 
 ```jsx
-import BackHomeButton from './BackHomeButton';
+import BackHomeButton from "./BackHomeButton";
 
 function SomePage() {
   return (

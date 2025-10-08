@@ -24,11 +24,15 @@ This store acts as a cache for the results of the product comparison logic. Inst
 
 ```jsx
 // Example of a component subscribing to the store
-import { useProductsStore } from './productsStore';
+import { useProductsStore } from "./productsStore";
 
 function UniqueProductsDisplay() {
-  const uniqueMixinCount = useProductsStore(state => state.uniqueMixinProducts.length);
-  const uniqueBasalamCount = useProductsStore(state => state.uniqueBasalamProducts.length);
+  const uniqueMixinCount = useProductsStore(
+    (state) => state.uniqueMixinProducts.length,
+  );
+  const uniqueBasalamCount = useProductsStore(
+    (state) => state.uniqueBasalamProducts.length,
+  );
 
   return (
     <div>
