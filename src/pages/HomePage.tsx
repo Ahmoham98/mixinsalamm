@@ -10,6 +10,7 @@ import type { MixinProduct, BasalamProduct } from '../types'
 import { incrementUsage } from '../services/api/pricing'
 import { QuotaExceededModal } from '../components/QuotaExceededModal'
 import { useProductsStore } from '../store/productsStore'
+import { useGlobalUiStore } from '../store/globalUiStore'
 
 // Utility function to convert Toman to Rial
 const tomanToRial = (toman: number): number => {
@@ -526,20 +527,13 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
           stockMismatch = true
         }
 
-        // Check weight mismatch using full product details
-        const mixinWeight = fullMixinProduct.weight || 0
-        const basalamWeight = fullBasalamProduct.net_weight || 0
-        
-        if (mixinWeight !== basalamWeight) {
-          weightMismatch = true
-        }
+        // weight comparison intentionally ignored for sync decision per requirements
 
-        if (priceMismatch || descriptionMismatch || stockMismatch || weightMismatch) {
+        if (priceMismatch || descriptionMismatch || stockMismatch) {
           const mismatchTypes = []
           if (priceMismatch) mismatchTypes.push('قیمت')
           if (descriptionMismatch) mismatchTypes.push('توضیحات')
           if (stockMismatch) mismatchTypes.push('موجودی')
-          if (weightMismatch) mismatchTypes.push('وزن')
           
           setCheckMessage({
             text: `${mismatchTypes.join(' و ')} محصول شما تغییر کرده، ${mismatchTypes.join(' و ')} محصول دیگر را همگام سازی کنید`,
@@ -651,7 +645,7 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
       setShowBasalamButton(false)
     }
 
-    setShowSyncButton(priceMismatch || descriptionMismatch || stockMismatch || weightMismatch)
+    setShowSyncButton(priceMismatch || descriptionMismatch || stockMismatch)
     localStorage.setItem('changecard', changecard)
   }
 
@@ -705,6 +699,11 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
         ) {
           console.log('Quota exceeded: showing modal (realtime, network error workaround)')
           setQuotaErrorModal({ isOpen: true, type: 'realtime' })
+          setIsEditing(false)
+          return
+        }
+        if (status === 401) {
+          useGlobalUiStore.getState().setShowTokenExpiredModal(true)
           setIsEditing(false)
           return
         }
@@ -2071,6 +2070,12 @@ function BulkMigrationPanel({ mixinCredentials, basalamCredentials, vendorId, qu
                   setIsHalted(true)
                   return
                 }
+                if (status === 401) {
+                  useGlobalUiStore.getState().setShowTokenExpiredModal(true)
+                  setIsProcessing(false)
+                  setIsHalted(true)
+                  return
+                }
                 throw error
               }
 
@@ -2540,18 +2545,13 @@ function HomePage() {
         const basalamStock = fullBasalamProduct.inventory || 0
         const stockMismatch = mixinStock !== basalamStock
         
-        // Weight comparison - use full product details like sync button
-        const mixinWeight = fullMixinProduct.weight || 0
-        const basalamWeight = fullBasalamProduct.net_weight || 0
-        const weightMismatch = mixinWeight !== basalamWeight
-        
         // Description comparison - use normalizeDescription like sync button
         const normalizeDescription = (s: string | undefined) => cleanHtmlText(s || '').trim()
         const mixinDescription = normalizeDescription(fullMixinProduct.description)
         const basalamDescription = normalizeDescription(fullBasalamProduct.description)
         const descriptionMismatch = mixinDescription !== basalamDescription
 
-        return { mismatch: priceMismatch || stockMismatch || weightMismatch || descriptionMismatch, fullM, fullB }
+        return { mismatch: priceMismatch || stockMismatch || descriptionMismatch, fullM, fullB }
       } catch {
         return { mismatch: false, fullM: null, fullB: null }
       }
@@ -2583,8 +2583,12 @@ function HomePage() {
             await incrementUsage('realtime')
           } catch (error: any) {
             const status = error?.response?.status || error?.status
-            if (status === 429 || status === 401) {
+            if (status === 429) {
               console.warn('[AutoSync] Halt due to quota/auth status:', status)
+              break
+            }
+            if (status === 401) {
+              useGlobalUiStore.getState().setShowTokenExpiredModal(true)
               break
             }
             continue

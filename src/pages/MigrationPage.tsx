@@ -23,12 +23,7 @@ export default function MigrationPage() {
     tmp.innerHTML = html
     return (tmp.textContent || tmp.innerText || '').replace(/\s+/g, ' ').trim()
   }
-  const normalize = (s: string): string => {
-    return cleanHtmlText(String(s || ''))
-      .toLowerCase()
-      .replace(/[\u200c\u200f\u202a-\u202e]/g, '')
-      .replace(/[^\p{L}\p{N}]+/gu, '')
-  }
+  // normalize helper no longer used here
 
   // Uniques are now sourced from global products store; local compute removed
 
