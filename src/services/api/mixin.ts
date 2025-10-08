@@ -165,18 +165,8 @@ export const mixinApi = {
       return response.data
     } catch (error: any) {
       console.error('Error updating Mixin product:', error)
-      if (error.response?.data) {
-        // Handle validation errors
-        if (error.response.status === 422) {
-          const validationErrors = error.response.data.detail
-          if (Array.isArray(validationErrors)) {
-            const errorMessages = validationErrors.map(err => `${err.loc[1]}: ${err.msg}`).join(', ')
-            throw new Error(`Validation error: ${errorMessages}`)
-          }
-        }
-        throw new Error(error.response.data.detail || 'Failed to update Mixin product')
-      }
-      throw new Error('Failed to update Mixin product')
+      // Preserve Axios-like error so callers can branch on response.status (e.g., 404)
+      throw error
     }
   },
 

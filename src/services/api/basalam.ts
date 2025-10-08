@@ -166,14 +166,13 @@ export const basalamApi = {
         throw new Error('No data received in response')
       }
       return response.data
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating Basalam product:', error)
+      // Preserve AxiosError with response/status so callers can branch on status codes (e.g., 404)
       if (error instanceof AxiosError && error.response) {
-        console.error('Error response:', error.response.data)
-        console.error('Error status:', error.response.status)
-        throw new Error(error.response.data?.message || 'Failed to update Basalam product')
+        throw error
       }
-      throw new Error('Failed to update Basalam product')
+      throw error
     }
   },
 

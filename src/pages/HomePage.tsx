@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom'
 import type { MixinProduct, BasalamProduct } from '../types'
 import { incrementUsage } from '../services/api/pricing'
 import { QuotaExceededModal } from '../components/QuotaExceededModal'
+import LogBanner from '../components/LogBanner'
 import { useProductsStore } from '../store/productsStore'
 import { useGlobalUiStore } from '../store/globalUiStore'
 
@@ -262,9 +263,11 @@ const formatPrice = (price: number | null | undefined): string => {
   return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
 }
 
-function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamProducts, globalMixinProducts, globalBasalamProducts, onOpenCreateBasalamModal, setQuotaErrorModal }: ProductModalProps) {
+function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamProducts, globalMixinProducts, globalBasalamProducts, onOpenCreateBasalamModal, setQuotaErrorModal: _setQuotaErrorModal }: ProductModalProps) {
   const [checkMessage, setCheckMessage] = useState<{ text: string; isSuccess: boolean } | null>(null)
   const [editMessage, setEditMessage] = useState<{ text: string; isSuccess: boolean } | null>(null)
+  const logs = useGlobalUiStore((s: any) => s.logs)
+  const storeAppendLog = useGlobalUiStore((s: any) => s.appendLog)
   const [showSyncButton, setShowSyncButton] = useState(false)
   const [showMixinButton, setShowMixinButton] = useState(false)
   const [showBasalamButton, setShowBasalamButton] = useState(false)
@@ -686,29 +689,7 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
         throw new Error('Product ID not found')
       }
 
-      // Check realtime quota before making any updates
-      try {
-        await incrementUsage('realtime')
-      } catch (error: any) {
-        console.error('incrementUsage error:', error)
-        const status = error?.response?.status || error?.status
-        // Workaround: Axios 'Network Error' may happen on 429 with CORS issues
-        if (
-          status === 429 ||
-          (error?.message === 'Network Error' && error?.config?.url && error.config.url.includes('/api/usage/increment'))
-        ) {
-          console.log('Quota exceeded: showing modal (realtime, network error workaround)')
-          setQuotaErrorModal({ isOpen: true, type: 'realtime' })
-          setIsEditing(false)
-          return
-        }
-        if (status === 401) {
-          useGlobalUiStore.getState().setShowTokenExpiredModal(true)
-          setIsEditing(false)
-          return
-        }
-        throw error
-      }
+  // increment realtime will be called only after successful update
 
       let mixinProductId = productId
       let basalamProductId = productId
@@ -756,8 +737,30 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
           extra_fields: []
         }
 
+        try {
         const mixinResponse = await mixinApi.updateProduct(mixinCredentials, mixinProductId, mixinProductData)
         console.log('Mixin update response:', mixinResponse)
+          // increment realtime only when update is successful
+          try { await incrementUsage('realtime') } catch {}
+        } catch (error: any) {
+          const status = error?.response?.status || error?.status
+          if (status === 404) {
+            const title = editedProduct.name
+            const key = `mixin:${mixinProductId}`
+            useGlobalUiStore.getState().register404(key, mixinProductId, title)
+            storeAppendLog({
+              id: `${Date.now()}-${Math.random()}`,
+              platform: 'mixin',
+              productId: mixinProductId,
+              title,
+              status: 'یافت نشد',
+              message: `در هنگام به‌روزرسانی محصول، میکسین درخواست را رد کرد. لطفاً در پلتفرم میکسین بررسی کنید.`,
+              url: 'https://mixin.ir/',
+              ts: Date.now()
+            })
+          }
+          throw error
+        }
       }
 
       if (changecard.includes('basalam') && basalamCredentials) {
@@ -777,8 +780,30 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
             descriptionPreview: editedProduct.description.substring(0, 100) + '...',
             fullDescription: editedProduct.description
           })
+          try {
           const basalamResponse = await basalamApi.updateProduct(basalamCredentials, basalamProductId, basalamProductData)
           console.log('Basalam update response:', basalamResponse)
+            // increment realtime only when update is successful
+            try { await incrementUsage('realtime') } catch {}
+          } catch (err: any) {
+            const status = err?.response?.status || err?.status
+            if (status === 404) {
+              const title = editedProduct.name
+              const key = `basalam:${basalamProductId}`
+              useGlobalUiStore.getState().register404(key, basalamProductId, title)
+              storeAppendLog({
+                id: `${Date.now()}-${Math.random()}`,
+                platform: 'basalam',
+                productId: basalamProductId,
+                title,
+                status: 'یافت نشد',
+                message: `در هنگام به‌روزرسانی محصول، باسلام درخواست را رد کرد. لطفاً در پلتفرم باسلام بررسی کنید.`,
+                url: 'https://basalam.com/',
+                ts: Date.now()
+              })
+            }
+            throw err
+          }
           // Verify the update by fetching the updated product
           console.log('Verifying Basalam product update...')
           const updatedBasalamProduct = await basalamApi.getProductById(basalamCredentials, basalamProductId)
@@ -1073,6 +1098,13 @@ function ProductModal({ isOpen, onClose, product, type, mixinProducts, basalamPr
               )}
             </div>
           )}
+        {/* Log banner */}
+        <LogBanner
+          logs={logs}
+          onOpenLink={(e) => {
+            if (e.url) window.open(e.url, '_blank')
+          }}
+        />
           {editMessage && (
             <p className={`text-sm ${editMessage.isSuccess ? 'text-green-600' : 'text-red-600'}`}>
               {editMessage.text}
@@ -2374,7 +2406,7 @@ function HomePage() {
   const [productToCreateInBasalam, setProductToCreateInBasalam] = useState<MixinProduct | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
-  const [isMigrationModalOpen, setIsMigrationModalOpen] = useState(false)
+  // const [isMigrationModalOpen, setIsMigrationModalOpen] = useState(false)
   // Auto-migration trigger counter; increment to trigger migration in panel
   const [autoMigrationTriggerCount, setAutoMigrationTriggerCount] = useState(0)
   
@@ -2580,23 +2612,12 @@ function HomePage() {
         // Process updates sequentially to avoid rate issues
         for (const item of needToUpdate) {
           try {
-            await incrementUsage('realtime')
-          } catch (error: any) {
-            const status = error?.response?.status || error?.status
-            if (status === 429) {
-              console.warn('[AutoSync] Halt due to quota/auth status:', status)
-              break
-            }
-            if (status === 401) {
-              useGlobalUiStore.getState().setShowTokenExpiredModal(true)
-              break
-            }
-            continue
-          }
-
-          try {
             if (preferBasalam) {
               const src = item.fullM || item.mp
+              const key = `basalam:${item.bp.id}`
+              if (useGlobalUiStore.getState().isBlocked(key)) {
+                continue
+              }
               const payload = {
                 name: src?.name || item.bp?.title,
                 price: tomanToRial(Number(src?.price || 0)),
@@ -2604,9 +2625,46 @@ function HomePage() {
                 stock: Number(src?.stock || 0),
                 weight: Number(src?.weight || 0) > 0 ? Number(src?.weight) : 500,
               }
-              await basalamApi.updateProduct(basalamCredentials!, item.bp.id, payload as any)
+              try {
+                await basalamApi.updateProduct(basalamCredentials!, item.bp.id, payload as any)
+                try { await incrementUsage('realtime') } catch {}
+              } catch (err: any) {
+                const status = err?.response?.status || err?.status
+                if (status === 404) {
+                  const title = src?.name || (item.bp as any)?.title || ''
+                  useGlobalUiStore.getState().register404(key, item.bp.id, title)
+                  storeAppendLog({
+                    id: `${Date.now()}-${Math.random()}`,
+                    platform: 'basalam',
+                    productId: item.bp.id,
+                    title,
+                    status: 'یافت نشد',
+                    message: 'در هنگام به‌روزرسانی محصول، باسلام درخواست را رد کرد. لطفاً در پلتفرم باسلام بررسی کنید.',
+                    url: 'https://basalam.com/',
+                    ts: Date.now()
+                  })
+                  const st = useGlobalUiStore.getState() as any
+                  if (st.product404[key]?.count >= 3 && st.productBlockList[key]) {
+                    storeAppendLog({
+                      id: `${Date.now()}-${Math.random()}`,
+                      platform: 'basalam',
+                      productId: item.bp.id,
+                      title,
+                      status: 'موقتا متوقف شد',
+                      message: 'ارسال درخواست به‌روزرسانی برای این محصول به مدت ۳۰ دقیقه متوقف شد. لطفاً از وجود محصول در باسلام اطمینان حاصل کنید.',
+                      url: 'https://basalam.com/',
+                      ts: Date.now()
+                    })
+                  }
+                }
+                continue
+              }
             } else if (preferMixin) {
               const src = item.fullB || item.bp
+              const key = `mixin:${item.mp.id}`
+              if (useGlobalUiStore.getState().isBlocked(key)) {
+                continue
+              }
               const original = await mixinApi.getProductById(mixinCredentials!, item.mp.id)
               if (original) {
                 const payload = {
@@ -2618,7 +2676,40 @@ function HomePage() {
                   weight: Number(src?.net_weight || 0) > 0 ? Number(src?.net_weight) : 500,
                   extra_fields: [] as any[],
                 }
-                await mixinApi.updateProduct(mixinCredentials!, item.mp.id, payload as any)
+                try {
+                  await mixinApi.updateProduct(mixinCredentials!, item.mp.id, payload as any)
+                  try { await incrementUsage('realtime') } catch {}
+                } catch (err: any) {
+                  const status = err?.response?.status || err?.status
+                  if (status === 404) {
+                    const title = (src as any)?.title || original.name || ''
+                    useGlobalUiStore.getState().register404(key, item.mp.id, title)
+                    storeAppendLog({
+                      id: `${Date.now()}-${Math.random()}`,
+                      platform: 'mixin',
+                      productId: item.mp.id,
+                      title,
+                      status: 'یافت نشد',
+                      message: 'در هنگام به‌روزرسانی محصول، میکسین درخواست را رد کرد. لطفاً در پلتفرم میکسین بررسی کنید.',
+                      url: 'https://mixin.ir/',
+                      ts: Date.now()
+                    })
+                    const st = useGlobalUiStore.getState() as any
+                    if (st.product404[key]?.count >= 3 && st.productBlockList[key]) {
+                      storeAppendLog({
+                        id: `${Date.now()}-${Math.random()}`,
+                        platform: 'mixin',
+                        productId: item.mp.id,
+                        title,
+                        status: 'موقتا متوقف شد',
+                        message: 'ارسال درخواست به‌روزرسانی برای این محصول به مدت ۳۰ دقیقه متوقف شد. لطفاً از وجود محصول در میکسین اطمینان حاصل کنید.',
+                        url: 'https://mixin.ir/',
+                        ts: Date.now()
+                      })
+                    }
+                  }
+                  continue
+                }
               }
             }
           } catch {
@@ -2630,7 +2721,7 @@ function HomePage() {
       }
     }
     // Run once immediately (if lists exist), then every ~3 minutes
-    const immediate = setTimeout(() => { run().catch(() => (backgroundSyncRunningRef.current = false)) }, 1000)
+    setTimeout(() => { run().catch(() => (backgroundSyncRunningRef.current = false)) }, 1000)
     const interval = setInterval(() => { run().catch(() => (backgroundSyncRunningRef.current = false)) }, 180000)
     return () => clearInterval(interval)
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2831,6 +2922,8 @@ function HomePage() {
 
   // Sync uniques into global products store for cross-page usage
   const setUniqueLists = useProductsStore((s) => s.setUniqueLists)
+  const storeAppendLog = useGlobalUiStore((s: any) => s.appendLog)
+  const globalLogs = useGlobalUiStore((s: any) => s.logs)
   useEffect(() => {
     try { setUniqueLists(uniqueMixinProducts, uniqueBasalamProducts) } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -3106,6 +3199,13 @@ function HomePage() {
                 محصولات مشترک در باسلام و میکسین
               </h2>
             </div>
+            {/* Log banner under stats and before lists */}
+            <LogBanner
+              logs={globalLogs}
+              onOpenLink={(e) => {
+                if (e.url) window.open(e.url, '_blank')
+              }}
+            />
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <div className="bg-white/60 backdrop-blur-md rounded-xl shadow-lg p-6 border border-gray-100">
                 <div className="flex items-center justify-between mb-4">
