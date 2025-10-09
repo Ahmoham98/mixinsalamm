@@ -1,3 +1,4 @@
+import BackHomeButton from '../components/BackHomeButton'
 import React, { useEffect, useState } from 'react'
 import { api } from '../services/api/config'
 
@@ -35,7 +36,11 @@ const AdminPage: React.FC = () => {
   if (loading) return <div className="p-8 text-center">در حال بارگذاری...</div>
 
   return (
-    <div className="max-w-6xl mx-auto py-10 px-4 space-y-6">
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-6xl mx-auto px-4 py-6">
+        <BackHomeButton />
+      </div>
+      <div className="max-w-6xl mx-auto pb-10 px-4 space-y-6">
       <Section title="کاربران">
         <div className="overflow-auto">
           <table className="w-full text-sm">
@@ -100,6 +105,7 @@ const AdminPage: React.FC = () => {
           </table>
         </div>
       </Section>
+      </div>
     </div>
   )
 }
