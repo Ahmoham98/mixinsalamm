@@ -16,6 +16,7 @@ This root `tsconfig.json` file acts as an orchestrator for the TypeScript compil
 For example, the settings in `tsconfig.node.json` are likely configured for a Node.js environment, so they will be used to type-check files like `vite.config.ts`. The settings in `tsconfig.app.json` are configured for a browser environment and will be used to type-check the React application code.
 
 This approach provides several benefits:
+
 - **Separation of Concerns**: It allows you to have different compiler options for different parts of your project. For example, the code that runs in Node.js might have different requirements than the code that runs in the browser.
 - **Improved Performance**: When you make a change in one part of the project, TypeScript can intelligently rebuild only the necessary parts, which can lead to faster build times.
 - **Better Editor Support**: Code editors like VS Code can use this information to provide more accurate autocompletion and error checking, as they understand the context of each file.

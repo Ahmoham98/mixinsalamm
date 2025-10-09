@@ -5,12 +5,14 @@ The `UsageDashboard` component provides a comprehensive and visually engaging ov
 ## Main Component: `UsageDashboard`
 
 ### Props
+
 - **`migrationsUsed: number`**: The number of product migrations the user has consumed.
 - **`migrationsQuota: number`**: The total product migration quota for the user's plan.
 - **`realtimeUsed: number`**: The number of real-time updates the user has consumed.
 - **`realtimeQuota: number`**: The total real-time update quota for the user's plan.
 
 ### Functionality
+
 - **Layout**: It serves as a container for the individual `UsageBar` components, arranging them vertically.
 - **Header**: It includes a main title "داشبورد مصرف" (Usage Dashboard) with an icon.
 - **Summary Section**: At the bottom, it provides a "خلاصه مصرف" (Usage Summary) that shows the total combined usage and quota for all services.
@@ -23,6 +25,7 @@ The `UsageDashboard` component provides a comprehensive and visually engaging ov
 This is a reusable component designed to display the usage statistics for a single type of quota.
 
 ### Props
+
 - **`used: number`**: The amount of the quota that has been used.
 - **`quota: number`**: The total available quota.
 - **`label: string`**: The name of the quota being displayed (e.g., "مهاجرت محصول").
@@ -30,6 +33,7 @@ This is a reusable component designed to display the usage statistics for a sing
 - **`color: string`**: A Tailwind CSS class for the background color of the icon.
 
 ### Functionality
+
 - **Status Calculation**: It calculates the usage percentage and determines the status (e.g., "Over limit", "Nearing limit", "Within limit") based on the usage ratio.
 - **Dynamic Icons and Colors**:
   - It displays a status icon (`AlertTriangle` or `CheckCircle`) based on whether the usage is within limits, nearing the limit (over 80%), or has exceeded the limit.
@@ -43,7 +47,7 @@ This is a reusable component designed to display the usage statistics for a sing
 The `UsageDashboard` is intended for a user's dashboard or account page, where they can monitor their resource consumption.
 
 ```jsx
-import UsageDashboard from './UsageDashboard';
+import UsageDashboard from "./UsageDashboard";
 
 function DashboardPage() {
   const usageData = {

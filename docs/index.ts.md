@@ -36,7 +36,7 @@ These interfaces are imported and used throughout the application wherever data 
 - **State Management (Zustand)**: The stores (`authStore`, `productsStore`) use these types to define the shape of their state.
   ```typescript
   // In authStore.ts
-  import type { MixinCredentials, BasalamCredentials } from '../types';
+  import type { MixinCredentials, BasalamCredentials } from "../types";
   interface AuthState {
     mixinCredentials: MixinCredentials | null;
     basalamCredentials: BasalamCredentials | null;
@@ -55,7 +55,7 @@ These interfaces are imported and used throughout the application wherever data 
 - **Components**: React components use these types for their props and internal state, ensuring that they receive and manage data correctly.
   ```typescript
   // In a component
-  import type { MixinProduct } from '../types';
+  import type { MixinProduct } from "../types";
   interface ProductCardProps {
     product: MixinProduct;
   }

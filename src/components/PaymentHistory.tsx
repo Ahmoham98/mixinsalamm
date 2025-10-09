@@ -31,12 +31,27 @@ const PaymentHistory: React.FC<PaymentHistoryProps> = ({ payments }) => (
         <tbody>
           {payments.map((p) => (
             <tr key={p.id} className="border-b">
-              <td className="py-2 px-3">{new Date(p.created_at).toLocaleDateString("fa-IR")}</td>
-              <td className="py-2 px-3">{p.amount} {p.currency.toUpperCase()}</td>
-              <td className={`py-2 px-3 font-bold ${p.status === "paid" ? "text-green-600" : "text-red-600"}`}>{p.status === "paid" ? "پرداخت شده" : "ناموفق"}</td>
+              <td className="py-2 px-3">
+                {new Date(p.created_at).toLocaleDateString("fa-IR")}
+              </td>
+              <td className="py-2 px-3">
+                {p.amount} {p.currency.toUpperCase()}
+              </td>
+              <td
+                className={`py-2 px-3 font-bold ${p.status === "paid" ? "text-green-600" : "text-red-600"}`}
+              >
+                {p.status === "paid" ? "پرداخت شده" : "ناموفق"}
+              </td>
               <td className="py-2 px-3">
                 {p.invoice_url ? (
-                  <a href={p.invoice_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">دانلود</a>
+                  <a
+                    href={p.invoice_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 underline"
+                  >
+                    دانلود
+                  </a>
                 ) : (
                   <span className="text-gray-400">—</span>
                 )}

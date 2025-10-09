@@ -25,19 +25,20 @@ The `QuotaExceededModal` component is a modal dialog that appears to inform the 
 This component is typically used in response to a user action that fails due to a quota limit. For example, if a user tries to migrate a product and the API returns a "quota exceeded" error, the application can trigger this modal.
 
 ```jsx
-import { QuotaExceededModal } from './QuotaExceededModal';
-import { useState } from 'react';
+import { QuotaExceededModal } from "./QuotaExceededModal";
+import { useState } from "react";
 
 function ProductMigrationPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalType, setModalType] = useState<'migration' | 'realtime'>('migration');
+  const [modalType, setModalType] =
+    (useState < "migration") | ("realtime" > "migration");
 
   const handleMigrate = async () => {
     try {
       // API call to migrate product
     } catch (error) {
       if (error.isQuotaError) {
-        setModalType('migration');
+        setModalType("migration");
         setIsModalOpen(true);
       }
     }

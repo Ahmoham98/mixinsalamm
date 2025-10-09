@@ -1,30 +1,39 @@
-import { X, AlertTriangle, ArrowRight } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { X, AlertTriangle, ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface QuotaExceededModalProps {
-  isOpen: boolean
-  onClose: () => void
-  type: 'migration' | 'realtime'
+  isOpen: boolean;
+  onClose: () => void;
+  type: "migration" | "realtime";
 }
 
-export function QuotaExceededModal({ isOpen, onClose, type }: QuotaExceededModalProps) {
-  const navigate = useNavigate()
+export function QuotaExceededModal({
+  isOpen,
+  onClose,
+  type,
+}: QuotaExceededModalProps) {
+  const navigate = useNavigate();
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
-  const isMigration = type === 'migration'
-  const title = isMigration ? 'حد مجاز مهاجرت محصولات تمام شده' : 'حد مجاز به‌روزرسانی لحظه‌ای تمام شده'
-  const description = isMigration 
-    ? 'شما به حد مجاز مهاجرت محصولات خود رسیده‌اید. برای ادامه مهاجرت محصولات، لطفاً پلن خود را ارتقا دهید.'
-    : 'شما به حد مجاز به‌روزرسانی لحظه‌ای محصولات خود رسیده‌اید. برای ادامه به‌روزرسانی محصولات، لطفاً پلن خود را ارتقا دهید.'
+  const isMigration = type === "migration";
+  const title = isMigration
+    ? "حد مجاز مهاجرت محصولات تمام شده"
+    : "حد مجاز به‌روزرسانی لحظه‌ای تمام شده";
+  const description = isMigration
+    ? "شما به حد مجاز مهاجرت محصولات خود رسیده‌اید. برای ادامه مهاجرت محصولات، لطفاً پلن خود را ارتقا دهید."
+    : "شما به حد مجاز به‌روزرسانی لحظه‌ای محصولات خود رسیده‌اید. برای ادامه به‌روزرسانی محصولات، لطفاً پلن خود را ارتقا دهید.";
 
   const handleUpgradePlan = () => {
-    onClose()
-    navigate('/pricing')
-  }
+    onClose();
+    navigate("/pricing");
+  };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50" dir="rtl">
+    <div
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+      dir="rtl"
+    >
       <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md relative transform transition-all duration-300">
         <button
           onClick={onClose}
@@ -87,5 +96,5 @@ export function QuotaExceededModal({ isOpen, onClose, type }: QuotaExceededModal
         </p>
       </div>
     </div>
-  )
+  );
 }
