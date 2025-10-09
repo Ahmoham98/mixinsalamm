@@ -24,31 +24,29 @@ This component should be triggered by a global mechanism that detects when an AP
 
 ```jsx
 // In a global state store (e.g., globalUiStore.ts)
-const useGlobalUiStore = create((set) => ({
+const useGlobalUiStore = create(set => ({
   showTokenExpiredModal: false,
   setShowTokenExpiredModal: (show) => set({ showTokenExpiredModal: show }),
 }));
 
 // In an API interceptor (e.g., api/config.ts)
 axios.interceptors.response.use(
-  (response) => response,
-  (error) => {
+  response => response,
+  error => {
     if (error.response.status === 401) {
       useAuthStore.getState().logout(); // Clear user session
       useGlobalUiStore.getState().setShowTokenExpiredModal(true); // Show the modal
       setTimeout(() => {
-        window.location.href = "/login"; // Redirect after a delay
+        window.location.href = '/login'; // Redirect after a delay
       }, 3000);
     }
     return Promise.reject(error);
-  },
+  }
 );
 
 // In the main App component
 function App() {
-  const showTokenExpiredModal = useGlobalUiStore(
-    (state) => state.showTokenExpiredModal,
-  );
+  const showTokenExpiredModal = useGlobalUiStore(state => state.showTokenExpiredModal);
   return (
     <div>
       <TokenExpiredModal open={showTokenExpiredModal} />

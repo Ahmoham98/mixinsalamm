@@ -4,7 +4,7 @@ This file (`tailwind.config.js`) is the configuration for the Tailwind CSS frame
 
 ## Key Components
 
-- **`/** @type {import('tailwindcss').Config} \*/`\*\*: This is a JSDoc comment that provides type information for the configuration object. It's not required, but it's a good practice as it enables autocompletion and type checking for the Tailwind CSS configuration in your code editor.
+- **`/** @type {import('tailwindcss').Config} */`**: This is a JSDoc comment that provides type information for the configuration object. It's not required, but it's a good practice as it enables autocompletion and type checking for the Tailwind CSS configuration in your code editor.
 - **`export default`**: This is the standard way to export a configuration object in a JavaScript module.
 - **`content`**: This is a crucial part of the configuration. It tells Tailwind CSS where to look for class names in your project. Tailwind will scan these files and generate only the CSS that is actually being used, which results in a much smaller final CSS file. In this configuration, it's set to scan:
   - `./index.html`: The main HTML file.

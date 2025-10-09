@@ -1,11 +1,5 @@
 import React from "react";
-import {
-  Package,
-  Zap,
-  TrendingUp,
-  AlertTriangle,
-  CheckCircle,
-} from "lucide-react";
+import { Package, Zap, TrendingUp, AlertTriangle, CheckCircle } from "lucide-react";
 
 interface UsageDashboardProps {
   migrationsUsed: number;
@@ -14,16 +8,10 @@ interface UsageDashboardProps {
   realtimeQuota: number;
 }
 
-const UsageBar = ({
-  used,
-  quota,
-  label,
-  icon,
-  color,
-}: {
-  used: number;
-  quota: number;
-  label: string;
+const UsageBar = ({ used, quota, label, icon, color }: { 
+  used: number; 
+  quota: number; 
+  label: string; 
   icon: React.ReactNode;
   color: string;
 }) => {
@@ -31,7 +19,7 @@ const UsageBar = ({
   const isWarning = used / quota > 0.8;
   const isOver = used > quota;
   const remaining = Math.max(quota - used, 0);
-
+  
   const getStatusIcon = () => {
     if (isOver) return <AlertTriangle className="w-4 h-4 text-red-500" />;
     if (isWarning) return <AlertTriangle className="w-4 h-4 text-yellow-500" />;
@@ -55,9 +43,7 @@ const UsageBar = ({
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div
-            className={`w-10 h-10 rounded-full flex items-center justify-center ${color}`}
-          >
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${color}`}>
             {icon}
           </div>
           <div>
@@ -95,11 +81,9 @@ const UsageBar = ({
         <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
           <div
             className={`h-3 rounded-full transition-all duration-500 ease-out ${
-              isOver
-                ? "bg-gradient-to-r from-red-500 to-red-600"
-                : isWarning
-                  ? "bg-gradient-to-r from-yellow-500 to-orange-500"
-                  : "bg-gradient-to-r from-green-500 to-emerald-500"
+              isOver ? "bg-gradient-to-r from-red-500 to-red-600" : 
+              isWarning ? "bg-gradient-to-r from-yellow-500 to-orange-500" : 
+              "bg-gradient-to-r from-green-500 to-emerald-500"
             }`}
             style={{ width: `${percent}%` }}
           />
@@ -131,24 +115,22 @@ const UsageDashboard: React.FC<UsageDashboardProps> = ({
       <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
         داشبورد مصرف
       </h2>
-      <p className="text-sm text-gray-600 mt-1">
-        وضعیت استفاده از سهمیه‌های شما
-      </p>
+      <p className="text-sm text-gray-600 mt-1">وضعیت استفاده از سهمیه‌های شما</p>
     </div>
 
     {/* Usage Bars */}
     <div className="space-y-4">
-      <UsageBar
-        used={migrationsUsed}
-        quota={migrationsQuota}
-        label="مهاجرت محصول"
+      <UsageBar 
+        used={migrationsUsed} 
+        quota={migrationsQuota} 
+        label="مهاجرت محصول" 
         icon={<Package className="w-5 h-5 text-white" />}
         color="bg-purple-500"
       />
-      <UsageBar
-        used={realtimeUsed}
-        quota={realtimeQuota}
-        label="آپدیت لحظه‌ای"
+      <UsageBar 
+        used={realtimeUsed} 
+        quota={realtimeQuota} 
+        label="آپدیت لحظه‌ای" 
         icon={<Zap className="w-5 h-5 text-white" />}
         color="bg-orange-500"
       />

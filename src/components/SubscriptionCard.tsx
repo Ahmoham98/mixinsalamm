@@ -17,40 +17,31 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
   cancelAtPeriodEnd,
   onUpgradePlan,
 }) => {
-  if (!plan)
-    return (
-      <div className="max-w-lg mx-auto p-6 bg-gradient-to-br from-red-50 to-red-100 rounded-2xl shadow-xl border border-red-200">
-        <div className="text-center text-red-600">
-          <Package className="w-12 h-12 mx-auto mb-3 text-red-400" />
-          <h3 className="text-lg font-semibold">پلنی فعال نیست</h3>
-          <p className="text-sm text-red-500 mt-1">لطفا یک پلن انتخاب کنید</p>
-        </div>
+  if (!plan) return (
+    <div className="max-w-lg mx-auto p-6 bg-gradient-to-br from-red-50 to-red-100 rounded-2xl shadow-xl border border-red-200">
+      <div className="text-center text-red-600">
+        <Package className="w-12 h-12 mx-auto mb-3 text-red-400" />
+        <h3 className="text-lg font-semibold">پلنی فعال نیست</h3>
+        <p className="text-sm text-red-500 mt-1">لطفا یک پلن انتخاب کنید</p>
       </div>
-    );
+    </div>
+  );
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
-      case "active":
-        return "text-green-600 bg-green-50 border-green-200";
-      case "cancelled":
-        return "text-red-600 bg-red-50 border-red-200";
-      case "expired":
-        return "text-orange-600 bg-orange-50 border-orange-200";
-      default:
-        return "text-blue-600 bg-blue-50 border-blue-200";
+      case 'active': return 'text-green-600 bg-green-50 border-green-200';
+      case 'cancelled': return 'text-red-600 bg-red-50 border-red-200';
+      case 'expired': return 'text-orange-600 bg-orange-50 border-orange-200';
+      default: return 'text-blue-600 bg-blue-50 border-blue-200';
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status.toLowerCase()) {
-      case "active":
-        return <CheckCircle className="w-4 h-4" />;
-      case "cancelled":
-        return <Package className="w-4 h-4" />;
-      case "expired":
-        return <Calendar className="w-4 h-4" />;
-      default:
-        return <Crown className="w-4 h-4" />;
+      case 'active': return <CheckCircle className="w-4 h-4" />;
+      case 'cancelled': return <Package className="w-4 h-4" />;
+      case 'expired': return <Calendar className="w-4 h-4" />;
+      default: return <Crown className="w-4 h-4" />;
     }
   };
 
@@ -69,9 +60,7 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
       {/* Plan Name */}
       <div className="text-center mb-6">
         <div className="inline-block px-4 py-2 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full">
-          <span className="text-xl font-bold text-blue-700 capitalize">
-            {plan.name}
-          </span>
+          <span className="text-xl font-bold text-blue-700 capitalize">{plan.name}</span>
         </div>
       </div>
 
@@ -86,9 +75,7 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
             <span className="font-medium text-gray-700">قیمت ماهانه</span>
           </div>
           <span className="text-lg font-bold text-green-600">
-            {plan.price_monthly === 0
-              ? "رایگان"
-              : `${plan.price_monthly.toLocaleString()} تومان`}
+            {plan.price_monthly === 0 ? "رایگان" : `${plan.price_monthly.toLocaleString()} تومان`}
           </span>
         </div>
 
@@ -126,9 +113,7 @@ const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
             </div>
             <span className="font-medium text-gray-700">وضعیت</span>
           </div>
-          <span
-            className={`px-3 py-1 rounded-full text-sm font-semibold border ${getStatusColor(status)}`}
-          >
+          <span className={`px-3 py-1 rounded-full text-sm font-semibold border ${getStatusColor(status)}`}>
             {status}
           </span>
         </div>
