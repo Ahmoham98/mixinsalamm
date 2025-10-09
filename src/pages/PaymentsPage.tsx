@@ -1,4 +1,4 @@
-import BackHomeButton from "../components/BackHomeButton";
+import BackHomeButton from '../components/BackHomeButton'
 import React, { useEffect, useState } from "react";
 import PaymentHistory, { Payment } from "../components/PaymentHistory";
 import { api } from "../services/api/config";

@@ -43,7 +43,6 @@ This is the main component for the home page.
 ## Key Sub-Components and Modals
 
 ### `ProductModal`
-
 - **Functionality**:
   - Displays detailed information for a selected product, including its image, name, price, description, weight, and stock.
   - Allows editing of these fields.
@@ -54,7 +53,6 @@ This is the main component for the home page.
 - **Multi-Image Support**: It can fetch and display multiple images for a single product, with navigation buttons to cycle through them.
 
 ### `CreateBasalamProductModal`
-
 - **Functionality**:
   - A form pre-filled with data from a Mixin product.
   - **Category Detection**: It automatically suggests a Basalam category based on the product's name by calling a dedicated API endpoint.
@@ -63,7 +61,6 @@ This is the main component for the home page.
   - **Submission**: It constructs a detailed payload and calls the Basalam API to create the new product.
 
 ### `BulkMigrationPanel`
-
 - **Functionality**:
   - Provides a UI for starting, pausing, and resuming a bulk migration process.
   - **Batch Processing**: It processes the products in batches with a configurable concurrency level to avoid overwhelming the APIs.
@@ -77,7 +74,6 @@ This is the main component for the home page.
 ## Utility Functions
 
 This file also contains several important utility functions:
-
 - **`tomanToRial`, `rialToToman`**: For currency conversion.
 - **`generateUniqueSKU`**: To create unique product identifiers.
 - **`cleanHtmlText`**: A sophisticated function to strip HTML tags from text while preserving line breaks and structure, and correctly handling emojis.

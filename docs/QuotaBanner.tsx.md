@@ -22,12 +22,11 @@ The `QuotaBanner` component is a notification banner that appears at the top of 
 This component should be used in conjunction with a global state management solution (like Zustand or Redux) that tracks whether a quota has been exceeded. The parent component would then render this banner based on that global state.
 
 ```jsx
-import QuotaBanner from "./QuotaBanner";
-import { useGlobalUiStore } from "../store/globalUiStore";
+import QuotaBanner from './QuotaBanner';
+import { useGlobalUiStore } from '../store/globalUiStore';
 
 function App() {
-  const { showQuotaBanner, quotaBannerType, setQuotaBanner } =
-    useGlobalUiStore();
+  const { showQuotaBanner, quotaBannerType, setQuotaBanner } = useGlobalUiStore();
 
   return (
     <div>
