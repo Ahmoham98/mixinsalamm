@@ -169,7 +169,7 @@ const HomePageTour: React.FC = () => {
             nextStep("home");
           }}
           showNext={true}
-          showSkip={true}
+          showSkip={false}
           fixedPosition={true}
           position={{ top: "50vh", left: "50vw", transform: "translate(-50%, -50%)" }}
           arrow="top"
@@ -262,7 +262,6 @@ const HomePageTour: React.FC = () => {
           showNext={true}
           showSkip={false}
           position={getElementPosition("#homepage-migration-panel")}
-          arrow="bottom"
           fixedPosition={true}
         >
           <h3 className="font-bold text-lg mb-2">انتقال گروهی محصولات</h3>
@@ -305,7 +304,7 @@ const HomePageTour: React.FC = () => {
             nextStep("home");
           }}
           showNext={true}
-          showSkip={true}
+          showSkip={false}
           position={getElementPosition("#product-migration-list")}
           arrow="top"
           fixedPosition={true}
@@ -330,7 +329,7 @@ const HomePageTour: React.FC = () => {
             setStep("settings", 0); // Start settings tour
           }}
           showNext={true}
-          showSkip={true}
+          showSkip={false}
           position={getRealtimeBannerPosition()}
           arrow="top"
           fixedPosition={true}

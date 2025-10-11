@@ -166,7 +166,6 @@ const SettingsPageTour: React.FC = () => {
           showNext={true}
           showSkip={false}
           position={getElementPosition("#save-settings-button")}
-          arrow="top"
           fixedPosition={true}
         >
           <h3 className="font-bold text-lg mb-2">ذخیره تغییرات</h3>

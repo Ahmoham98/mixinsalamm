@@ -210,7 +210,11 @@ const PricingPage: React.FC = () => {
         <div style={{ position: "absolute", top: 0, right: 0, zIndex: 2000 }}>
           <button
             className="text-sm text-blue-600 bg-white/80 px-4 py-2 rounded-full shadow hover:bg-blue-50 transition"
-            onClick={() => { const st = useTourStore.getState(); st.setStep("pricing", 0); }}
+            onClick={() => { 
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+              const st = useTourStore.getState(); 
+              st.setStep("pricing", 0); 
+            }}
           >
             راهنمای استفاده از سایت
           </button>

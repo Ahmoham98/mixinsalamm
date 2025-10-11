@@ -21,15 +21,21 @@ const TourModal: React.FC<TourModalProps> = ({
   arrow,
   fixedPosition,
 }) => {
+  const [isMobile, setIsMobile] = React.useState(window.innerWidth < 640);
+  React.useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 640);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
   const modalStyle: React.CSSProperties = {
     position: fixedPosition ? "fixed" : "absolute",
     ...position,
     backgroundColor: "rgba(255, 253, 248, 0.95)", // Cream color with higher opacity for better visibility
     boxShadow: "0 10px 25px rgba(0, 0, 0, 0.2)",
     borderRadius: "12px",
-    padding: "20px",
-    width: "350px",
-    maxWidth: "90vw",
+    padding: isMobile ? "10px" : "20px",
+    width: isMobile ? "95vw" : "350px",
+    maxWidth: "98vw",
     zIndex: 1002, // Ensure modal is above the overlay and other elements
     direction: "rtl",
     border: "1px solid rgba(59, 130, 246, 0.2)", // Subtle border for better definition

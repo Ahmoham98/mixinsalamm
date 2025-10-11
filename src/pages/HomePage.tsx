@@ -4110,7 +4110,11 @@ function HomePage() {
                 className="text-sm text-blue-700 bg-white/90 px-4 py-2 rounded-full shadow hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-300 transition"
                 aria-label="شروع راهنمای استفاده از سایت برای معرفی بخش‌های اصلی و قابلیت‌ها"
                 title="راهنما: با کلیک این دکمه راهنمای جامع سایت نمایش داده می‌شود"
-                onClick={() => { const st = useTourStore.getState(); st.setStep("home", 0); }}
+                onClick={() => { 
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                  const st = useTourStore.getState(); 
+                  st.setStep("home", 0); 
+                }}
               >
                 راهنمای استفاده از سایت
               </button>

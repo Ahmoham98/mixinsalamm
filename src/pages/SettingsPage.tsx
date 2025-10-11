@@ -239,7 +239,11 @@ function SettingsPage() {
             <div style={{ position: "absolute", bottom: 0, right: 0, zIndex: 2000 }}>
               <button
                 className="text-sm text-blue-600 bg-white/80 px-4 py-2 rounded-full shadow hover:bg-blue-50 transition"
-                onClick={() => { const st = useTourStore.getState(); st.setStep("settings", 0); }}
+                onClick={() => { 
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                  const st = useTourStore.getState(); 
+                  st.setStep("settings", 0); 
+                }}
               >
                 راهنمای استفاده از سایت
               </button>
@@ -253,7 +257,6 @@ function SettingsPage() {
             {/* Auto-sync section */}
             <div
               className="p-6 border-b border-gray-100"
-              id="auto-sync-section"
             >
               <div className="flex items-center gap-3 mb-4">
                 <div className="p-3 bg-gradient-to-br from-[#5b9fdb]/10 to-[#5b9fdb]/20 rounded-lg">
@@ -285,7 +288,7 @@ function SettingsPage() {
 
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <h3 className="font-semibold text-gray-800">
+                      <h3 className="font-semibold text-gray-800" id="auto-sync-section">
                         فعال‌سازی همگام‌سازی خودکار
                       </h3>
                       {localSettings.autoSyncEnabled && (
@@ -313,7 +316,6 @@ function SettingsPage() {
                     <div
                       className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3"
                       dir="rtl"
-                      id="auto-sync-direction"
                     >
                       <label className="flex items-center gap-3 p-3 bg-white/70 border border-blue-200 rounded-lg hover:bg-white transition-colors cursor-pointer">
                         <input
@@ -323,7 +325,7 @@ function SettingsPage() {
                             handlePreferBasalamFromMixin(e.target.checked)
                           }
                         />
-                        <span className="text-sm text-gray-800">
+                        <span className="text-sm text-gray-800" id="auto-sync-direction">
                           به‌روزرسانی باسلام مطابق تغییرات میکسین
                         </span>
                       </label>
@@ -353,7 +355,6 @@ function SettingsPage() {
             {/* Auto-migration section */}
             <div
               className="p-6 border-b border-gray-100"
-              id="auto-migration-section"
             >
               <div className="flex items-center gap-3 mb-4">
                 <div className="p-3 bg-gradient-to-br from-[#ff6040]/10 to-[#ff6040]/20 rounded-lg">
@@ -390,6 +391,7 @@ function SettingsPage() {
                       <h3 className="font-semibold text-gray-800">
                         فعال‌سازی انتقال خودکار
                       </h3>
+                      <div  id="auto-migration-section"></div>
                       {localSettings.autoMigrationEnabled && (
                         <CheckCircle2 size={16} className="text-green-600" />
                       )}
@@ -454,9 +456,9 @@ function SettingsPage() {
             </div>
 
             {/* Save button section */}
-            <div className="p-6 bg-gray-50" id="save-settings-button">
+            <div className="p-6 bg-gray-50">
               <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-600" id="save-settings-button">
                   تغییرات شما تا زمان کلیک روی دکمه ذخیره اعمال نخواهد شد.
                 </div>
 
