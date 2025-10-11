@@ -86,18 +86,24 @@ const TourModal: React.FC<TourModalProps> = ({
   return (
     <>
       <div
-        className="fixed inset-0 z-1001"
+        className="fixed inset-0 z-1001 cursor-pointer hover:bg-black hover:bg-opacity-5"
         style={{
           backgroundColor: "transparent", // remove black color
           backdropFilter: "blur(6px)",
           WebkitBackdropFilter: "blur(6px)",
-          transition: "background-color 0.3s"
+          transition: "background-color 0.3s, backdrop-filter 0.3s"
         }}
-        onClick={onNext}
+        onClick={onNext || (() => {})}
+        title="کلیک کنید تا به مرحله بعد بروید"
       />
       <div style={modalStyle} onClick={(e) => e.stopPropagation()}>
         {arrow && <div style={arrowStyle} />}
-        <div className="text-right text-gray-800">{children}</div>
+        <div className="text-right text-gray-800">
+          {children}
+          <div className="text-xs text-gray-500 mt-2 text-center">
+            💡 کلیک کنید تا به مرحله بعد بروید
+          </div>
+        </div>
         <div className="flex justify-between items-center mt-4">
           <button
             onClick={onSkipAll}

@@ -306,7 +306,7 @@ const HomePageTour: React.FC = () => {
           }}
           showNext={true}
           showSkip={true}
-          position={getElementPosition("#migration-modal-content")}
+          position={getElementPosition("#product-migration-list")}
           arrow="top"
           fixedPosition={true}
         >

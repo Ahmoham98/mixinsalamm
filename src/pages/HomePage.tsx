@@ -2922,8 +2922,8 @@ function BulkMigrationPanel({
                   </p>
                 )}
               </div>
-              <div className="max-h-64 overflow-y-auto border rounded mb-4">
-                <ul className="divide-y divide-gray-200">
+              <div className="max-h-64 overflow-y-auto border rounded mb-4" >
+                <ul className="divide-y divide-gray-200" id="product-migration-list">
                   {missingProducts.map((p: any) => (
                     <li key={p.id} className="p-2 text-gray-700">
                       {p.name}
