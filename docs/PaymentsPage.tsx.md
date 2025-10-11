@@ -25,7 +25,6 @@ The `PaymentsPage` is a straightforward component responsible for displaying a u
 6. The component re-renders. This time, `loading` is `false`, so it renders the `PaymentHistory` component, which then displays the list of payments.
 
 This component follows a common and effective pattern for fetching and displaying data in React:
-
 1.  Initialize with a loading state.
 2.  Fetch data in `useEffect`.
 3.  Update state with the fetched data and set loading to false.

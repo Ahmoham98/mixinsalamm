@@ -236,7 +236,7 @@ const HomePageTour: React.FC = () => {
           onSkipAll={handleSkipAll}
           onNext={() => {
             // Close migration modal by dispatching custom event
-            const closeBtn = document.querySelector("migration-panel-close-button") as HTMLElement || null ;
+            const closeBtn = document.querySelector("#migration-panel-close-button") as HTMLElement || null;
             if (closeBtn) {
               closeBtn.click();
             }

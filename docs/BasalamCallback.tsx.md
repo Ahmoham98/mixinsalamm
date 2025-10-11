@@ -22,7 +22,6 @@ The `BasalamCallback` page is a crucial part of the OAuth 2.0 authentication flo
 ## Usage
 
 This page is part of a larger authentication flow:
-
 1. The user clicks a "Connect to Basalam" button in the main application.
 2. The application opens a popup window pointing to the Basalam authorization URL.
 3. The user logs in to Basalam and approves the application's request for access.

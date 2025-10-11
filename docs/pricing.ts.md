@@ -5,12 +5,10 @@ This file contains a collection of functions for interacting with the applicatio
 ## Date Utilities
 
 ### `formatNow`
-
 - **Description**: Returns the current date and time as a string in the custom format `YYYY-MM-DD/HH:mm`.
 - **Returns**: `string`
 
 ### `addDays`
-
 - **Description**: Adds a specified number of days to a date string.
 - **Parameters**:
   - `isoLike: string`: A date string in the format `YYYY-MM-DD/HH:mm`.
@@ -22,7 +20,6 @@ This file contains a collection of functions for interacting with the applicatio
 ### Users
 
 #### `ensureUser`
-
 - **Endpoint**: `POST /googlesheet/user/`
 - **Description**: This function seems to be related to a Google Sheet integration, likely to create or verify a user record in a spreadsheet.
 - **Parameters**: `body: any`
@@ -31,20 +28,17 @@ This file contains a collection of functions for interacting with the applicatio
 ### Usage
 
 #### `createInitialUsageRecord`
-
 - **Endpoint**: `POST /api/usage/increment`
 - **Description**: Creates the first usage record for a new user. It sets the `migration_used` and `realtime_used` counters to 0. The usage period (`period_start` and `period_end`) is set based on the current time and the subscription's renewal date.
 - **Parameters**: `periodEnd?: string` (optional)
 - **Returns**: A `Promise` with the response data.
 
 #### `getUsage`
-
 - **Endpoint**: `GET /api/usage/`
 - **Description**: Fetches the current usage data for the authenticated user.
 - **Returns**: A `Promise` with the usage data.
 
 #### `incrementUsage`
-
 - **Endpoint**: `POST /api/usage/increment`
 - **Description**: Increments the usage counter for a specific feature. The backend handles the logic of which counter to increment based on the `type` parameter.
 - **Parameters**: `type: 'migration' | 'realtime'`
@@ -53,13 +47,11 @@ This file contains a collection of functions for interacting with the applicatio
 ### Plans
 
 #### `getPlans`
-
 - **Endpoint**: `GET /api/plans/`
 - **Description**: Fetches a list of all available pricing plans.
 - **Returns**: A `Promise` with an array of plan objects.
 
 #### `getPlanById`
-
 - **Endpoint**: `GET /api/plans/{planId}`
 - **Description**: Fetches the details of a single pricing plan by its ID.
 - **Parameters**: `planId: number`
@@ -68,13 +60,11 @@ This file contains a collection of functions for interacting with the applicatio
 ### Subscriptions
 
 #### `getCurrentSubscription`
-
 - **Endpoint**: `GET /api/subscription/current`
 - **Description**: Fetches the current subscription details for the authenticated user.
 - **Returns**: A `Promise` with the subscription object.
 
 #### `createDefaultSubscription`
-
 - **Endpoint**: `POST /api/subscription/`
 - **Description**: Creates a default subscription for a new user. It's typically a free or trial plan (in this case, `plan_id: 1`) with a 31-day duration.
 - **Returns**: A `Promise` with the newly created subscription object.
@@ -82,7 +72,6 @@ This file contains a collection of functions for interacting with the applicatio
 ### Payments
 
 #### `createPayment`
-
 - **Endpoint**: `POST /api/payments/`
 - **Description**: Creates a new payment record in the database. This is used to log a user's payment attempt after they have paid through the external Basalam link.
 - **Parameters**: `body: any` (an object representing the payment details)

@@ -36,15 +36,15 @@ This store is used as a single source of truth for authentication and settings t
 
 ```jsx
 // Example of using the store in a component
-import { useAuthStore } from "./authStore";
+import { useAuthStore } from './authStore';
 
 function MyComponent() {
   // Select specific pieces of state
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated());
-  const settings = useAuthStore((state) => state.settings);
-
+  const isAuthenticated = useAuthStore(state => state.isAuthenticated());
+  const settings = useAuthStore(state => state.settings);
+  
   // Get an action to call
-  const clearCredentials = useAuthStore((state) => state.clearCredentials);
+  const clearCredentials = useAuthStore(state => state.clearCredentials);
 
   if (!isAuthenticated) {
     return <p>Please log in.</p>;
@@ -52,7 +52,7 @@ function MyComponent() {
 
   return (
     <div>
-      <p>Auto-sync is {settings.autoSyncEnabled ? "enabled" : "disabled"}.</p>
+      <p>Auto-sync is {settings.autoSyncEnabled ? 'enabled' : 'disabled'}.</p>
       <button onClick={clearCredentials}>Log Out</button>
     </div>
   );

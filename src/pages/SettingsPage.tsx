@@ -239,7 +239,7 @@ function SettingsPage() {
             <div style={{ position: "absolute", bottom: 0, right: 0, zIndex: 2000 }}>
               <button
                 className="text-sm text-blue-600 bg-white/80 px-4 py-2 rounded-full shadow hover:bg-blue-50 transition"
-                onClick={() => { const st = useTourStore.getState(); st.setStep("settings", 0); st.startTour(); }}
+                onClick={() => { const st = useTourStore.getState(); st.setStep("settings", 0); }}
               >
                 راهنمای استفاده از سایت
               </button>
