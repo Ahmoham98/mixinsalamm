@@ -5,6 +5,7 @@ This file exports an object `mixinApi` that encapsulates all the functions for i
 ## Functions
 
 ### `validateCredentials`
+
 - **Description**: Validates a user's Mixin URL and access token by making a request to the backend.
 - **Endpoint**: `POST /mixin/client/`
 - **Parameters**:
@@ -13,6 +14,7 @@ This file exports an object `mixinApi` that encapsulates all the functions for i
 - **Returns**: A `Promise` that resolves to a `MixinValidationResponse` object, which contains the validated credentials if successful. It throws specific errors for different failure statuses (403, 404, 500).
 
 ### `getProducts`
+
 - **Description**: Fetches a paginated list of products from the user's Mixin store.
 - **Endpoint**: `GET /products/my-mixin-products`
 - **Parameters**:
@@ -21,6 +23,7 @@ This file exports an object `mixinApi` that encapsulates all the functions for i
 - **Returns**: A `Promise` that resolves to an array of `MixinProduct` objects. It can handle multiple response formats from the backend.
 
 ### `getProductById`
+
 - **Description**: Fetches a single Mixin product by its ID.
 - **Endpoint**: `GET /products/mixin/{productId}`
 - **Parameters**:
@@ -29,6 +32,7 @@ This file exports an object `mixinApi` that encapsulates all the functions for i
 - **Returns**: A `Promise` that resolves to a `MixinProduct` object or `null` on error.
 
 ### `getProductsByIds`
+
 - **Description**: Fetches multiple Mixin products in a single batch request using a list of product IDs.
 - **Endpoint**: `POST /products/mixin/productids`
 - **Parameters**:
@@ -37,6 +41,7 @@ This file exports an object `mixinApi` that encapsulates all the functions for i
 - **Returns**: A `Promise` that resolves to a `Record<number, MixinProduct>`, which is a map of product ID to the product object.
 
 ### `updateProduct`
+
 - **Description**: Updates an existing product in the Mixin store.
 - **Endpoint**: `PUT /products/update/mixin/{productId}`
 - **Implementation Detail**: This function first fetches the original product data using `getProductById`. It then merges the new `productData` with the original data before sending the `PUT` request. This is often necessary for APIs that require the full object to be sent on update, not just the changed fields. It also ensures `extra_fields` is always an empty array.
@@ -47,6 +52,7 @@ This file exports an object `mixinApi` that encapsulates all the functions for i
 - **Returns**: A `Promise` that resolves to the updated product data.
 
 ### `createProduct`
+
 - **Description**: Creates a new product in the Mixin store.
 - **Endpoint**: `POST /products/create/mixin`
 - **Parameters**:
@@ -55,6 +61,7 @@ This file exports an object `mixinApi` that encapsulates all the functions for i
 - **Returns**: A `Promise` that resolves to the newly created product data.
 
 ### `getProductImage`
+
 - **Description**: Fetches the main (default) image for a specific Mixin product.
 - **Endpoint**: `GET /images/my-mixin_image`
 - **Parameters**:
@@ -63,6 +70,7 @@ This file exports an object `mixinApi` that encapsulates all the functions for i
 - **Returns**: A `Promise` that resolves to the image URL as a `string`, or `null` if no image is found.
 
 ### `getProductImages`
+
 - **Description**: Fetches all images for a specific Mixin product.
 - **Endpoint**: `GET /images/my-mixin_image`
 - **Implementation Detail**: It sorts the results to ensure the default image is the first one in the returned array.
@@ -72,6 +80,7 @@ This file exports an object `mixinApi` that encapsulates all the functions for i
 - **Returns**: A `Promise` that resolves to an array of image URL `string`s.
 
 ### `getProductsCount`
+
 - **Description**: Calculates the total number of products in a user's Mixin store by iterating through all pages of the product list.
 - **Endpoint**: `GET /products/my-mixin-products` (called repeatedly)
 - **Parameters**: `credentials: MixinCredentials`

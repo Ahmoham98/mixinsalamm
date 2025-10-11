@@ -20,6 +20,7 @@ This file (`src/main.tsx`) is the main entry point for the React application. It
 ## How It Works
 
 This file is the bridge between the HTML and the React application. When the browser loads the `index.html` file, it executes the script tag that points to this `main.tsx` file. This script then:
+
 1. Finds the designated root element in the HTML.
 2. Creates a React root.
 3. Renders the main `App` component (and all of its children) into that root element.

@@ -405,6 +405,36 @@ function CredentialsPage() {
           </button>
 
           <p className='text-sm text-center'>هنگام اتصال، از خاموش بودن پروکسی و فیلترشکن خود اطمینان حاصل کنید</p>
+
+          {/* Quick Mixin Connect */}
+          <div className="mt-6 p-4 border rounded-lg">
+            <h3 className="font-semibold mb-3">اتصال سریع میکسین</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <input
+                className="border rounded px-3 py-2"
+                placeholder="دامنه میکسین (mixin_url)"
+                value={mixinDomain}
+                onChange={(e) => setMixinDomain(e.target.value)}
+              />
+              <input
+                className="border rounded px-3 py-2"
+                placeholder="توکن میکسین"
+                value={mixinAccessTokenInput}
+                onChange={(e) => setMixinAccessTokenInput(e.target.value)}
+              />
+              <button
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-60"
+                onClick={handleMixinQuickConnect}
+                disabled={isSubmittingMixinConnect || !mixinDomain || !mixinAccessTokenInput}
+              >
+                {isSubmittingMixinConnect ? 'در حال ارسال...' : 'اتصال'}
+              </button>
+            </div>
+            {mixinConnectMessage && (
+              <p className="mt-2 text-sm text-gray-700">{mixinConnectMessage}</p>
+            )}
+          </div>
+
           {(mixinCredentials || basalamCredentials) && (
             <button
               onClick={handleContinue}

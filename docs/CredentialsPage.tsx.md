@@ -24,7 +24,7 @@ This page serves as the central hub for the user to initiate connections to the 
     - It includes a fallback mechanism (`setInterval`) to check if the popup window has been closed, in case the message event fails.
 - **User Bootstrapping (`callBootstrapIfReady`)**:
   - This crucial function is called after either Mixin or Basalam successfully connects.
-  - It checks if *both* Mixin and Basalam tokens are now present in the state.
+  - It checks if _both_ Mixin and Basalam tokens are now present in the state.
   - If both are present, it performs a one-time "bootstrap" process:
     1. It calls `ensureUser` to create or verify the user's record in the application's own database.
     2. It calls `createDefaultSubscription` and `createInitialUsageRecord` to set up the user's initial subscription and usage data.
@@ -40,15 +40,17 @@ This page serves as the central hub for the user to initiate connections to the 
 This is a reusable modal component used for entering credentials, currently configured for Mixin.
 
 ### Props
+
 - `isOpen`, `onClose`: Standard modal control props.
 - `onSubmit`: A callback function that is called with the entered URL and token when the user clicks the "Connect" button.
 - `type`: Specifies the type of modal ('mixin' or 'basalam'), which determines the title and fields.
 
 ### Functionality
+
 - **Input Fields**: It provides input fields for the Mixin store URL and access token.
 - **Guide Modals**:
   - It includes "راهنما" (Guide) buttons next to each input field.
-  - Clicking these buttons opens *another* modal that provides specific instructions on how to find the required information.
+  - Clicking these buttons opens _another_ modal that provides specific instructions on how to find the required information.
   - The token guide modal even includes an embedded video tutorial for clarity.
 - **Styling**: It's a well-styled modal that appears as an overlay, with clear inputs and buttons. The nested guide modals provide an excellent user experience by offering help directly where it's needed.
 

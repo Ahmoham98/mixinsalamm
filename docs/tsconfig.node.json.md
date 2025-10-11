@@ -9,11 +9,13 @@ This file (`tsconfig.node.json`) is a specific TypeScript configuration file int
 This object contains the specific rules and settings for the TypeScript compiler for the Node.js environment.
 
 #### General Options
+
 - **`target`: "ES2022"**: Specifies the ECMAScript target version. This is a recent version, suitable for modern Node.js environments.
 - **`lib`: ["ES2023"]**: Lists the library files to be included in the compilation. This tells TypeScript to include type definitions for the latest ES2023 features.
 - **`module`: "ESNext"**: Specifies the module system to be used. `ESNext` means it will use the latest supported ECMAScript module syntax, which is compatible with how Vite handles its configuration.
 
 #### Module Resolution & Bundling
+
 - **`skipLibCheck`: true**: Skips type checking of all declaration files (`.d.ts`). This can speed up compilation time.
 - **`moduleResolution`: "bundler"**: This setting is designed to work with modern JavaScript bundlers like Vite, telling TypeScript to align with the bundler's module resolution strategy.
 - **`allowImportingTsExtensions`: true**: Allows importing `.ts` files with their extensions, which is often necessary when `moduleResolution` is set to `bundler`.
@@ -22,6 +24,7 @@ This object contains the specific rules and settings for the TypeScript compiler
 - **`noEmit`: true**: This is a critical setting. It tells the TypeScript compiler (`tsc`) to only perform type checking and not to generate any JavaScript output files. The actual execution of the TypeScript configuration file is handled by Vite.
 
 #### Linting & Strictness
+
 - **`strict`: true**: Enables all strict type-checking options, which helps to catch a wide range of potential errors at compile time.
 - **`noUnusedLocals`: true**: Reports an error for any local variable that is declared but not used.
 - **`noUnusedParameters`: true**: Reports an error for any function parameter that is declared but not used.
@@ -29,7 +32,7 @@ This object contains the specific rules and settings for the TypeScript compiler
 
 ### `include`
 
-- **`"include": ["vite.config.ts"]`**: This is a very important line. It explicitly tells the TypeScript compiler that this configuration should *only* be applied to the `vite.config.ts` file. This prevents the Node.js-specific settings from being accidentally applied to the application's source code.
+- **`"include": ["vite.config.ts"]`**: This is a very important line. It explicitly tells the TypeScript compiler that this configuration should _only_ be applied to the `vite.config.ts` file. This prevents the Node.js-specific settings from being accidentally applied to the application's source code.
 
 ## How It Works
 

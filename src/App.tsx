@@ -1,46 +1,64 @@
-import React from 'react'
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { useAuthStore } from './store/authStore'
-import CredentialsPage from './pages/CredentialsPage'
-import HomePage from './pages/HomePage'
-import BasalamCallback from './pages/BasalamCallback'
-import LandingPage from './pages/LandingPage'; // <-- **این خط را اضافه کنید**
-import SettingsPage from './pages/SettingsPage'
-import PricingPage from './pages/PricingPage';
-import UsagePage from './pages/UsagePage';
-import SubscriptionPage from './pages/SubscriptionPage';
-import PaymentsPage from './pages/PaymentsPage';
-import MigrationPage from './pages/MigrationPage';
-import AdminPage from './pages/AdminPage'
-import SupportPage from './pages/SupportPage'
-import TokenExpiredModal from './components/TokenExpiredModal';
-import { useGlobalUiStore } from './store/globalUiStore';
-import QuotaBanner from './components/QuotaBanner';
+import React from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useAuthStore } from "./store/authStore";
+import CredentialsPage from "./pages/CredentialsPage";
+import HomePage from "./pages/HomePage";
+import BasalamCallback from "./pages/BasalamCallback";
+import LandingPage from "./pages/LandingPage"; // <-- **این خط را اضافه کنید**
+import SettingsPage from "./pages/SettingsPage";
+import PricingPage from "./pages/PricingPage";
+import UsagePage from "./pages/UsagePage";
+import SubscriptionPage from "./pages/SubscriptionPage";
+import PaymentsPage from "./pages/PaymentsPage";
+import MigrationPage from "./pages/MigrationPage";
+import AdminPage from "./pages/AdminPage";
+import SupportPage from "./pages/SupportPage";
+import TokenExpiredModal from "./components/TokenExpiredModal";
+import { useGlobalUiStore } from "./store/globalUiStore";
+import QuotaBanner from "./components/QuotaBanner";
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient();
 
 // PrivateRoute logic remains the same, but the redirect path changes
 function PrivateRoute({ children }: { children: React.ReactNode }) {
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   // Redirect to /login if not authenticated, as LandingPage is now at /
-  return isAuthenticated() ? <>{children}</> : <Navigate to="/login" replace={true} />
+  return isAuthenticated() ? (
+    <>{children}</>
+  ) : (
+    <Navigate to="/login" replace={true} />
+  );
 }
 
 function WithGlobalOverlays({ children }: { children: React.ReactNode }) {
-  const showTokenExpiredModal = useGlobalUiStore((state) => state.showTokenExpiredModal);
+  const showTokenExpiredModal = useGlobalUiStore(
+    (state) => state.showTokenExpiredModal,
+  );
   const showQuotaBanner = useGlobalUiStore((state) => state.showQuotaBanner);
   const quotaBannerType = useGlobalUiStore((state) => state.quotaBannerType);
   const setQuotaBanner = useGlobalUiStore((state) => state.setQuotaBanner);
   const location = useLocation();
 
-  const shouldShowQuotaBanner = showQuotaBanner && (location.pathname === '/home' || location.pathname === '/migration');
+  const shouldShowQuotaBanner =
+    showQuotaBanner &&
+    (location.pathname === "/home" || location.pathname === "/migration");
 
   return (
     <>
       <TokenExpiredModal open={showTokenExpiredModal} />
       {shouldShowQuotaBanner && (
-        <QuotaBanner open={showQuotaBanner} type={quotaBannerType} onClose={() => setQuotaBanner(false, null)} />
+        <QuotaBanner
+          open={showQuotaBanner}
+          type={quotaBannerType}
+          onClose={() => setQuotaBanner(false, null)}
+        />
       )}
       {children}
     </>
@@ -148,7 +166,7 @@ function App() {
         </WithGlobalOverlays>
       </Router>
     </QueryClientProvider>
-  )
+  );
 }
 
-export default App
+export default App;
