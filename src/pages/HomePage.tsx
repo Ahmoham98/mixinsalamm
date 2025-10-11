@@ -1088,6 +1088,7 @@ function ProductModal({
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700"
+            id="product-modal-close-button"
           >
             <X size={24} />
           </button>
@@ -3976,6 +3977,7 @@ function HomePage() {
             <button
               onClick={() => navigate("/settings")}
               className="bg-gradient-to-r from-[#5b9fdb] to-[#ff6040] text-white px-6 py-3 rounded-lg font-semibold hover:from-[#4a8bc7] hover:to-[#e5553a] transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+              id="let's-go-realtime-banner-button"
             >
               اتوماتیک کن!
             </button>

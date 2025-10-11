@@ -24,14 +24,15 @@ const TourModal: React.FC<TourModalProps> = ({
   const modalStyle: React.CSSProperties = {
     position: fixedPosition ? "fixed" : "absolute",
     ...position,
-    backgroundColor: "rgba(255, 253, 248, 0.9)", // Cream color with low opacity
+    backgroundColor: "rgba(255, 253, 248, 0.95)", // Cream color with higher opacity for better visibility
     boxShadow: "0 10px 25px rgba(0, 0, 0, 0.2)",
     borderRadius: "12px",
     padding: "20px",
     width: "350px",
     maxWidth: "90vw",
-    zIndex: 1001, // Ensure modal is above the overlay
+    zIndex: 1002, // Ensure modal is above the overlay and other elements
     direction: "rtl",
+    border: "1px solid rgba(59, 130, 246, 0.2)", // Subtle border for better definition
   };
 
   const arrowStyle: React.CSSProperties = {
@@ -85,7 +86,7 @@ const TourModal: React.FC<TourModalProps> = ({
   return (
     <>
       <div
-        className="fixed inset-0 z-1000"
+        className="fixed inset-0 z-1001"
         style={{
           backgroundColor: "transparent", // remove black color
           backdropFilter: "blur(6px)",

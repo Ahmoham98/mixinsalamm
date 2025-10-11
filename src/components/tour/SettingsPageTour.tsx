@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useTourStore } from "../../store/tourStore";
 import TourModal from "./TourModal";
 import { useAuthStore } from "../../store/authStore";
@@ -6,6 +6,17 @@ import { useAuthStore } from "../../store/authStore";
 const SettingsPageTour: React.FC = () => {
   const { steps, setStep, nextStep } = useTourStore();
   const { isAuthenticated } = useAuthStore();
+  const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight });
+
+  // Handle window resize to recalculate positions
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     let selector;
@@ -36,11 +47,34 @@ const SettingsPageTour: React.FC = () => {
   const getElementPosition = (selector: string) => {
     const element = document.querySelector(selector);
     if (!element)
-      return { top: "50%", left: "50%", transform: "translate(-50%, -50%)" };
+      return { top: "50vh", left: "50vw", transform: "translate(-50%, -50%)" };
+    
     const rect = element.getBoundingClientRect();
+    const viewportWidth = windowSize.width;
+    const viewportHeight = windowSize.height;
+    
+    // Calculate position relative to viewport
+    let top = rect.bottom + 15;
+    let left = rect.left + rect.width / 2;
+    
+    // Ensure modal stays within viewport bounds
+    const modalWidth = 350; // TourModal width
+    const modalHeight = 200; // Approximate TourModal height
+    
+    if (left < modalWidth / 2) {
+      left = modalWidth / 2;
+    } else if (left > viewportWidth - modalWidth / 2) {
+      left = viewportWidth - modalWidth / 2;
+    }
+    
+    if (top + modalHeight > viewportHeight) {
+      // If modal would go off bottom, position above element
+      top = rect.top - modalHeight - 15;
+    }
+    
     return {
-      top: `${rect.bottom + 15}px`,
-      left: `${rect.left + rect.width / 2}px`,
+      top: `${Math.max(20, top)}px`,
+      left: `${left}px`,
       transform: "translateX(-50%)",
     };
   };
@@ -53,6 +87,8 @@ const SettingsPageTour: React.FC = () => {
           onNext={() => nextStep("settings")}
           showNext={true}
           showSkip={false}
+          position={{ right: "18rem", top: "6.5rem" }}
+          fixedPosition={true}
         >
           <h3 className="font-bold text-lg mb-2">به صفحه تنظیمات خوش آمدید!</h3>
           <p>
@@ -71,6 +107,7 @@ const SettingsPageTour: React.FC = () => {
           showSkip={false}
           position={getElementPosition("#auto-sync-section")}
           arrow="top"
+          fixedPosition={true}
         >
           <h3 className="font-bold text-lg mb-2">همگام‌سازی خودکار</h3>
           <p>
@@ -89,6 +126,7 @@ const SettingsPageTour: React.FC = () => {
           showSkip={false}
           position={getElementPosition("#auto-sync-direction")}
           arrow="top"
+          fixedPosition={true}
         >
           <h3 className="font-bold text-lg mb-2">تعیین جهت همگام‌سازی</h3>
           <p>
@@ -108,6 +146,7 @@ const SettingsPageTour: React.FC = () => {
           showSkip={false}
           position={getElementPosition("#auto-migration-section")}
           arrow="top"
+          fixedPosition={true}
         >
           <h3 className="font-bold text-lg mb-2">انتقال خودکار محصولات</h3>
           <p>
@@ -128,6 +167,7 @@ const SettingsPageTour: React.FC = () => {
           showSkip={false}
           position={getElementPosition("#save-settings-button")}
           arrow="top"
+          fixedPosition={true}
         >
           <h3 className="font-bold text-lg mb-2">ذخیره تغییرات</h3>
           <p>

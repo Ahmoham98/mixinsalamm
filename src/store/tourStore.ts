@@ -15,7 +15,7 @@ interface TourState {
 
 export const useTourStore = create<TourState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       steps: {
         home: -1, // -1 means tour is completed/skipped
         settings: -1,

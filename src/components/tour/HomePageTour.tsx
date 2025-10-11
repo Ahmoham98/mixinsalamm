@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useTourStore } from "../../store/tourStore";
 import TourModal from "./TourModal";
 import { useAuthStore } from "../../store/authStore";
@@ -8,6 +8,17 @@ const HomePageTour: React.FC = () => {
   const { steps, setStep, nextStep } = useTourStore();
   const { isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
+  const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight });
+
+  // Handle window resize to recalculate positions
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     let selector;
@@ -42,11 +53,34 @@ const HomePageTour: React.FC = () => {
   const getElementPosition = (selector: string) => {
     const element = document.querySelector(selector);
     if (!element)
-      return { top: "50%", left: "50%", transform: "translate(-50%, -50%)" };
+      return { top: "50vh", left: "50vw", transform: "translate(-50%, -50%)" };
+    
     const rect = element.getBoundingClientRect();
+    const viewportWidth = windowSize.width;
+    const viewportHeight = windowSize.height;
+    
+    // Calculate position relative to viewport
+    let top = rect.bottom + 15;
+    let left = rect.left + rect.width / 2;
+    
+    // Ensure modal stays within viewport bounds
+    const modalWidth = 350; // TourModal width
+    const modalHeight = 200; // Approximate TourModal height
+    
+    if (left < modalWidth / 2) {
+      left = modalWidth / 2;
+    } else if (left > viewportWidth - modalWidth / 2) {
+      left = viewportWidth - modalWidth / 2;
+    }
+    
+    if (top + modalHeight > viewportHeight) {
+      // If modal would go off bottom, position above element
+      top = rect.top - modalHeight - 15;
+    }
+    
     return {
-      top: `${rect.bottom + 15}px`,
-      left: `${rect.left + rect.width / 2}px`,
+      top: `${Math.max(20, top)}px`,
+      left: `${left}px`,
       transform: "translateX(-50%)",
     };
   };
@@ -54,12 +88,33 @@ const HomePageTour: React.FC = () => {
   const getRealtimeBannerPosition = () => {
     const element = document.querySelector("#realtime-automation-banner");
     if (!element)
-      return { top: "50%", left: "50%", transform: "translate(-50%, -50%)" };
+      return { top: "50vh", left: "50vw", transform: "translate(-50%, -50%)" };
+    
     const rect = element.getBoundingClientRect();
-    // Position to the left side of the banner where the button is
+    const viewportWidth = windowSize.width;
+    const viewportHeight = windowSize.height;
+    
+    // Calculate position relative to viewport for left side of banner
+    let top = rect.bottom + 15;
+    let left = rect.left + 100; // Offset to the left side
+    
+    // Ensure modal stays within viewport bounds
+    const modalWidth = 350;
+    const modalHeight = 200;
+    
+    if (left < modalWidth / 2) {
+      left = modalWidth / 2;
+    } else if (left > viewportWidth - modalWidth / 2) {
+      left = viewportWidth - modalWidth / 2;
+    }
+    
+    if (top + modalHeight > viewportHeight) {
+      top = rect.top - modalHeight - 15;
+    }
+    
     return {
-      top: `${rect.bottom + 15}px`,
-      left: `${rect.left + 100}px`, // Offset to the left side
+      top: `${Math.max(20, top)}px`,
+      left: `${left}px`,
       transform: "translateX(-50%)",
     };
   };
@@ -73,6 +128,7 @@ const HomePageTour: React.FC = () => {
           showNext={true}
           showSkip={false}
           position={{ right: "18rem", top: "6.5rem" }} // place next to sidebar in rtl layout
+          fixedPosition={true}
         >
           <h3 className="font-bold text-lg mb-2">به میکسین سلام خوش آمدید!</h3>
           <p>
@@ -92,6 +148,7 @@ const HomePageTour: React.FC = () => {
           showSkip={false}
           position={getElementPosition("#statistic-section")}
           arrow="top"
+          fixedPosition={true}
         >
           <h3 className="font-bold text-lg mb-2">آمار کلی محصولات</h3>
           <p>
@@ -114,7 +171,7 @@ const HomePageTour: React.FC = () => {
           showNext={true}
           showSkip={true}
           fixedPosition={true}
-          position={{ top: "50%", left: "50%", transform: "translate(-50%, -50%)" }}
+          position={{ top: "50vh", left: "50vw", transform: "translate(-50%, -50%)" }}
           arrow="top"
         >
           <h3 className="font-bold text-lg mb-2">مشاهده جزئیات محصول</h3>
@@ -142,6 +199,7 @@ const HomePageTour: React.FC = () => {
           showSkip={false}
           position={getElementPosition("#product-modal-fields")}
           arrow="top"
+          fixedPosition={true}
         >
           <h3 className="font-bold text-lg mb-2">ویرایش اطلاعات محصول</h3>
           <p>
@@ -164,9 +222,10 @@ const HomePageTour: React.FC = () => {
             }
             
             // Close product modal by dispatching custom event
-            const homePageElement = document.querySelector('[data-testid="homepage"]') || document.body;
-            const event = new CustomEvent('tourCloseProductModal');
-            homePageElement.dispatchEvent(event);
+            const modalCloseBtn = document.querySelector('#product-modal-close-button') as HTMLElement || null;
+            if (modalCloseBtn) {
+              modalCloseBtn.click()
+            }
             
             nextStep("home");
           }}
@@ -174,6 +233,7 @@ const HomePageTour: React.FC = () => {
           showSkip={false}
           position={getElementPosition("#product-modal-update-button")}
           arrow="top"
+          fixedPosition={true}
         >
           <h3 className="font-bold text-lg mb-2">همگام‌سازی تغییرات</h3>
           <p>
@@ -203,6 +263,7 @@ const HomePageTour: React.FC = () => {
           showSkip={false}
           position={getElementPosition("#homepage-migration-panel")}
           arrow="bottom"
+          fixedPosition={true}
         >
           <h3 className="font-bold text-lg mb-2">انتقال گروهی محصولات</h3>
           <p>
@@ -221,6 +282,7 @@ const HomePageTour: React.FC = () => {
           showSkip={false}
           position={getElementPosition("#migration-modal-controls")}
           arrow="top"
+          fixedPosition={true}
         >
           <h3 className="font-bold text-lg mb-2">مدیریت فرآیند انتقال</h3>
           <p>
@@ -246,6 +308,7 @@ const HomePageTour: React.FC = () => {
           showSkip={true}
           position={getElementPosition("#migration-modal-content")}
           arrow="top"
+          fixedPosition={true}
         >
           <h3 className="font-bold text-lg mb-2">بخش‌های مختلف پنل انتقال</h3>
           <p>
@@ -270,6 +333,7 @@ const HomePageTour: React.FC = () => {
           showSkip={true}
           position={getRealtimeBannerPosition()}
           arrow="top"
+          fixedPosition={true}
         >
           <h3 className="font-bold text-lg mb-2">
             اتوماسیون بروزرسانی لحظه‌ای
