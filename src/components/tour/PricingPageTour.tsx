@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useTourStore } from "../../store/tourStore";
-import TourModal from "./TourModal";
 import { useAuthStore } from "../../store/authStore";
+import TourModal from "./TourModal";
 
-const PricingPageTour: React.FC = () => {
+const PricingPageTour: React.FC = React.memo(function PricingPageTour() {
   const { steps, setStep, nextStep } = useTourStore();
   const { isAuthenticated } = useAuthStore();
   const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight });
@@ -82,60 +82,60 @@ const PricingPageTour: React.FC = () => {
     case 0:
       return (
         <TourModal
-          onSkipAll={handleSkipAll}
-          onNext={() => nextStep("pricing")}
-          showNext={true}
-          showSkip={false}
-          position={{ right: "10rem", top: "6.5rem" }}
-          fixedPosition={true}
-        >
-          <h3 className="font-bold text-lg mb-2">صفحه پلن‌ها و مصرف</h3>
-          <p>
-            در این صفحه می‌توانید جزئیات پلن اشتراک فعلی خود را مشاهده کنید،
-            میزان مصرف خود از قابلیت‌های پلتفرم را بسنجید و در صورت نیاز پلن خود
-            را ارتقا دهید.
-          </p>
-        </TourModal>
+            onSkipAll={handleSkipAll}
+            onNext={() => nextStep("pricing")}
+            showNext={true}
+            showSkip={false}
+            position={getElementPosition("#start-guid-button")}
+            fixedPosition={true}
+          >
+            <h3 className="font-bold text-lg mb-2">صفحه پلن‌ها و مصرف</h3>
+            <p>
+              در این صفحه می‌توانید جزئیات پلن اشتراک فعلی خود را مشاهده کنید،
+              میزان مصرف خود از قابلیت‌های پلتفرم را بسنجید و در صورت نیاز پلن خود
+              را ارتقا دهید.
+            </p>
+          </TourModal>
       );
 
     case 1:
       return (
         <TourModal
-          onSkipAll={handleSkipAll}
-          onNext={() => nextStep("pricing")}
-          showNext={true}
-          showSkip={false}
-          position={getElementPosition("#subscription-card")}
-          arrow="top"
-          fixedPosition={true}
-        >
-          <h3 className="font-bold text-lg mb-2">جزئیات اشتراک فعلی</h3>
-          <p>
-            این بخش اطلاعات پلن فعلی شما، وضعیت آن و میزان مصرف شما از
-            قابلیت‌های انتقال گروهی و بروزرسانی لحظه‌ای را نمایش می‌دهد. توجه
-            داشته باشید که پلن‌ها محدودیت زمانی ندارند و بر اساس میزان مصرف شما
-            هستند.
-          </p>
-        </TourModal>
+            onSkipAll={handleSkipAll}
+            onNext={() => nextStep("pricing")}
+            showNext={true}
+            showSkip={false}
+            position={getElementPosition("#subscription-card")}
+            arrow="top"
+            fixedPosition={true}
+          >
+            <h3 className="font-bold text-lg mb-2">جزئیات اشتراک فعلی</h3>
+            <p>
+              این بخش اطلاعات پلن فعلی شما، وضعیت آن و میزان مصرف شما از
+              قابلیت‌های انتقال گروهی و بروزرسانی لحظه‌ای را نمایش می‌دهد. توجه
+              داشته باشید که پلن‌ها محدودیت زمانی ندارند و بر اساس میزان مصرف شما
+              هستند.
+            </p>
+          </TourModal>
       );
 
     case 2:
       return (
         <TourModal
-          onSkipAll={handleSkipAll}
-          onNext={() => nextStep("pricing")}
-          showNext={true}
-          showSkip={false}
-          position={getElementPosition("#usage-dashboard")}
-          arrow="top"
-          fixedPosition={true}
-        >
-          <h3 className="font-bold text-lg mb-2">داشبورد مصرف</h3>
-          <p>
-            در این قسمت می‌توانید به تفکیک ببینید که چه میزان از سهمیه انتقال
-            محصول و بروزرسانی لحظه‌ای خود را استفاده کرده‌اید.
-          </p>
-        </TourModal>
+            onSkipAll={handleSkipAll}
+            onNext={() => nextStep("pricing")}
+            showNext={true}
+            showSkip={false}
+            position={getElementPosition("#usage-dashboard")}
+            arrow="top"
+            fixedPosition={true}
+          >
+            <h3 className="font-bold text-lg mb-2">داشبورد مصرف</h3>
+            <p>
+              در این قسمت می‌توانید به تفکیک ببینید که چه میزان از سهمیه انتقال
+              محصول و بروزرسانی لحظه‌ای خود را استفاده کرده‌اید.
+            </p>
+          </TourModal>
       );
 
     case 3:
@@ -160,6 +160,6 @@ const PricingPageTour: React.FC = () => {
     default:
       return null;
   }
-};
+});
 
 export default PricingPageTour;

@@ -19,8 +19,14 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { Crown } from "lucide-react";
-import SettingsPageTour from "../components/tour/SettingsPageTour";
 import { useTourStore } from "../store/tourStore";
+import React, { Suspense } from "react";
+
+// Lazy load tour component for better performance
+const SettingsPageTour = React.lazy(() => import("../components/tour/SettingsPageTour"));
+
+// Preload tour modal for better performance
+const preloadSettingsPageTour = () => import("../components/tour/SettingsPageTour");
 
 function SettingsPage() {
   const navigate = useNavigate();
@@ -122,7 +128,9 @@ function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#5b9fdb]/10 to-[#ff6040]/10">
-      <SettingsPageTour />
+      <Suspense fallback={<div className="text-center p-4">در حال بارگذاری راهنما...</div>}>
+        <SettingsPageTour />
+      </Suspense>
       {/* Mobile menu button */}
       <button
         onClick={() => {
@@ -239,6 +247,8 @@ function SettingsPage() {
             <div style={{ position: "absolute", bottom: 0, right: 0, zIndex: 2000 }}>
               <button
                 className="text-sm text-blue-600 bg-white/80 px-4 py-2 rounded-full shadow hover:bg-blue-50 transition"
+                onMouseEnter={preloadSettingsPageTour}
+                onFocus={preloadSettingsPageTour}
                 onClick={() => { 
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                   const st = useTourStore.getState(); 

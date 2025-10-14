@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, Suspense } from "react";
 import PricingTable, { Plan } from "../components/PricingTable";
 import UsageDashboard from "../components/UsageDashboard";
 import SubscriptionCard from "../components/SubscriptionCard";
@@ -12,8 +12,13 @@ import {
 import { useAuthStore } from "../store/authStore";
 import { useNavigate } from "react-router-dom";
 import BackHomeButton from "../components/BackHomeButton";
-import PricingPageTour from "../components/tour/PricingPageTour";
 import { useTourStore } from "../store/tourStore";
+
+// Lazy load tour component for better performance
+const PricingPageTour = React.lazy(() => import("../components/tour/PricingPageTour"));
+
+// Preload tour modal for better performance
+const preloadPricingPageTour = () => import("../components/tour/PricingPageTour");
 
 const PricingPage: React.FC = () => {
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -204,12 +209,16 @@ const PricingPage: React.FC = () => {
       className="min-h-screen bg-gradient-to-br from-[#f6ffe8] to-blue-50 py-12 px-4"
       dir="rtl"
     >
-      <PricingPageTour />
+      <Suspense fallback={<div className="text-center p-4">در حال بارگذاری راهنما...</div>}>
+        <PricingPageTour />
+      </Suspense>
       <div className="max-w-6xl mx-auto" style={{position: 'relative'}}>
         {/* Site Guide Button - move to top left */}
         <div style={{ position: "absolute", top: 0, right: 0, zIndex: 2000 }}>
           <button
             className="text-sm text-blue-600 bg-white/80 px-4 py-2 rounded-full shadow hover:bg-blue-50 transition"
+            onMouseEnter={preloadPricingPageTour}
+            onFocus={preloadPricingPageTour}
             onClick={() => { 
               window.scrollTo({ top: 0, behavior: 'smooth' });
               const st = useTourStore.getState(); 

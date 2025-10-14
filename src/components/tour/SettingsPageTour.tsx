@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useTourStore } from "../../store/tourStore";
-import TourModal from "./TourModal";
 import { useAuthStore } from "../../store/authStore";
+import TourModal from "./TourModal";
 
-const SettingsPageTour: React.FC = () => {
+const SettingsPageTour: React.FC = React.memo(function SettingsPageTour() {
   const { steps, setStep, nextStep } = useTourStore();
   const { isAuthenticated } = useAuthStore();
   const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight });
@@ -87,13 +87,13 @@ const SettingsPageTour: React.FC = () => {
           onNext={() => nextStep("settings")}
           showNext={true}
           showSkip={false}
-          position={{ right: "18rem", top: "6.5rem" }}
+          position={getElementPosition("#start-guid-button")}
           fixedPosition={true}
         >
           <h3 className="font-bold text-lg mb-2">به صفحه تنظیمات خوش آمدید!</h3>
           <p>
-            در این بخش می‌توانید فرآیندهای خودکار پلتفرم را مطابق با نیاز خود
-            سفارشی‌سازی کنید تا مدیریت فروشگاه‌هایتان آسان‌تر شود.
+              در این بخش می‌توانید فرآیندهای خودکار پلتفرم را مطابق با نیاز خود
+              سفارشی‌سازی کنید تا مدیریت فروشگاه‌هایتان آسان‌تر شود.
           </p>
         </TourModal>
       );
@@ -111,8 +111,8 @@ const SettingsPageTour: React.FC = () => {
         >
           <h3 className="font-bold text-lg mb-2">همگام‌سازی خودکار</h3>
           <p>
-            با فعال کردن این گزینه، هر زمان که محصولی را ویرایش کنید، نیازی به
-            همگام‌سازی دستی نیست و سیستم به طور خودکار تغییرات را اعمال می‌کند.
+              با فعال کردن این گزینه، هر زمان که محصولی را ویرایش کنید، نیازی به
+              همگام‌سازی دستی نیست و سیستم به طور خودکار تغییرات را اعمال می‌کند.
           </p>
         </TourModal>
       );
@@ -130,9 +130,9 @@ const SettingsPageTour: React.FC = () => {
         >
           <h3 className="font-bold text-lg mb-2">تعیین جهت همگام‌سازی</h3>
           <p>
-            شما می‌توانید تعیین کنید که تغییرات از کدام پلتفرم به دیگری منتقل
-            شوند. برای مثال، می‌توانید تنظیم کنید که همیشه اطلاعات محصولات در
-            باسلام مطابق با میکسین بروزرسانی شوند.
+              شما می‌توانید تعیین کنید که تغییرات از کدام پلتفرم به دیگری منتقل
+              شوند. برای مثال، می‌توانید تنظیم کنید که همیشه اطلاعات محصولات در
+              باسلام مطابق با میکسین بروزرسانی شوند.
           </p>
         </TourModal>
       );
@@ -150,10 +150,10 @@ const SettingsPageTour: React.FC = () => {
         >
           <h3 className="font-bold text-lg mb-2">انتقال خودکار محصولات</h3>
           <p>
-            این گزینه به شما اجازه می‌دهد تا محصولات جدیدی که در میکسین اضافه
-            می‌کنید، به صورت خودکار به باسلام نیز منتقل شوند. می‌توانید تعیین
-            کنید که این فرآیند پس از افزوده شدن چند محصول جدید فعال شود. در حال
-            حاضر، این قابلیت فقط برای انتقال از میکسین به باسلام فعال است.
+              این گزینه به شما اجازه می‌دهد تا محصولات جدیدی که در میکسین اضافه
+              می‌کنید، به صورت خودکار به باسلام نیز منتقل شوند. می‌توانید تعیین
+              کنید که این فرآیند پس از افزوده شدن چند محصول جدید فعال شود. در حال
+              حاضر، این قابلیت فقط برای انتقال از میکسین به باسلام فعال است.
           </p>
         </TourModal>
       );
@@ -170,8 +170,8 @@ const SettingsPageTour: React.FC = () => {
         >
           <h3 className="font-bold text-lg mb-2">ذخیره تغییرات</h3>
           <p>
-            فراموش نکنید که پس از اعمال تغییرات، حتماً روی این دکمه کلیک کنید تا
-            تنظیمات شما ذخیره شود.
+              فراموش نکنید که پس از اعمال تغییرات، حتماً روی این دکمه کلیک کنید تا
+              تنظیمات شما ذخیره شود.
           </p>
         </TourModal>
       );
@@ -179,6 +179,6 @@ const SettingsPageTour: React.FC = () => {
     default:
       return null;
   }
-};
+});
 
 export default SettingsPageTour;

@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useTourStore } from "../../store/tourStore";
-import TourModal from "./TourModal";
 import { useAuthStore } from "../../store/authStore";
 import { useNavigate } from "react-router-dom";
+import TourModal from "./TourModal";
 
-const HomePageTour: React.FC = () => {
+const HomePageTour: React.FC = React.memo(function HomePageTour() {
   const { steps, setStep, nextStep } = useTourStore();
   const { isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
@@ -127,7 +127,7 @@ const HomePageTour: React.FC = () => {
           onNext={() => nextStep("home")}
           showNext={true}
           showSkip={false}
-          position={{ right: "18rem", top: "6.5rem" }} // place next to sidebar in rtl layout
+          position={getElementPosition("#start-guid-button")} // place next to sidebar in rtl layout
           fixedPosition={true}
         >
           <h3 className="font-bold text-lg mb-2">به میکسین سلام خوش آمدید!</h3>
@@ -143,7 +143,7 @@ const HomePageTour: React.FC = () => {
       return (
         <TourModal
           onSkipAll={handleSkipAll}
-          onNext={() => nextStep("home")}
+            onNext={() => nextStep("home")}
           showNext={true}
           showSkip={false}
           position={getElementPosition("#statistic-section")}
@@ -152,8 +152,8 @@ const HomePageTour: React.FC = () => {
         >
           <h3 className="font-bold text-lg mb-2">آمار کلی محصولات</h3>
           <p>
-            در این بخش می‌توانید نگاهی سریع به تعداد کل محصولات، محصولات مشترک
-            بین دو پلتفرم و محصولات منحصر به فرد هر یک داشته باشید.
+              در این بخش می‌توانید نگاهی سریع به تعداد کل محصولات، محصولات مشترک
+              بین دو پلتفرم و محصولات منحصر به فرد هر یک داشته باشید.
           </p>
         </TourModal>
       );
@@ -163,22 +163,22 @@ const HomePageTour: React.FC = () => {
         <TourModal
           onSkipAll={handleSkipAll}
           onNext={() => {
-            const mixin = document.querySelector("#first-common-mixin") as HTMLElement | null;
-            const basalam = document.querySelector("#first-common-basalam") as HTMLElement | null;
-            if (mixin) mixin.click(); else if (basalam) basalam.click();
-            nextStep("home");
-          }}
+              const mixin = document.querySelector("#first-common-mixin") as HTMLElement | null;
+              const basalam = document.querySelector("#first-common-basalam") as HTMLElement | null;
+              if (mixin) mixin.click(); else if (basalam) basalam.click();
+              nextStep("home");
+            }}
           showNext={true}
           showSkip={false}
           fixedPosition={true}
-          position={{ top: "50vh", left: "50vw", transform: "translate(-50%, -50%)" }}
+            position={{ top: "50vh", left: "50vw", transform: "translate(-50%, -50%)" }}
           arrow="top"
         >
           <h3 className="font-bold text-lg mb-2">مشاهده جزئیات محصول</h3>
           <p>
-            با کلیک بر روی هر محصول در لیست‌ها، می‌توانید جزئیات آن را مشاهده،
-            ویرایش و همگام‌سازی کنید. لطفاً برای ادامه راهنما، روی یکی از
-            محصولات کلیک کنید.
+              با کلیک بر روی هر محصول در لیست‌ها، می‌توانید جزئیات آن را مشاهده،
+              ویرایش و همگام‌سازی کنید. لطفاً برای ادامه راهنما، روی یکی از
+              محصولات کلیک کنید.
           </p>
         </TourModal>
       );
@@ -188,13 +188,13 @@ const HomePageTour: React.FC = () => {
         <TourModal
           onSkipAll={handleSkipAll}
           onNext={() => {
-            // Scroll to product modal fields to show the update button
-            const fieldsElement = document.querySelector("#product-modal-fields");
-            if (fieldsElement) {
-              fieldsElement.scrollIntoView({ behavior: "smooth", block: "center" });
-            }
-            nextStep("home");
-          }}
+              // Scroll to product modal fields to show the update button
+              const fieldsElement = document.querySelector("#product-modal-fields");
+              if (fieldsElement) {
+                fieldsElement.scrollIntoView({ behavior: "smooth", block: "center" });
+              }
+              nextStep("home");
+            }}
           showNext={true}
           showSkip={false}
           position={getElementPosition("#product-modal-fields")}
@@ -203,9 +203,9 @@ const HomePageTour: React.FC = () => {
         >
           <h3 className="font-bold text-lg mb-2">ویرایش اطلاعات محصول</h3>
           <p>
-            در این مدال می‌توانید اطلاعات محصول مانند نام، قیمت، توضیحات و
-            موجودی را تغییر دهید. برای دیدن دکمه بروزرسانی، به پایین اسکرول
-            کنید.
+              در این مدال می‌توانید اطلاعات محصول مانند نام، قیمت، توضیحات و
+              موجودی را تغییر دهید. برای دیدن دکمه بروزرسانی، به پایین اسکرول
+              کنید.
           </p>
         </TourModal>
       );
@@ -220,7 +220,6 @@ const HomePageTour: React.FC = () => {
             if (updateButton) {
               updateButton.scrollIntoView({ behavior: "smooth", block: "center" });
             }
-            
             // Close product modal by dispatching custom event
             const modalCloseBtn = document.querySelector('#product-modal-close-button') as HTMLElement || null;
             if (modalCloseBtn) {
@@ -249,16 +248,16 @@ const HomePageTour: React.FC = () => {
         <TourModal
           onSkipAll={handleSkipAll}
           onNext={() => {
-            // Open migration panel and scroll to start transfer button
-            const startBtn = document.querySelector("#migration-panel-start-button") as HTMLElement | null;
-            if (startBtn) {
-              startBtn.click(); // Open migration modal
-              setTimeout(() => {
-                startBtn.scrollIntoView({ behavior: "smooth", block: "center" });
-              }, 100);
-            }
-            nextStep("home");
-          }}
+              // Open migration panel and scroll to start transfer button
+              const startBtn = document.querySelector("#migration-panel-start-button") as HTMLElement | null;
+              if (startBtn) {
+                startBtn.click(); // Open migration modal
+                setTimeout(() => {
+                  startBtn.scrollIntoView({ behavior: "smooth", block: "center" });
+                }, 100);
+              }
+              nextStep("home");
+            }}
           showNext={true}
           showSkip={false}
           position={getElementPosition("#homepage-migration-panel")}
@@ -266,8 +265,8 @@ const HomePageTour: React.FC = () => {
         >
           <h3 className="font-bold text-lg mb-2">انتقال گروهی محصولات</h3>
           <p>
-            با استفاده از دکمه "شروع انتقال" می‌توانید تمام محصولات خود را از میکسین به
-            باسلام منتقل کنید. برای ادامه، روی دکمه "شروع انتقال" کلیک کنید.
+              با استفاده از دکمه "شروع انتقال" می‌توانید تمام محصولات خود را از میکسین به
+              باسلام منتقل کنید. برای ادامه، روی دکمه "شروع انتقال" کلیک کنید.
           </p>
         </TourModal>
       );
@@ -276,7 +275,7 @@ const HomePageTour: React.FC = () => {
       return (
         <TourModal
           onSkipAll={handleSkipAll}
-          onNext={() => nextStep("home")}
+            onNext={() => nextStep("home")}
           showNext={true}
           showSkip={false}
           position={getElementPosition("#migration-modal-controls")}
@@ -285,8 +284,8 @@ const HomePageTour: React.FC = () => {
         >
           <h3 className="font-bold text-lg mb-2">مدیریت فرآیند انتقال</h3>
           <p>
-            شما می‌توانید تعداد درخواست‌های همزمان را برای کنترل سرعت تنظیم کرده
-            و یا فرآیند ساخت محصول را در هر زمان متوقف و دوباره از سر بگیرید.
+              شما می‌توانید تعداد درخواست‌های همزمان را برای کنترل سرعت تنظیم کرده
+              و یا فرآیند ساخت محصول را در هر زمان متوقف و دوباره از سر بگیرید.
           </p>
         </TourModal>
       );
@@ -296,13 +295,13 @@ const HomePageTour: React.FC = () => {
         <TourModal
           onSkipAll={handleSkipAll}
           onNext={() => {
-            // Close migration modal by dispatching custom event
-            const closeBtn = document.querySelector("#migration-panel-close-button") as HTMLElement || null;
-            if (closeBtn) {
-              closeBtn.click();
-            }
-            nextStep("home");
-          }}
+              // Close migration modal by dispatching custom event
+              const closeBtn = document.querySelector("#migration-panel-close-button") as HTMLElement || null;
+              if (closeBtn) {
+                closeBtn.click();
+              }
+              nextStep("home");
+            }}
           showNext={true}
           showSkip={false}
           position={getElementPosition("#product-migration-list")}
@@ -311,10 +310,10 @@ const HomePageTour: React.FC = () => {
         >
           <h3 className="font-bold text-lg mb-2">بخش‌های مختلف پنل انتقال</h3>
           <p>
-            در بالا، محصولات قابل انتقال را می‌بینید. در وسط، دکمه شروع قرار
-            دارد و در پایین، گزارش لحظه‌ای از محصولات ایجاد شده یا ناموفق را
-            مشاهده می‌کنید. سیستم در صورت بروز خطا، تا ۳ بار برای ایجاد محصول
-            تلاش می‌کند.
+              در بالا، محصولات قابل انتقال را می‌بینید. در وسط، دکمه شروع قرار
+              دارد و در پایین، گزارش لحظه‌ای از محصولات ایجاد شده یا ناموفق را
+              مشاهده می‌کنید. سیستم در صورت بروز خطا، تا ۳ بار برای ایجاد محصول
+              تلاش می‌کند.
           </p>
         </TourModal>
       );
@@ -324,22 +323,22 @@ const HomePageTour: React.FC = () => {
         <TourModal
           onSkipAll={handleSkipAll}
           onNext={() => {
-            navigate("/settings");
-            setStep("home", -1); // End home tour
-            setStep("settings", 0); // Start settings tour
-          }}
+              navigate("/settings");
+              setStep("home", -1); // End home tour
+              setStep("settings", 0); // Start settings tour
+            }}
           showNext={true}
           showSkip={false}
-          position={getRealtimeBannerPosition()}
+            position={getRealtimeBannerPosition()}
           arrow="top"
           fixedPosition={true}
         >
           <h3 className="font-bold text-lg mb-2">
-            اتوماسیون بروزرسانی لحظه‌ای
-          </h3>
+              اتوماسیون بروزرسانی لحظه‌ای
+            </h3>
           <p>
-            با کلیک بر روی این دکمه و فعال‌سازی در صفحه تنظیمات، دیگر نیازی به
-            بروزرسانی دستی محصولات نخواهید داشت و همه چیز خودکار انجام می‌شود.
+              با کلیک بر روی این دکمه و فعال‌سازی در صفحه تنظیمات، دیگر نیازی به
+              بروزرسانی دستی محصولات نخواهید داشت و همه چیز خودکار انجام می‌شود.
           </p>
         </TourModal>
       );
@@ -347,6 +346,6 @@ const HomePageTour: React.FC = () => {
     default:
       return null;
   }
-};
+});
 
 export default HomePageTour;

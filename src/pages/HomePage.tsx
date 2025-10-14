@@ -30,8 +30,14 @@ import { QuotaExceededModal } from "../components/QuotaExceededModal";
 import LogBanner from "../components/LogBanner";
 import { useProductsStore } from "../store/productsStore";
 import { useGlobalUiStore } from "../store/globalUiStore";
-import HomePageTour from "../components/tour/HomePageTour";
 import { useTourStore } from "../store/tourStore";
+import React, { Suspense } from "react";
+
+// Lazy load tour component for better performance
+const HomePageTour = React.lazy(() => import("../components/tour/HomePageTour"));
+
+// Preload tour modal for better performance
+const preloadHomePageTour = () => import("../components/tour/HomePageTour");
 
 // Utility function to convert Toman to Rial
 const tomanToRial = (toman: number): number => {
@@ -4110,6 +4116,9 @@ function HomePage() {
                 className="text-sm text-blue-700 bg-white/90 px-4 py-2 rounded-full shadow hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-300 transition"
                 aria-label="شروع راهنمای استفاده از سایت برای معرفی بخش‌های اصلی و قابلیت‌ها"
                 title="راهنما: با کلیک این دکمه راهنمای جامع سایت نمایش داده می‌شود"
+                id="start-guid-button"
+                onMouseEnter={preloadHomePageTour}
+                onFocus={preloadHomePageTour}
                 onClick={() => { 
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                   const st = useTourStore.getState(); 
@@ -4123,7 +4132,9 @@ function HomePage() {
         </header>
 
         <main className="max-w-7xl mx-auto px-8 py-8">
-          <HomePageTour />
+          <Suspense fallback={<div className="text-center p-4">در حال بارگذاری راهنما...</div>}>
+            <HomePageTour />
+          </Suspense>
 
           {/* Automation Banner */}
           <div id="realtime-automation-banner">
