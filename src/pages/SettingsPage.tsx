@@ -69,6 +69,7 @@ function SettingsPage() {
       preferBasalamFromMixin: enabled,
       // Ensure mutual exclusivity
       preferMixinFromBasalam: enabled ? false : prev.preferMixinFromBasalam,
+      autoDetectSyncDirection: enabled ? false : prev.autoDetectSyncDirection,
     }));
   };
 
@@ -78,6 +79,17 @@ function SettingsPage() {
       preferMixinFromBasalam: enabled,
       // Ensure mutual exclusivity
       preferBasalamFromMixin: enabled ? false : prev.preferBasalamFromMixin,
+      autoDetectSyncDirection: enabled ? false : prev.autoDetectSyncDirection,
+    }));
+  };
+
+  const handleAutoDetectSyncDirection = (enabled: boolean) => {
+    setLocalSettings((prev) => ({
+      ...prev,
+      autoDetectSyncDirection: enabled,
+      // Ensure mutual exclusivity with other direction preferences
+      preferBasalamFromMixin: enabled ? false : prev.preferBasalamFromMixin,
+      preferMixinFromBasalam: enabled ? false : prev.preferMixinFromBasalam,
     }));
   };
 
@@ -351,10 +363,22 @@ function SettingsPage() {
                           به‌روزرسانی میکسین مطابق تغییرات باسلام
                         </span>
                       </label>
+                      <label className="flex items-center gap-3 p-3 bg-white/70 border border-blue-200 rounded-lg hover:bg-white transition-colors cursor-pointer md:col-span-2">
+                        <input
+                          type="checkbox"
+                          checked={!!localSettings.autoDetectSyncDirection}
+                          onChange={(e) =>
+                            handleAutoDetectSyncDirection(e.target.checked)
+                          }
+                        />
+                        <span className="text-sm text-gray-800">
+                          تشخیص خودکار جهت به‌روزرسانی (دوطرفه)
+                        </span>
+                      </label>
                       <div className="col-span-1 md:col-span-2 text-xs text-gray-600">
-                        اگر هیچ‌کدام انتخاب نشود، رفتار پیش‌فرض فعلی (بر اساس
-                        صفحهٔ باز) اعمال می‌شود. انتخاب یکی از گزینه‌ها باعث
-                        می‌شود همیشه همان سمت به‌روزرسانی شود.
+                        تنها یکی از گزینه‌های بالا را می‌توانید فعال کنید. با فعال کردن
+                        «تشخیص خودکار»، سیستم تغییرات را مقایسه کرده و جهت درست را
+                        به‌صورت خودکار انتخاب می‌کند.
                       </div>
                     </div>
                   </div>

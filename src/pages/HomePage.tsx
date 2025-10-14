@@ -3808,6 +3808,116 @@ function HomePage() {
     uniqueBasalamProducts,
   } = getCommonProducts();
 
+  // Keep a snapshot of the previous common products to detect change direction automatically
+  const preFetchRef = useRef<{
+    mixinByName: Record<string, { price: number; stock: number; description: string }>;
+    basalamByName: Record<string, { price: number; stock: number; description: string }>;
+  } | null>(null);
+
+  const buildSnapshot = () => {
+    const normalize = (s: string | undefined) => (s || "").trim().toLowerCase();
+    const mixinByName: Record<string, { price: number; stock: number; description: string }> = {};
+    const basalamByName: Record<string, { price: number; stock: number; description: string }> = {};
+    for (let i = 0; i < Math.min(commonMixinProducts.length, commonBasalamProducts.length); i++) {
+      const mp = commonMixinProducts[i] as any;
+      const bp = commonBasalamProducts[i] as any;
+      const key = normalize(mp?.name) || normalize(bp?.title);
+      mixinByName[key] = {
+        price: Number(mp?.price || 0),
+        stock: Number(mp?.stock || 0),
+        description: String(mp?.description || ""),
+      };
+      basalamByName[key] = {
+        price: Number(toToman(Number(bp?.price || 0))),
+        stock: Number(bp?.inventory || 0),
+        description: String(bp?.description || ""),
+      };
+    }
+    return { mixinByName, basalamByName };
+  };
+
+  // After lists recompute, if auto detect is enabled, compare with previous snapshot and push updates
+  useEffect(() => {
+    if (!settings?.autoSyncEnabled || !settings?.autoDetectSyncDirection) {
+      // refresh snapshot even if disabled to have the latest preFetch for when user enables later
+      preFetchRef.current = buildSnapshot();
+      return;
+    }
+
+    const prev = preFetchRef.current;
+    const current = buildSnapshot();
+    preFetchRef.current = current; // move window forward
+
+    if (!prev) return;
+
+    const keys = Object.keys(current.mixinByName);
+    const run = async () => {
+      for (const key of keys) {
+        try {
+          const prevM = prev.mixinByName[key];
+          const prevB = prev.basalamByName[key];
+          const curM = current.mixinByName[key];
+          const curB = current.basalamByName[key];
+          if (!prevM || !prevB || !curM || !curB) continue;
+
+          const mixinUnchanged = prevM.price === curM.price && prevM.stock === curM.stock && prevM.description === curM.description;
+          const basalamUnchanged = prevB.price === curB.price && prevB.stock === curB.stock && prevB.description === curB.description;
+
+          // Proceed only if there is a current mismatch between platforms
+          const platformsMatchNow = curM.price === curB.price && curM.stock === curB.stock && curM.description === curB.description;
+          if (platformsMatchNow) {
+            continue;
+          }
+
+          // Determine direction
+          // If mixin unchanged and basalam changed -> update mixin from basalam
+          // If basalam unchanged and mixin changed -> update basalam from mixin
+          if (mixinUnchanged && !basalamUnchanged) {
+            // find the pair to update mixin
+            const idx = commonMixinProducts.findIndex((p: any) => (p?.name || "").trim().toLowerCase() === key);
+            if (idx >= 0) {
+              const mp = commonMixinProducts[idx] as any;
+              const bp = commonBasalamProducts[idx] as any;
+              const original = await mixinApi.getProductById(mixinCredentials!, mp.id);
+              if (original) {
+                const payload = {
+                  ...original,
+                  name: (bp as any)?.title || original.name,
+                  price: Number(curB.price),
+                  description: String(curB.description || ""),
+                  stock: Number(curB.stock || 0),
+                  weight: Number(original?.weight || 500) || 500,
+                  extra_fields: [] as any[],
+                };
+                await mixinApi.updateProduct(mixinCredentials!, mp.id, payload as any);
+                try { await incrementUsage("realtime"); } catch {}
+              }
+            }
+          } else if (!mixinUnchanged && basalamUnchanged) {
+            // update basalam from mixin
+            const idx = commonBasalamProducts.findIndex((p: any) => (p?.title || "").trim().toLowerCase() === key);
+            if (idx >= 0) {
+              const mp = commonMixinProducts[idx] as any;
+              const bp = commonBasalamProducts[idx] as any;
+              const payload = {
+                name: mp?.name || bp?.title,
+                price: tomanToRial(Number(curM.price || 0)),
+                description: String(curM.description || ""),
+                stock: Number(curM.stock || 0),
+                weight: Number(mp?.weight || 500) || 500,
+              };
+              await basalamApi.updateProduct(basalamCredentials!, bp.id, payload as any);
+              try { await incrementUsage("realtime"); } catch {}
+            }
+          }
+        } catch {}
+      }
+    };
+
+    run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [commonMixinProducts, commonBasalamProducts, settings?.autoSyncEnabled, settings?.autoDetectSyncDirection]);
+
   // Sync uniques into global products store for cross-page usage
   const setUniqueLists = useProductsStore((s) => s.setUniqueLists);
   const storeAppendLog = useGlobalUiStore((s: any) => s.appendLog);
