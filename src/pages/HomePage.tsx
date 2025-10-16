@@ -4221,7 +4221,7 @@ function HomePage() {
               </div>
             </div>
             {/* Site Guide Button - responsive: mobile uses margin to avoid overlap, desktop stays absolute */}
-            <div className="sm:absolute sm:bottom-2 sm:right-4 mt-2 sm:mt-0" style={{ zIndex: 100 }}>
+            <div className="w-full text-right sm:w-auto sm:absolute sm:bottom-2 sm:right-4 mt-2 sm:mt-0" style={{ zIndex: 100 }}>
               <button
                 className="text-sm text-blue-700 bg-white/90 px-4 py-2 rounded-full shadow hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-300 transition"
                 aria-label="شروع راهنمای استفاده از سایت برای معرفی بخش‌های اصلی و قابلیت‌ها"
@@ -4315,7 +4315,7 @@ function HomePage() {
               }}
             />
             <div
-              className="grid grid-cols-1 lg:grid-cols-2 gap-8"
+              className="grid grid-cols-1 md:grid-cols-2 gap-8"
               id="product-list"
             >
               <div className="bg-white/60 backdrop-blur-md rounded-xl shadow-lg p-6 border border-gray-100">
@@ -4338,7 +4338,7 @@ function HomePage() {
                 </div>
 
                 {isCommonMixinSectionOpen && (
-                  <div className="space-y-3 sm:space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                  <div className="space-y-3 sm:space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
                     {!mixinCredentials ? (
                       <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">
                         لطفا ابتدا به میکسین متصل شوید
@@ -4400,7 +4400,7 @@ function HomePage() {
                 </div>
 
                 {isCommonBasalamSectionOpen && (
-                  <div className="space-y-3 sm:space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                  <div className="space-y-3 sm:space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
                     {!basalamCredentials ? (
                       <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">
                         لطفا ابتدا به باسلام متصل شوید
