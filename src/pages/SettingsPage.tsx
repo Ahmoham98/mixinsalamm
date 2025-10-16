@@ -249,8 +249,8 @@ function SettingsPage() {
               </div>
               <div className="w-20"></div> {/* Spacer for centering */}
             </div>
-            {/* Site Guide Link - bottom right of header */}
-            <div style={{ position: "absolute", bottom: 0, right: 0, zIndex: 2000 }}>
+            {/* Site Guide Link - responsive placement: mobile uses margin, desktop stays bottom-right */}
+            <div className="mt-3 sm:mt-0 sm:absolute sm:bottom-0 sm:right-0" style={{ zIndex: 2000 }}>
               <button
                 className="text-sm text-blue-600 bg-white/80 px-4 py-2 rounded-full shadow hover:bg-blue-50 transition"
                 onMouseEnter={preloadSettingsPageTour}

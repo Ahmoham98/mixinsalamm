@@ -4220,8 +4220,8 @@ function HomePage() {
                 </p>
               </div>
             </div>
-            {/* Site Guide Button - Bottom right absolute position */}
-            <div style={{ position: "absolute", bottom: 8, right: 16, zIndex: 100 }}>
+            {/* Site Guide Button - responsive: mobile uses margin to avoid overlap, desktop stays absolute */}
+            <div className="sm:absolute sm:bottom-2 sm:right-4 mt-2 sm:mt-0" style={{ zIndex: 100 }}>
               <button
                 className="text-sm text-blue-700 bg-white/90 px-4 py-2 rounded-full shadow hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-300 transition"
                 aria-label="شروع راهنمای استفاده از سایت برای معرفی بخش‌های اصلی و قابلیت‌ها"
