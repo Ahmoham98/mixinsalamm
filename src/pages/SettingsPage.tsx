@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 import {
-  ArrowLeft,
   Settings,
   RefreshCw,
   CheckCircle2,
@@ -21,6 +20,7 @@ import {
 import { Crown } from "lucide-react";
 import { useTourStore } from "../store/tourStore";
 import React, { Suspense } from "react";
+import BackHomeButton from "../components/BackHomeButton";
 
 // Lazy load tour component for better performance
 const SettingsPageTour = React.lazy(() => import("../components/tour/SettingsPageTour"));
@@ -238,13 +238,7 @@ function SettingsPage() {
         <header className="sticky top-0 bg-white/60 backdrop-blur-md shadow-lg z-20 border-b border-gray-200">
           <div className="max-w-7xl mx-auto px-8 py-4 relative">
             <div className="flex items-center justify-between">
-              <button
-                onClick={handleBackToHome}
-                className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-200"
-              >
-                <ArrowLeft size={20} />
-                <span>بازگشت به صفحه اصلی</span>
-              </button>
+              <BackHomeButton />
               <div className="text-center flex-1">
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-[#fa6b23] to-[#fa864b] bg-clip-text text-transparent">
                   تنظیمات

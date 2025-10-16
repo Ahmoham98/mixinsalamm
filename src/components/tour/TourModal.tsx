@@ -34,7 +34,7 @@ const TourModal: React.FC<TourModalProps> = ({
     boxShadow: "0 10px 25px rgba(0, 0, 0, 0.2)",
     borderRadius: "12px",
     padding: isMobile ? "6px" : "20px",
-    width: isMobile ? "48vw" : "350px",
+    width: isMobile ? "80vw" : "350px",
     maxWidth: "98vw",
     zIndex: 1002, // Ensure modal is above the overlay and other elements
     direction: "rtl",
@@ -104,7 +104,7 @@ const TourModal: React.FC<TourModalProps> = ({
       />
       <div style={modalStyle} onClick={(e) => e.stopPropagation()}>
         {arrow && <div style={arrowStyle} />}
-        <div className="text-right text-gray-800">
+        <div className="text-center text-gray-800">
           {children}
           <div className="text-xs text-gray-500 mt-2 text-center">
             💡 کلیک کنید تا به مرحله بعد بروید

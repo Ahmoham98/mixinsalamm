@@ -2815,15 +2815,15 @@ function BulkMigrationPanel({
           </button>
           {results.length > 0 && (
             <button
-              className="px-4 py-2 border border-[#30cfb7] text-[#30cfb7] rounded hover:bg-[#30cfb7]/10 transition-all duration-200"
+              className="px-3 py-2 sm:px-4 sm:py-2 h-10 sm:h-auto border border-[#30cfb7] text-[#30cfb7] rounded hover:bg-[#30cfb7]/10 transition-all duration-200 text-sm sm:text-base"
               onClick={exportCsv}
             >
-              خروجی CSV
+              CSV
             </button>
           )}
           {auditLogs.length > 0 && (
             <button
-              className="px-4 py-2 border border-[#ffa454] text-[#ffa454] rounded hover:bg-[#ffa454]/10 transition-all duration-200"
+              className="px-3 py-2 sm:px-4 sm:py-2 h-10 sm:h-auto border border-[#ffa454] text-[#ffa454] rounded hover:bg-[#ffa454]/10 transition-all duration-200 text-sm sm:text-base"
               onClick={exportAuditLogs}
             >
               گزارشات
