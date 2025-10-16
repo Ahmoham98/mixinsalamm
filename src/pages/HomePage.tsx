@@ -2786,28 +2786,28 @@ function BulkMigrationPanel({
       className="bg-gradient-to-r from-[#30cfb7]/20 to-[#ffa454]/20 backdrop-blur-md rounded-lg p-6 mb-6 shadow-lg border border-[#30cfb7]/30"
       dir="rtl"
     >
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3 sm:flex-nowrap">
         <div className="flex items-center gap-4">
-          <div className="p-3 bg-gradient-to-br from-[#30cfb7]/200 to-[#ffa454]/200 rounded-lg">
-            <Layers className="w-8 h-8 text-[#30cfb7]" />
+          <div className="p-2 sm:p-3 bg-gradient-to-br from-[#30cfb7]/200 to-[#ffa454]/200 rounded-lg">
+            <Layers className="w-6 h-6 sm:w-8 sm:h-8 text-[#30cfb7]" />
           </div>
-          <div className="text-right">
-            <h3 className="text-xl font-bold text-gray-800 mb-2">
+          <div className="text-right min-w-0">
+            <h3 className="text-base sm:text-xl font-bold text-gray-800 mb-1 truncate">
               انتقال سریع محصولات میکسین به باسلام
             </h3>
             <>
-              <p className="text-[#5e5d5b] text-sm">
+              <p className="text-[#5e5d5b] text-xs sm:text-sm truncate">
                 شما واجد شرایط انتقال خودکار محصولات هستید.
               </p>
-              <p className="text-[#5e5d5b] text-xs">
+              <p className="text-[#5e5d5b] text-[10px] sm:text-xs truncate">
                 {missingProducts.length} محصول آماده انتقال!
               </p>
             </>
           </div>
         </div>
-        <div className="flex items-center gap-2 mr-6">
+        <div className="flex items-center gap-2 mr-0 sm:mr-6 w-full sm:w-auto">
           <button
-            className="bg-gradient-to-r from-[#30cfb7] to-[#ffa454] text-white px-6 py-3 rounded-lg font-semibold hover:from-[#2bbfa7] hover:to-[#ffb454] transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+            className="bg-gradient-to-r from-[#30cfb7] to-[#ffa454] text-white px-3 py-2 sm:px-6 sm:py-3 rounded-lg font-semibold hover:from-[#2bbfa7] hover:to-[#ffb454] transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 w-full sm:w-auto text-sm sm:text-base"
             onClick={() => setShowModal(true)}
             id="migration-panel-start-button"
           >
@@ -4073,26 +4073,26 @@ function HomePage() {
         className="bg-gradient-to-r from-[#5b9fdb]/20 to-[#ff6040]/20 backdrop-blur-md rounded-lg p-6 mb-6 shadow-lg border border-[#5b9fdb]/30"
         dir="rtl"
       >
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-3 sm:flex-nowrap">
           {/* Icon for realtime update banner */}
           <div className="flex-shrink-0 ml-6">
             <div className="bg-gradient-to-tr from-[#5b9fdb]/20 to-[#ff6040]/30 rounded-lg p-3 shadow-lg flex items-center justify-center">
-              <FolderSync size={32} className="w-8 h-8 text-[#ff6040]" />
+              <FolderSync size={24} className="w-6 h-6 text-[#ff6040] sm:w-8 sm:h-8" />
             </div>
           </div>
-          <div className="flex-1 text-right">
-            <h3 className="text-xl font-bold text-gray-800 mb-2">
+          <div className="flex-1 text-right min-w-0">
+            <h3 className="text-base sm:text-xl font-bold text-gray-800 mb-1 truncate">
               میخوای هر تغییری که توی میکسین میدی همونجا روی محصولاتت توی
               باسلامم اعمال شه؟
             </h3>
-            <p className="text-gray-600 text-sm">
+            <p className="text-gray-600 text-xs sm:text-sm truncate">
               دکمه رو بزن که بریم فعالش کنیم
             </p>
           </div>
-          <div className="mr-6">
+          <div className="mr-0 sm:mr-6 w-full sm:w-auto">
             <button
               onClick={() => navigate("/settings")}
-              className="bg-gradient-to-r from-[#5b9fdb] to-[#ff6040] text-white px-6 py-3 rounded-lg font-semibold hover:from-[#4a8bc7] hover:to-[#e5553a] transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+              className="bg-gradient-to-r from-[#5b9fdb] to-[#ff6040] text-white px-3 py-2 sm:px-6 sm:py-3 rounded-lg font-semibold hover:from-[#4a8bc7] hover:to-[#e5553a] transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 w-full sm:w-auto text-sm sm:text-base"
               id="let's-go-realtime-banner-button"
             >
               اتوماتیک کن!
@@ -4320,7 +4320,7 @@ function HomePage() {
             >
               <div className="bg-white/60 backdrop-blur-md rounded-xl shadow-lg p-6 border border-gray-100">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl font-semibold text-gray-800">
+                  <h3 className="text-lg sm:text-xl font-semibold text-gray-800">
                     محصولات مشترک در میکسین
                   </h3>
                   <button
@@ -4338,7 +4338,7 @@ function HomePage() {
                 </div>
 
                 {isCommonMixinSectionOpen && (
-                  <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                  <div className="space-y-3 sm:space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                     {!mixinCredentials ? (
                       <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">
                         لطفا ابتدا به میکسین متصل شوید
@@ -4360,17 +4360,17 @@ function HomePage() {
                           key={product.id}
                           id={idx === 0 ? "first-common-mixin" : undefined}
                           onClick={() => handleProductClick(product.id, "mixin")}
-                          className={`p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer border text-right group ${
+                          className={`p-3 sm:p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer border text-right group ${
                             idx === 0 && tourSteps?.home === 2
                               ? "ring-4 ring-[#fa6c23] ring-offset-2 ring-offset-white animate-pulse"
                               : "border-gray-100"
                           }`}
                           dir="rtl"
                         >
-                          <h3 className="font-medium text-gray-800 group-hover:text-[#5b9fdb] transition-colors">
+                          <h3 className="font-medium text-gray-800 group-hover:text-[#5b9fdb] transition-colors text-base sm:text-lg">
                             {cleanHtmlText(product.name)}
                           </h3>
-                          <p className="text-gray-600 mt-1">
+                          <p className="text-gray-600 mt-1 text-sm sm:text-base truncate">
                             قیمت: {product.price ? formatPrice(product.price) : "قیمت نامشخص"} تومان
                           </p>
                         </div>
@@ -4382,7 +4382,7 @@ function HomePage() {
 
               <div className="bg-white/60 backdrop-blur-md rounded-xl shadow-lg p-6 border border-gray-100">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl font-semibold text-gray-800">
+                  <h3 className="text-lg sm:text-xl font-semibold text-gray-800">
                     محصولات مشترک در باسلام
                   </h3>
                   <button
@@ -4400,7 +4400,7 @@ function HomePage() {
                 </div>
 
                 {isCommonBasalamSectionOpen && (
-                  <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                  <div className="space-y-3 sm:space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                     {!basalamCredentials ? (
                       <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">
                         لطفا ابتدا به باسلام متصل شوید
@@ -4422,17 +4422,17 @@ function HomePage() {
                           key={product.id}
                           id={idx === 0 ? "first-common-basalam" : undefined}
                           onClick={() => handleProductClick(product.id, "basalam")}
-                          className={`p-4 rounded-lg cursor-pointer hover:bg-blue-50 hover:border-blue-200 transition-all duration-200 text-right group border ${
+                          className={`p-3 sm:p-4 rounded-lg cursor-pointer hover:bg-blue-50 hover:border-blue-200 transition-all duration-200 text-right group border ${
                             idx === 0 && tourSteps?.home === 2
                               ? "ring-4 ring-[#5b9fdb] ring-offset-2 ring-offset-white animate-pulse"
                               : "border-gray-100"
                           }`}
                           dir="rtl"
                         >
-                          <h3 className="font-medium text-gray-800 group-hover:text-blue-600 transition-colors" id="section_journey">
+                          <h3 className="font-medium text-gray-800 group-hover:text-blue-600 transition-colors text-base sm:text-lg" id="section_journey">
                             {cleanHtmlText(product.title)}
                           </h3>
-                          <p className="text-gray-600 mt-1">
+                          <p className="text-gray-600 mt-1 text-sm sm:text-base truncate">
                             قیمت: {product.price ? formatPrice(rialToToman(product.price)) : "قیمت نامشخص"} تومان
                           </p>
                         </div>
