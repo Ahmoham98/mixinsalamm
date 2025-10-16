@@ -21,7 +21,8 @@ import {
   ChevronUp,
   Layers,
   Unlink,
-  LogOut
+  LogOut,
+  Bell
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { MixinProduct, BasalamProduct } from "../types";
@@ -4106,6 +4107,11 @@ function HomePage() {
   const showHeader = true; // Ensure header always shows. Remove or adjust as you desire.
 
   const tourSteps = useTourStore((s: any) => s.steps); // get tour steps
+  const notifications = useGlobalUiStore((s: any) => s.notifications);
+  const [seenNotifCount, setSeenNotifCount] = useState<number>(() => {
+    try { return Number(localStorage.getItem('notifications_seen_count') || '0') } catch { return 0 }
+  });
+  const hasUnread = (notifications?.length || 0) > seenNotifCount;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#5b9fdb]/10 to-[#ff6040]/10" data-testid="homepage">
@@ -4219,6 +4225,20 @@ function HomePage() {
                   سپاس بابت اینکه ما را انتخاب کردید
                 </p>
               </div>
+            </div>
+            {/* Inbox button - top left */}
+            <div className="absolute top-5 left-5 z-50">
+              <button
+                onClick={() => { navigate('/notifications'); try { localStorage.setItem('notifications_seen_count', String((useGlobalUiStore.getState() as any).notifications?.length || 0)); setSeenNotifCount((useGlobalUiStore.getState() as any).notifications?.length || 0); } catch {} }}
+                className="relative p-2 rounded-full bg-white/80 hover:bg-white shadow transition"
+                aria-label="صندوق پیام‌ها"
+                title="صندوق پیام‌ها"
+              >
+                <Bell className="w-5 h-5 text-gray-700" />
+                {hasUnread && (
+                  <span className="absolute -top-0.5 -right-0.5 inline-block w-2.5 h-2.5 rounded-full bg-red-500" />
+                )}
+              </button>
             </div>
             {/* Site Guide Button - responsive: mobile uses margin to avoid overlap, desktop stays absolute */}
             <div className="w-full text-right sm:w-auto sm:absolute sm:bottom-2 sm:right-4 mt-2 sm:mt-0" style={{ zIndex: 100 }}>

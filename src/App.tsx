@@ -14,6 +14,7 @@ import PaymentsPage from './pages/PaymentsPage';
 import MigrationPage from './pages/MigrationPage';
 import AdminPage from './pages/AdminPage'
 import SupportPage from './pages/SupportPage'
+import NotificationsPage from './pages/NotificationsPage'
 import TokenExpiredModal from './components/TokenExpiredModal';
 import { useGlobalUiStore } from './store/globalUiStore';
 import QuotaBanner from './components/QuotaBanner';
@@ -131,6 +132,16 @@ function App() {
               element={
                 <PrivateRoute>
                   <SupportPage />
+                </PrivateRoute>
+              }
+            />
+
+            {/* Protected Notifications route */}
+            <Route
+              path="/notifications"
+              element={
+                <PrivateRoute>
+                  <NotificationsPage />
                 </PrivateRoute>
               }
             />
