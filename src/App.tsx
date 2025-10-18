@@ -18,6 +18,7 @@ import NotificationsPage from './pages/NotificationsPage'
 import TokenExpiredModal from './components/TokenExpiredModal';
 import { useGlobalUiStore } from './store/globalUiStore';
 import QuotaBanner from './components/QuotaBanner';
+import InstallPWAModal from './components/InstallPWAModal'
 
 const queryClient = new QueryClient()
 
@@ -157,6 +158,7 @@ function App() {
             />
           </Routes>
         </WithGlobalOverlays>
+        <InstallPWAModal />
       </Router>
     </QueryClientProvider>
   )
