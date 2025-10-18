@@ -73,21 +73,21 @@ const InstallPWAModal: React.FC = () => {
               Install Mixinsalam
             </h2>
             <p className="text-gray-600 mb-4 text-sm">
-              Get faster access to Mixinsalam right from your home screen!
+              با اضافه کردن میکسین سلام به صفحه اصلیت، بهش سریعتر دسترسی پیدا کن!
             </p>
 
             <div className="flex justify-center gap-4">
               <button
-                onClick={handleInstall}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
-              >
-                Install Now
-              </button>
-              <button
                 onClick={handleDismiss}
                 className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition"
               >
-                Maybe Later
+                شاید بعداً
+              </button>
+              <button
+                onClick={handleInstall}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+              >
+                آره، اضافه کن
               </button>
             </div>
           </motion.div>
