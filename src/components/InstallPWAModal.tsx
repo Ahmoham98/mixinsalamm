@@ -63,14 +63,14 @@ const InstallPWAModal: React.FC = () => {
             {/* App logo */}
             <div className="flex justify-center mb-4">
               <img
-                src="/icons/icon-192.jpg"
+                src="/icons/icon-192.png"
                 alt="Mixinsalam Logo"
                 className="w-16 h-16 rounded-lg shadow-md"
               />
             </div>
 
             <h2 className="text-xl font-semibold text-gray-800 mb-2">
-              !میکسین سلام رو نصب کن
+              میکسین سلام در صفحه اصلی
             </h2>
             <p className="text-gray-600 mb-4 text-sm">
               با اضافه کردن میکسین سلام به صفحه اصلیت، بهش سریعتر دسترسی پیدا کن
