@@ -63,7 +63,7 @@ const InstallPWAModal: React.FC = () => {
             {/* App logo */}
             <div className="flex justify-center mb-4">
               <img
-                src="/icons/icon-192.png"
+                src="/icon-912.png"
                 alt="Mixinsalam Logo"
                 className="w-16 h-16 rounded-lg shadow-md"
               />
