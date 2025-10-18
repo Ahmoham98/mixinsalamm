@@ -63,17 +63,17 @@ const InstallPWAModal: React.FC = () => {
             {/* App logo */}
             <div className="flex justify-center mb-4">
               <img
-                src="/public/icons/icon-192.jpg"
+                src="/icons/icon-192.jpg"
                 alt="Mixinsalam Logo"
                 className="w-16 h-16 rounded-lg shadow-md"
               />
             </div>
 
             <h2 className="text-xl font-semibold text-gray-800 mb-2">
-              Install Mixinsalam
+              !میکسین سلام رو نصب کن
             </h2>
             <p className="text-gray-600 mb-4 text-sm">
-              با اضافه کردن میکسین سلام به صفحه اصلیت، بهش سریعتر دسترسی پیدا کن!
+              با اضافه کردن میکسین سلام به صفحه اصلیت، بهش سریعتر دسترسی پیدا کن
             </p>
 
             <div className="flex justify-center gap-4">
@@ -87,7 +87,7 @@ const InstallPWAModal: React.FC = () => {
                 onClick={handleInstall}
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
               >
-                آره، اضافه کن
+                آره حتماً 
               </button>
             </div>
           </motion.div>
