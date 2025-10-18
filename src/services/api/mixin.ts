@@ -131,13 +131,15 @@ export const mixinApi = {
     }
 
     try {
-      // Get the original product data first
+      // Get the original product data first to preserve all user-defined fields
       const originalProduct = await mixinApi.getProductById(credentials, productId)
       if (!originalProduct) {
         throw new Error('Could not fetch original product data')
       }
 
       // Create updated data by merging original data with new values
+      // This preserves all user-defined fields (categories, extra_fields, etc.) 
+      // while only updating the necessary fields: name, price, description, stock, weight
       const updatedData = {
         ...originalProduct,
         name: productData.name,
@@ -145,7 +147,7 @@ export const mixinApi = {
         description: productData.description,
         stock: productData.stock,
         weight: productData.weight,
-        extra_fields: []  // Always set extra_fields to empty array
+        extra_fields: Array.isArray(originalProduct.extra_fields) ? originalProduct.extra_fields : []  // Ensure extra_fields is always an array
       }
 
 

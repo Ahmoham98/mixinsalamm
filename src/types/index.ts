@@ -11,16 +11,39 @@ export interface BasalamCredentials {
 export interface MixinProduct {
   id: number;
   name: string;
-  price: number;
   description: string;
-  seo_description?: string;
-  weight?: number;
-  stock?: number;
-  imageUrl?: string;
-  length?: number | null;
-  width?: number | null;
-  height?: number | null;
-  // Add other fields as needed
+  analysis: string;
+  english_name: string | null;
+  main_category: number;
+  other_categories: any[];
+  brand: string | null;
+  is_digital: boolean;
+  price: number;
+  compare_at_price: number | null;
+  special_offer: boolean;
+  special_offer_end: string | null;
+  length: number | null;
+  width: number | null;
+  height: number | null;
+  weight: number;
+  barcode: string | null;
+  show_price: boolean;
+  stock: number;
+  stock_type: string;
+  max_order_quantity: number;
+  min_order_quantity: number;
+  guarantee: string | null;
+  product_identifier: string | null;
+  processing_time: number;
+  old_slug: string | null;
+  old_path: string | null;
+  has_variants: boolean;
+  available: boolean;
+  draft: boolean;
+  seo_title: string;
+  seo_description: string;
+  extra_fields: any[];  // Array of custom fields
+  imageUrl?: string; // Keep this for backward compatibility
 }
 
 export interface BasalamPhoto {
