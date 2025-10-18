@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion"; // optional animation
-import icon192 from "../assets/icon-192.png";
 
 const InstallPWAModal: React.FC = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -64,7 +63,7 @@ const InstallPWAModal: React.FC = () => {
             {/* App logo */}
             <div className="flex justify-center mb-4">
               <img
-                src={icon192}
+                src="/icons/icon-192.png"
                 alt="Mixinsalam Logo"
                 className="w-16 h-16 rounded-lg shadow-md"
               />
