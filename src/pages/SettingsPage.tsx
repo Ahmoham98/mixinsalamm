@@ -289,7 +289,7 @@ function SettingsPage() {
                   </p>
                 </div>
               </div>
-              <h2 dir="rtl" className="coler-red"> بخش تغییرات اتوماتیک درحال آپدیت است، لطفاً فعلاً تا پایان زمان آپدیت و پاک شدن این متن، از آپدیت دستی استفاده کنید</h2>
+              <h2 dir="rtl" className="text-red-700"> بخش تغییرات اتوماتیک درحال آپدیت است، لطفاً فعلاً تا پایان زمان آپدیت و پاک شدن این متن، از آپدیت دستی استفاده کنید</h2>
 
               <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 border border-blue-100">
                 <div className="flex items-start gap-4">
