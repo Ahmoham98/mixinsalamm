@@ -21,6 +21,7 @@ import { Crown } from "lucide-react";
 import { useTourStore } from "../store/tourStore";
 import React, { Suspense } from "react";
 import BackHomeButton from "../components/BackHomeButton";
+import { color } from "framer-motion";
 
 // Lazy load tour component for better performance
 const SettingsPageTour = React.lazy(() => import("../components/tour/SettingsPageTour"));
@@ -271,6 +272,7 @@ function SettingsPage() {
         <main className="max-w-4xl mx-auto px-8 py-8">
           <div className="bg-white/80 backdrop-blur-md rounded-xl shadow-lg border border-gray-100 overflow-hidden">
             {/* Auto-sync section */}
+            
             <div
               className="p-6 border-b border-gray-100"
             >
@@ -287,6 +289,7 @@ function SettingsPage() {
                   </p>
                 </div>
               </div>
+              <h2 dir="rtl" className="coler-red"> بخش تغییرات اتوماتیک درحال آپدیت است، لطفاً فعلاً تا پایان زمان آپدیت و پاک شدن این متن، از آپدیت دستی استفاده کنید</h2>
 
               <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 border border-blue-100">
                 <div className="flex items-start gap-4">
