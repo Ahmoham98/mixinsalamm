@@ -21,7 +21,6 @@ import { Crown } from "lucide-react";
 import { useTourStore } from "../store/tourStore";
 import React, { Suspense } from "react";
 import BackHomeButton from "../components/BackHomeButton";
-import { color } from "framer-motion";
 
 // Lazy load tour component for better performance
 const SettingsPageTour = React.lazy(() => import("../components/tour/SettingsPageTour"));

@@ -37,11 +37,6 @@ export const mixinApi = {
 
   getProducts: async (credentials: MixinCredentials, page: number = 1): Promise<MixinProduct[]> => {
     try {
-      console.log('Fetching Mixin products with credentials:', {
-        url: credentials.url,
-        token: credentials.access_token,
-        page
-      });
 
       const response = await api.get('/products/my-mixin-products', {
         headers: {
@@ -52,8 +47,6 @@ export const mixinApi = {
           mixin_page: page,
         },
       });
-
-      console.log('Mixin products response:', response.data);
 
       // Handle paginated response
       if (response.data?.result && Array.isArray(response.data.result)) {

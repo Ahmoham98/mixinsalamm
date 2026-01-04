@@ -41,13 +41,6 @@ api.interceptors.request.use((config) => {
 // Add response interceptor for debugging and global 401 handling
 api.interceptors.response.use(
   (response) => {
-    console.log('API Response:', {
-      url: response.config.url,
-      method: response.config.method,
-      status: response.status,
-      data: response.data,
-      headers: response.headers
-    });
     return response;
   },
   (error) => {
