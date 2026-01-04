@@ -20,7 +20,6 @@ import { useGlobalUiStore } from './store/globalUiStore';
 import QuotaBanner from './components/QuotaBanner';
 import InstallPWAModal from './components/InstallPWAModal'
 import FlexPlayground from './components/FlexPlayGround'
-import Test from './components/Test'
 
 const queryClient = new QueryClient()
 
@@ -171,10 +170,6 @@ function App() {
             path='/flex-playground' 
             element={<FlexPlayground />}
             />
-
-            <Route
-            path='/test'
-            element={<Test />} />
 
           </Routes>
         </WithGlobalOverlays>
