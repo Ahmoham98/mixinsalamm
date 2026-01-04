@@ -22,7 +22,8 @@ import {
   Layers,
   Unlink,
   LogOut,
-  Bell
+  Bell,
+  Search
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { MixinProduct, BasalamProduct } from "../types";
@@ -3010,6 +3011,8 @@ function HomePage() {
   const [isBasalamSectionOpen, setIsBasalamSectionOpen] = useState(true);
   const [isCommonMixinSectionOpen, setIsCommonMixinSectionOpen] =useState(true);
   const [isCommonBasalamSectionOpen, setIsCommonBasalamSectionOpen] =useState(true);
+  const [commonSearchTerm, setCommonSearchTerm] = useState("");
+  const [uniqueSearchTerm, setUniqueSearchTerm] = useState("");
   const [isCreateMixinModalOpen, setIsCreateMixinModalOpen] = useState(false);
   const [isCreateBasalamModalOpen, setIsCreateBasalamModalOpen] = useState(false);
   const [productToCreateInBasalam, setProductToCreateInBasalam] = useState<MixinProduct | null>(null);
@@ -3652,6 +3655,21 @@ function HomePage() {
     uniqueBasalamProducts,
   } = getCommonProducts();
 
+  // Filter products based on search terms
+  const filterProducts = (products: any[], searchTerm: string, nameField: string = 'name'): any[] => {
+    if (!searchTerm.trim()) return products;
+    const term = searchTerm.trim().toLowerCase();
+    return products.filter((product: any) => {
+      const name = cleanHtmlText(product[nameField] || '').toLowerCase();
+      return name.includes(term);
+    });
+  };
+
+  const filteredCommonMixinProducts = filterProducts(commonMixinProducts, commonSearchTerm, 'name');
+  const filteredCommonBasalamProducts = filterProducts(commonBasalamProducts, commonSearchTerm, 'title');
+  const filteredUniqueMixinProducts = filterProducts(uniqueMixinProducts, uniqueSearchTerm, 'name');
+  const filteredUniqueBasalamProducts = filterProducts(uniqueBasalamProducts, uniqueSearchTerm, 'title');
+
   console.log("[CommonMixinProducts]", commonMixinProducts)
   console.log('[commonBasalamProducts]', commonBasalamProducts)
   
@@ -4170,6 +4188,28 @@ function HomePage() {
                 if (e.url) window.open(e.url, "_blank");
               }}
             />
+            {/* Search bar for common products */}
+            <div className="mb-6">
+              <div className="relative">
+                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type="text"
+                  placeholder="جستجوی محصولات مشترک..."
+                  value={commonSearchTerm}
+                  onChange={(e) => setCommonSearchTerm(e.target.value)}
+                  className="w-full pr-10 pl-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5b9fdb] focus:border-transparent text-right"
+                  dir="rtl"
+                />
+                {commonSearchTerm && (
+                  <button
+                    onClick={() => setCommonSearchTerm("")}
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <X size={18} />
+                  </button>
+                )}
+              </div>
+            </div>
             <div
               className="grid grid-cols-1 md:grid-cols-2 gap-8"
               id="product-list"
@@ -4206,12 +4246,12 @@ function HomePage() {
                           در حال بارگذاری محصولات...
                         </p>
                       </div>
-                    ) : commonMixinProducts.length === 0 ? (
+                    ) : filteredCommonMixinProducts.length === 0 ? (
                       <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">
-                        محصول مشترکی یافت نشد
+                        {commonSearchTerm ? "محصولی با این نام یافت نشد" : "محصول مشترکی یافت نشد"}
                       </div>
                     ) : (
-                      commonMixinProducts.map((product: MixinProduct, idx: number) => (
+                      filteredCommonMixinProducts.map((product: MixinProduct, idx: number) => (
                         <div
                           key={product.id}
                           id={idx === 0 ? "first-common-mixin" : undefined}
@@ -4268,12 +4308,12 @@ function HomePage() {
                           در حال بارگذاری محصولات...
                         </p>
                       </div>
-                    ) : commonBasalamProducts.length === 0 ? (
+                    ) : filteredCommonBasalamProducts.length === 0 ? (
                       <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">
-                        محصول مشترکی یافت نشد
+                        {commonSearchTerm ? "محصولی با این نام یافت نشد" : "محصول مشترکی یافت نشد"}
                       </div>
                     ) : (
-                      commonBasalamProducts.map((product: BasalamProduct, idx: number) => (
+                      filteredCommonBasalamProducts.map((product: BasalamProduct, idx: number) => (
                         <div
                           key={product.id}
                           id={idx === 0 ? "first-common-basalam" : undefined}
@@ -4318,6 +4358,29 @@ function HomePage() {
               محصولات غیرمشترک در باسلام و میکسین
             </h2>
 
+            {/* Search bar for unique products */}
+            <div className="mb-6">
+              <div className="relative">
+                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type="text"
+                  placeholder="جستجوی محصولات غیرمشترک..."
+                  value={uniqueSearchTerm}
+                  onChange={(e) => setUniqueSearchTerm(e.target.value)}
+                  className="w-full pr-10 pl-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5b9fdb] focus:border-transparent text-right"
+                  dir="rtl"
+                />
+                {uniqueSearchTerm && (
+                  <button
+                    onClick={() => setUniqueSearchTerm("")}
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <X size={18} />
+                  </button>
+                )}
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
                 <div className="flex items-center justify-between mb-4">
@@ -4349,12 +4412,12 @@ function HomePage() {
                           در حال بارگذاری محصولات میکسین...
                         </p>
                       </div>
-                    ) : uniqueMixinProducts.length === 0 ? (
+                    ) : filteredUniqueMixinProducts.length === 0 ? (
                       <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">
-                        محصول منحصر به میکسین یافت نشد
+                        {uniqueSearchTerm ? "محصولی با این نام یافت نشد" : "محصول منحصر به میکسین یافت نشد"}
                       </div>
                     ) : (
-                      uniqueMixinProducts.map((product: MixinProduct) => (
+                      filteredUniqueMixinProducts.map((product: MixinProduct) => (
                         <div
                           key={product.id}
                           onClick={() =>
@@ -4419,12 +4482,12 @@ function HomePage() {
                           در حال بارگذاری محصولات باسلام...
                         </p>
                       </div>
-                    ) : uniqueBasalamProducts.length === 0 ? (
+                    ) : filteredUniqueBasalamProducts.length === 0 ? (
                       <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">
-                        محصول منحصر به باسلام یافت نشد
+                        {uniqueSearchTerm ? "محصولی با این نام یافت نشد" : "محصول منحصر به باسلام یافت نشد"}
                       </div>
                     ) : (
-                      uniqueBasalamProducts.map((product: BasalamProduct) => (
+                      filteredUniqueBasalamProducts.map((product: BasalamProduct) => (
                         <div
                           key={product.id}
                           onClick={() =>
