@@ -19,6 +19,8 @@ import TokenExpiredModal from './components/TokenExpiredModal';
 import { useGlobalUiStore } from './store/globalUiStore';
 import QuotaBanner from './components/QuotaBanner';
 import InstallPWAModal from './components/InstallPWAModal'
+import FlexPlayground from './components/FlexPlayGround'
+import Test from './components/Test'
 
 const queryClient = new QueryClient()
 
@@ -62,7 +64,14 @@ function App() {
             <Route path="/login" element={<CredentialsPage />} />
 
             {/* Pricing Page route */}
-            <Route path="/pricing" element={<PricingPage />} />
+            <Route 
+              path="/pricing" 
+              element={
+                <PrivateRoute>
+                  <PricingPage />
+                </PrivateRoute>
+                } 
+              />
 
             {/* Usage Dashboard route */}
             <Route
@@ -156,6 +165,17 @@ function App() {
                 </PrivateRoute>
               }
             />
+            
+            {/* flex playground*/}
+            <Route 
+            path='/flex-playground' 
+            element={<FlexPlayground />}
+            />
+
+            <Route
+            path='/test'
+            element={<Test />} />
+
           </Routes>
         </WithGlobalOverlays>
         <InstallPWAModal />
